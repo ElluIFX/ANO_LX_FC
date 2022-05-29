@@ -1,0 +1,10 @@
+ProjectSTM32F407/build
+*.bak
+*.bin
+*.elf
+*.hex
+*.map
+*.uvguix.*
+Doc
+build
+.vscode
