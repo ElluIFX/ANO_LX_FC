@@ -159,10 +159,10 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len) {
   }
   //凌霄IMU发出的RGB灯光数据
   else if (*(data + 2) == 0X0f) {
-    led.brightness[0] = *(data + 4);
-    led.brightness[1] = *(data + 5);
-    led.brightness[2] = *(data + 6);
-    led.brightness[3] = *(data + 7);
+    lx_led.brightness[0] = *(data + 4);
+    lx_led.brightness[1] = *(data + 5);
+    lx_led.brightness[2] = *(data + 6);
+    lx_led.brightness[3] = *(data + 7);
   }
   //凌霄飞控当前的运行状态
   else if (*(data + 2) == 0X06) {
