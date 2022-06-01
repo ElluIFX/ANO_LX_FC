@@ -1,10 +1,3 @@
-/******************** (C) COPYRIGHT 2017 ANO Tech
- ********************************* 浣滆€�
- *锛氬尶鍚嶇鍒� 瀹樼綉    锛歸ww.anotc.com
- * 娣樺疂    锛歛notc.taobao.com
- * 鎶€鏈疩缇� 锛�190169595
- * 鎻忚堪    锛歀ED椹卞姩
- **********************************************************************************/
 #include "Drv_led.h"
 
 void DvrLedInit() {
@@ -55,7 +48,7 @@ void LED_On_Off(uint16_t leds) {
   }
 }
 
-// LED鐨�1ms椹卞姩锛屽湪1ms瀹氭椂涓柇閲岃皟鐢ㄣ€�
+// LED驱动，在1ms定时中断里调用
 _led_st led;
 void LED_1ms_DRV()  //
 {
