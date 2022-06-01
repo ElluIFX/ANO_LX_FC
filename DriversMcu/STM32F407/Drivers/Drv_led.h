@@ -12,8 +12,8 @@
 #define LED_ALL_BIT 0x0f
 
 //
-#define LED4_OFF ANO_GPIO_LED->BSRRL = ANO_Pin_LED4 //BSRRL   LEVEL_H
-#define LED4_ON ANO_GPIO_LED->BSRRH = ANO_Pin_LED4	//L
+#define LED4_OFF ANO_GPIO_LED->BSRRL = ANO_Pin_LED4  // BSRRL   LEVEL_H
+#define LED4_ON ANO_GPIO_LED->BSRRH = ANO_Pin_LED4   // L
 //
 #define LED1_ON ANO_GPIO_LED->BSRRL = ANO_Pin_LED1
 #define LED1_OFF ANO_GPIO_LED->BSRRH = ANO_Pin_LED1
@@ -27,15 +27,15 @@
 #define ANO_GPIO_LED GPIOE
 #define ANO_Pin_LED4 GPIO_Pin_7
 //
-#define ANO_Pin_LED1 GPIO_Pin_1 //r
-#define ANO_Pin_LED2 GPIO_Pin_0 //g
-#define ANO_Pin_LED3 GPIO_Pin_2 //b
+#define ANO_Pin_LED1 GPIO_Pin_1  // r
+#define ANO_Pin_LED2 GPIO_Pin_0  // g
+#define ANO_Pin_LED3 GPIO_Pin_2  // b
 /*********************************************/
 #define LED_NUM 4
 
 typedef union {
-	//
-	s8 brightness[LED_NUM];
+  //
+  s8 brightness[LED_NUM];
 
 } _led_st;
 

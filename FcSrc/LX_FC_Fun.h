@@ -9,9 +9,9 @@
 //==数据声明
 
 //==函数声明
-//static
+// static
 
-//public
+// public
 u8 FC_Unlock(void);
 u8 FC_Lock(void);
 u8 LX_Change_Mode(u8 new_mode);

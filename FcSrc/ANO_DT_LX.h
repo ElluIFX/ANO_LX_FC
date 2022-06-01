@@ -6,56 +6,51 @@
 //==定义/声明
 #define FUN_NUM_LEN 256
 
-typedef struct
-{
-	u8 D_Addr;		 //目标地址
-	u8 WTS;			 //wait to send等待发送标记
-	u16 fre_ms;		 //发送周期
-	u16 time_cnt_ms; //计时变量
+typedef struct {
+  u8 D_Addr;        //目标地址
+  u8 WTS;           // wait to send等待发送标记
+  u16 fre_ms;       //发送周期
+  u16 time_cnt_ms;  //计时变量
 } _dt_frame_st;
 
-//cmd
-typedef struct
-{
-	u8 CID;
-	u8 CMD[10];
+// cmd
+typedef struct {
+  u8 CID;
+  u8 CMD[10];
 } _cmd_st;
 
-//check
-typedef struct
-{
-	u8 ID;
-	u8 SC;
-	u8 AC;
+// check
+typedef struct {
+  u8 ID;
+  u8 SC;
+  u8 AC;
 } _ck_st;
 
-//param
-typedef struct
-{
-	u16 par_id;
-	s32 par_val;
+// param
+typedef struct {
+  u16 par_id;
+  s32 par_val;
 } _par_st;
 
-typedef struct
-{
-	_dt_frame_st fun[FUN_NUM_LEN];
-	//
-	u8 wait_ck;
-	//
-	_cmd_st cmd_send;
-	_ck_st ck_send;
-	_ck_st ck_back;
-	_par_st par_data;
+typedef struct {
+  _dt_frame_st fun[FUN_NUM_LEN];
+  //
+  u8 wait_ck;
+  //
+  _cmd_st cmd_send;
+  _ck_st ck_send;
+  _ck_st ck_back;
+  _par_st par_data;
 } _dt_st;
 
 //==数据声明
 extern _dt_st dt;
 //==函数声明
-//static
+// static
 static void ANO_DT_LX_Send_Data(u8 *dataToSend, u8 length);
 static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len);
 
-//public
+// public
 //
 void ANO_DT_Init(void);
 void ANO_LX_Data_Exchange_Task(float dT_s);
