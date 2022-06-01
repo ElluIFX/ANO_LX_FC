@@ -49,13 +49,19 @@ void LED_On_Off(uint16_t leds) {
 }
 
 // LED驱动，在1ms定时中断里调用
-_led_st led;
+_led_st lx_led;
+_led_st user_led;
+#ifdef LED_CONTROLED_BY_LX
+#define led_set lx_led
+#else
+#define led_set user_led
+#endif
 void LED_1ms_DRV()  //
 {
   static u16 led_cnt[LED_NUM];
   u16 led_tmp;
   for (u8 i = 0; i < LED_NUM; i++) {
-    if (led_cnt[i] < (s16)led.brightness[i]) {
+    if (led_cnt[i] < (s16)led_set.brightness[i]) {
       // ON
       led_tmp |= (1 << i);
     } else {

@@ -32,6 +32,7 @@
 #define ANO_Pin_LED3 GPIO_Pin_2  // b
 /*********************************************/
 #define LED_NUM 4
+// #define LED_CONTROLED_BY_LX
 
 typedef union {
   //
@@ -39,7 +40,8 @@ typedef union {
 
 } _led_st;
 
-extern _led_st led;
+extern _led_st lx_led;
+extern _led_st user_led;
 
 void DvrLedInit(void);
 void LED_1ms_DRV(void);
