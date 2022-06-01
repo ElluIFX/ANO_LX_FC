@@ -7,4 +7,8 @@ ProjectSTM32F407/build
 *.uvguix.*
 Doc
 build
+Build
 .vscode
+.*
+*.code-workspace
+*.exe
