@@ -77,4 +77,17 @@ void LED_1ms_DRV()  //
   LED_On_Off(led_tmp);
 }
 
+/**
+ * @brief 设置RGB LED色值
+ * @param  r                红色值
+ * @param  g                绿色值
+ * @param  b                蓝色值
+ */
+void Set_RGB_LED(u8 r, u8 g, u8 b) {
+  const float MAX_BRIGHTNESS = 20.0f;
+  led_set.brightness[0] = (u8)(r * MAX_BRIGHTNESS / 255.0f);
+  led_set.brightness[1] = (u8)(g * MAX_BRIGHTNESS / 255.0f);
+  led_set.brightness[2] = (u8)(b * MAX_BRIGHTNESS / 255.0f);
+}
+
 /******************* (C) COPYRIGHT 2016 ANO TECH *****END OF FILE************/

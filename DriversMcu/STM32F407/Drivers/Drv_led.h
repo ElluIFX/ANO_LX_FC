@@ -45,5 +45,6 @@ extern _led_st user_led;
 
 void DvrLedInit(void);
 void LED_1ms_DRV(void);
+void Set_RGB_LED(u8 r, u8 g, u8 b);
 
 #endif
