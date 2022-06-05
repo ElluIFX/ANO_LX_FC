@@ -32,7 +32,7 @@
 #define ANO_Pin_LED3 GPIO_Pin_2  // b
 /*********************************************/
 #define LED_NUM 4
-// #define LED_CONTROLED_BY_LX
+#define LED_CONTROLED_BY_LX
 
 typedef union {
   //
