@@ -12,3 +12,8 @@ Build
 .*
 *.code-workspace
 *.exe
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.log
