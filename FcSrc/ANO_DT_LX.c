@@ -185,7 +185,7 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len) {
     }
   }
   //×ËÌ¬ËÄÔªÊı
-  else if (*(data + 2) == 0X03) {
+  else if (*(data + 2) == 0X04) {
     for (u8 i = 0; i < 9; i++) {
       fc_att_qua.byte_data[i] = *(data + 4 + i);
     }
