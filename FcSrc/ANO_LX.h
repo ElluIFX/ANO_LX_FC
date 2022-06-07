@@ -85,6 +85,18 @@ typedef union {
   _fc_att_qua_st st_data;
 } _fc_att_qua_un;
 
+// 0x05
+typedef struct {
+  s32 alt_fused;
+  s32 alt_add;
+  u8 alt_state;
+} __attribute__((__packed__)) _fc_alt_st;
+
+typedef union {
+  u8 byte_data[9];
+  _fc_alt_st st_data;
+} _fc_alt_un;
+
 // 0x07
 typedef struct {
   s16 vel_x;
@@ -125,6 +137,7 @@ typedef struct {
 //==Êý¾ÝÉùÃ÷
 extern _fc_att_un fc_att;
 extern _fc_att_qua_un fc_att_qua;
+extern _fc_alt_un fc_alt;
 extern _fc_vel_un fc_vel;
 extern _fc_pos_un fc_pos;
 extern _rt_tar_un rt_tar;

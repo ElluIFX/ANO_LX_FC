@@ -38,6 +38,7 @@ _fc_att_un fc_att;
 _fc_att_qua_un fc_att_qua;
 _fc_vel_un fc_vel;
 _fc_pos_un fc_pos;
+_fc_alt_un fc_alt;
 
 //遥控CH5(AUX1)通道值(1000-1500-2000)设置模式1-2-3，模式0需要通过单独发送指令设置
 //模式0：姿态自稳    ->遥控CH1-CH4直接控制姿态和油门。
