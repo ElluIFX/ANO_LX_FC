@@ -164,6 +164,12 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len) {
     lx_led.brightness[2] = *(data + 6);
     lx_led.brightness[3] = *(data + 7);
   }
+  //融合高度
+  else if (*(data + 2) == 0X05) {
+    for (u8 i = 0; i < 9; i++) {
+      fc_alt.byte_data[i] = *(data + 4 + i);
+    }
+  }
   //凌霄飞控当前的运行状态
   else if (*(data + 2) == 0X06) {
     fc_sta.fc_mode_sta = *(data + 4);
