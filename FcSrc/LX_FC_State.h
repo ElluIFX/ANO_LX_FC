@@ -30,10 +30,10 @@ typedef struct {
   _cmd_fun_st cmd_fun;
 
   // state
-  u8 imu_ready;
-  u8 take_off;
-  u8 in_air;
-  u8 landing;
+  // u8 imu_ready;
+  // u8 take_off;
+  // u8 in_air;
+  // u8 landing;
 
 } _fc_state_st;
 
