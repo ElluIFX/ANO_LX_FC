@@ -11,7 +11,6 @@
 #include "Drv_RcIn.h"
 #include "Drv_Timer.h"
 #include "Drv_Uart.h"
-#include "Drv_UbloxGPS.h"
 #include "Drv_adc.h"
 #include "Drv_led.h"
 
@@ -24,6 +23,8 @@ u8 All_Init() {
   //初始化电调输出功能
   DrvPwmOutInit();
   MyDelayMs(100);
+  //串口1初始化，函数参数为波特率
+  DrvUart1Init(500000);
   //串口2初始化，函数参数为波特率
   DrvUart2Init(500000);
   //串口3初始化
@@ -41,8 +42,6 @@ u8 All_Init() {
   //数传模块初始化
   ANO_DT_Init();
   MyDelayMs(800);
-  // GPS接口初始化
-  Init_GPS();
   //初始化定时中断
   DrvTimerFcInit();
   //初始化完成，返回1

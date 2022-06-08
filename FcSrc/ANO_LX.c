@@ -6,7 +6,6 @@
 #include "Drv_PwmOut.h"
 #include "Drv_RcIn.h"
 #include "Drv_Uart.h"
-#include "Drv_UbloxGPS.h"
 #include "Drv_adc.h"
 #include "Drv_led.h"
 #include "LX_FC_EXT_Sensor.h"
@@ -260,8 +259,6 @@ void ANO_LX_Task() {
   }
   //解析串口接收到的数据
   DrvUartDataCheck();
-  // GPS数据处理
-  GPS_Data_Prepare_Task(1);
   //外部传感器数据处理
   LX_FC_EXT_Sensor_Task(0.001f);
   //通信交换

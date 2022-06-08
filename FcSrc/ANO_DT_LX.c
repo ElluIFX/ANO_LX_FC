@@ -290,13 +290,6 @@ static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[]) {
         send_buffer[(*_cnt)++] = fc_bat.byte_data[i];
       }
     } break;
-    case 0x30:  // GPS数据
-    {
-      //
-      for (u8 i = 0; i < 23; i++) {
-        send_buffer[(*_cnt)++] = ext_sens.fc_gps.byte[i];
-      }
-    } break;
     case 0x33:  //通用速度测量数据
     {
       //
