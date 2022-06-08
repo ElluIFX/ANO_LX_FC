@@ -40,34 +40,12 @@ typedef union {
   u8 byte[7];
   _general_dis_st st_data;
 } _general_dis_un;
-//====GPS数据====
-typedef struct {
-  u8 FIX_STA;
-  u8 S_NUM;
-  s32 LNG;
-  s32 LAT;
-  s32 ALT_GPS;
-  s16 N_SPE;
-  s16 E_SPE;
-  s16 D_SPE;
-  u8 PDOP_001;  // 0.01f
-  u8 SACC_001;  // 0.01f
-  u8 VACC_001;  // 0.01f
-
-} __attribute__((__packed__)) _fc_gps_st;
-
-typedef union {
-  u8 byte[23];
-  _fc_gps_st st_data;
-} _fc_gps_un;
-//====
 
 typedef struct {
   //
   _general_vel_un gen_vel;
   _general_pos_un gen_pos;
   _general_dis_un gen_dis;
-  _fc_gps_un fc_gps;
 
 } _fc_ext_sensor_st;
 //==数据声明

@@ -36,8 +36,6 @@ typedef s16 vec2_s16[2];
 #define LED_S 0x08
 #define LED_ALL 0xFF
 
-//#define GPS_USE_RTK
-#define GPS_USE_UBLOX_M8
 
 //=========================================
 #endif
