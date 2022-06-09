@@ -476,6 +476,7 @@ int LxPrintf(const char *fmt, ...) {
   int i;
   va_start(ap, fmt);
   i = vsnprintf((char *)strBuf, STRLENMAX, fmt, ap);
+  strBuf[i] = '\0';
   va_end(ap);
   strLen = i;
   strColor = LOG_COLOR_BLACK;
@@ -490,6 +491,22 @@ int LxPrintf(const char *fmt, ...) {
 int LxPrintf(const char *fmt, ...) { return 0; }
 
 #endif
+
+#define FLOAT_BUF_NUM 5
+#define FLOAT_BUF_LEN 12
+#define FLOAT_PRECISION_MUL 1000
+#include <Ano_Math.h>
+
+static u8 floatBufs[FLOAT_BUF_LEN][FLOAT_BUF_NUM];
+static u8 lastBuf = 0;
+
+char *FloatToString(float f) {
+  lastBuf = (lastBuf + 1) % FLOAT_BUF_NUM;
+  char *floatBuf = (char *)&(floatBufs[lastBuf][0]);
+  snprintf(floatBuf, FLOAT_BUF_LEN, "%d.%df", (int)f,
+           (int)(f * FLOAT_PRECISION_MUL) % FLOAT_PRECISION_MUL);
+  return floatBuf;
+}
 
 static void stringSendCheck(void) {
   u8 _cnt = 0;
