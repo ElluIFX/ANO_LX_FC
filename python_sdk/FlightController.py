@@ -24,7 +24,7 @@ class FlightController:
         self._stop_bit = []
         self.running = True
         self.connected = False
-        self.ser = SerCom32(serial_port, 115200)
+        self.ser = SerCom32(serial_port, 500000)
         logger.info("FC: Serial port opened")
         self.set_option(0)
         self.ser.readConfig(readByteStartBit=[0xAA, 0x55], byteDataCheck="sum")
@@ -158,10 +158,10 @@ class FlightController:
         action_degree = 30
         while True:
             try:
-                k = input()
+                k = input()[0]
             except:
                 return
-            logger.debug(f"FC: Key: {k}")
+            logger.info(f"FC: Key: {k}")
             if k == "t":
                 self.quit()
                 return

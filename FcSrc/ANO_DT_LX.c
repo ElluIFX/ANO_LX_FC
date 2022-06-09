@@ -435,6 +435,7 @@ static inline void CK_Back_Check() {
 }
 
 //////////////////////// LOG //////////////////////////
+static void stringSendCheck(void);
 static u8 strBuf[STRLENMAX];
 static u8 strColor;
 static u8 strLen;
@@ -472,6 +473,9 @@ void LxStringSend(u8 string_color, char *str) {
  * @retval
  */
 int LxPrintf(const char *fmt, ...) {
+  if (strLen > 0){
+    stringSendCheck();
+  }
   va_list ap;
   int i;
   va_start(ap, fmt);
