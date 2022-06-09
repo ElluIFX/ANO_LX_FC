@@ -83,7 +83,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
     LxPrintf("R: checksum error");
     return;
   }
-  // LxPrintf("R: %d %d", option, sub_option);
+  LxPrintf("R: %d %d", option, sub_option);
   switch (option) {
     case 0x00:  // Œ’ ÷
       if (p_data[0] == 0x01) {
