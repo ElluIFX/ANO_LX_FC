@@ -462,6 +462,7 @@ void LxStringSend(u8 string_color, char *str) {
 #ifdef USE_DEBUG_PRINTF
 
 #include <stdarg.h>
+#include <stdio.h>
 
 /**
  * @brief 使用printf格式化语法发送LOG到上位机, 警告:
@@ -473,9 +474,8 @@ void LxStringSend(u8 string_color, char *str) {
 int LxPrintf(const char *fmt, ...) {
   va_list ap;
   int i;
-  char *s;
   va_start(ap, fmt);
-  i = vsprintf(strBuf, fmt, ap);
+  i = vsnprintf((char *)strBuf, STRLENMAX, fmt, ap);
   va_end(ap);
   strLen = i;
   strColor = LOG_COLOR_BLACK;
