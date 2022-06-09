@@ -63,4 +63,5 @@ void CK_Back(u8 dest_addr, _ck_st *ck);
 void PAR_Back(u8 dest_addr, _par_st *par);
 void LxStringSend(u8 string_color, char *str);
 int LxPrintf(const char *fmt, ...);
+char *FloatToString(float f);
 #endif

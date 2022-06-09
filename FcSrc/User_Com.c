@@ -80,18 +80,19 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
     calc_check += data_buf[i];
   }
   if (calc_check != recv_check) {
-    // DTprintf("R: checksum error");
+    LxPrintf("R: checksum error");
     return;
   }
+  // LxPrintf("R: %d %d", option, sub_option);
   switch (option) {
     case 0x00:  // 握手
       if (p_data[0] == 0x01) {
         connected = 1;
-        // DTprintf("Ctrl Connected");
+        LxPrintf("Ctrl Connected");
         break;
       }
     case 0x01:  // 流程控制
-      if (p_data[0] == 0x10) {
+      if (sub_option == 0x10) {
       }
       break;
     case 0x02:  // 实时控制
@@ -99,7 +100,8 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
       val1 = temp_s16 / 100.0f;
       temp_s16 = p_data[3] << 8 | p_data[4];
       val2 = temp_s16 / 100.0f;
-      // DTprintf("R: sub_option:%d,val1:%f,val2:%f", sub_option, val1, val2);
+      LxPrintf("R: sub_option:%d,val1:%s,val2:%s", sub_option,
+               FloatToString(val1), FloatToString(val2));
       switch (sub_option) {
         case 0x01:
           break;
