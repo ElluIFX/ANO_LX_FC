@@ -5,6 +5,8 @@
 
 //==定义/声明
 #define FUN_NUM_LEN 256
+#define STRLENMAX 128     //字符串最大长度
+#define USE_DEBUG_PRINTF  //是否使用printf调试
 
 typedef struct {
   u8 D_Addr;        //目标地址
@@ -59,4 +61,6 @@ void ANO_DT_LX_Data_Receive_Prepare(u8 data);
 void CMD_Send(u8 dest_addr, _cmd_st *cmd);
 void CK_Back(u8 dest_addr, _ck_st *ck);
 void PAR_Back(u8 dest_addr, _par_st *par);
+void LxStringSend(u8 string_color, char *str);
+int LxPrintf(const char *fmt, ...);
 #endif

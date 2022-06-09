@@ -36,6 +36,9 @@ typedef s16 vec2_s16[2];
 #define LED_S 0x08
 #define LED_ALL 0xFF
 
+#define LOG_COLOR_BLACK 0
+#define LOG_COLOR_RED 1
+#define LOG_COLOR_GREEN 2
 
 //=========================================
 #endif

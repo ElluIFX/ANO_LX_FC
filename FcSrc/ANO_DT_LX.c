@@ -434,6 +434,90 @@ static inline void CK_Back_Check() {
   }
 }
 
+//////////////////////// LOG //////////////////////////
+static u8 strBuf[STRLENMAX];
+static u8 strColor;
+static u8 strLen;
+
+/**
+ * @brief 发送LOG到上位机
+ * @param  string_color     字符串颜色 (LOG_COLOR_BLACK, LOG_COLOR_RED,
+ * LOG_COLOR_GREEN)
+ * @param  str             字符串
+ */
+void LxStringSend(u8 string_color, char *str) {
+  u8 i = 0;
+  while (*(str + i) != '\0') {
+    strBuf[i] = *(str + i);
+    i++;
+    if (i >= STRLENMAX) {
+      break;
+    }
+  }
+  if (string_color > LOG_COLOR_GREEN) string_color = LOG_COLOR_BLACK;
+  strColor = string_color;
+  strLen = i;
+}
+
+#ifdef USE_DEBUG_PRINTF
+
+#include <stdarg.h>
+
+/**
+ * @brief 使用printf格式化语法发送LOG到上位机, 警告:
+ * printf函数开销极大，不建议用于打印浮点数，不要在循环中使用，调试结束后取消使能USE_DEBUG_PRINTF
+ * @param  fmt            格式化字符串
+ * @param  ...
+ * @retval
+ */
+int LxPrintf(const char *fmt, ...) {
+  va_list ap;
+  int i;
+  char *s;
+  va_start(ap, fmt);
+  i = vsprintf(strBuf, fmt, ap);
+  va_end(ap);
+  strLen = i;
+  strColor = LOG_COLOR_BLACK;
+  return i;
+}
+
+#else
+
+/**
+ * @brief 已禁用
+ */
+int LxPrintf(const char *fmt, ...) { return 0; }
+
+#endif
+
+static void stringSendCheck(void) {
+  u8 _cnt = 0;
+  if (strLen) {
+    send_buffer[_cnt++] = 0xAA;
+    send_buffer[_cnt++] = 0xFF;
+    send_buffer[_cnt++] = 0xA0;
+    send_buffer[_cnt++] = 0;
+    // string_color
+    send_buffer[_cnt++] = strColor;
+    // string
+    for (u8 i = 0; i < strLen; i++) send_buffer[_cnt++] = strBuf[i];
+    //==
+    send_buffer[3] = _cnt - 4;
+    //==
+    u8 check_sum1 = 0, check_sum2 = 0;
+    for (u8 i = 0; i < _cnt; i++) {
+      check_sum1 += send_buffer[i];
+      check_sum2 += check_sum1;
+    }
+    send_buffer[_cnt++] = check_sum1;
+    send_buffer[_cnt++] = check_sum2;
+    ANO_DT_LX_Send_Data(send_buffer, _cnt);
+    strLen = 0;
+  }
+}
+////////////////////////////////////////////////////////////////
+
 // 1ms调用一次，用于通信交换数据
 void ANO_LX_Data_Exchange_Task(float dT_s) {
   //=====检测CMD是否返回了校验
@@ -447,6 +531,7 @@ void ANO_LX_Data_Exchange_Task(float dT_s) {
   Check_To_Send(0xe0);
   Check_To_Send(0xe2);
   Check_To_Send(0x0d);
+  stringSendCheck();
 }
 
 //===================================================================
