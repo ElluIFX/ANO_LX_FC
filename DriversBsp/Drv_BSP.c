@@ -26,7 +26,7 @@ u8 All_Init() {
   //串口1初始化，函数参数为波特率
   DrvUart1Init(500000);
   //串口2初始化，函数参数为波特率
-  DrvUart2Init(500000);
+  DrvUart2Init(115200);
   //串口3初始化
   DrvUart3Init(500000);
   //接匿名光流

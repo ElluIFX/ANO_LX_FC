@@ -13,7 +13,17 @@
 #include "ANO_DT_LX.h"
 #include "ANO_LX.h"
 #include "Drv_Uart.h"
+#include "LX_FC_Fun.h"
 #include "LX_FC_State.h"
+
+void UserCom_DataAnl(u8* data_buf, u8 data_len);
+void UserCom_DataExchange(void);
+void UserCom_SendData(u8* dataToSend, u8 Length);
+
+static u8 user_connected = 0;       //用户下位机是否连接
+static u16 user_heartbeat_cnt = 0;  //用户下位机心跳计数
+
+_to_user_un to_user_data;
 
 /**
  * @brief 用户协议数据获取,在串口中断中调用,解析完成后调用UserCom_DataAnl
@@ -61,18 +71,12 @@ void UserCom_GetOneByte(u8 data) {
  */
 void UserCom_DataAnl(u8* data_buf, u8 data_len) {
   static u8 option;
-  static u8 sub_option;
   static u8 recv_check;
   static u8 calc_check;
   static u8 len;
-  static u8 connected = 0;
   static u8* p_data;
-  static float val1, val2, val3;
-  static int16_t temp_s16;
-  static int32_t temp_s32;
   p_data = (uint8_t*)(data_buf + 4);
   option = data_buf[2];
-  sub_option = p_data[0];
   len = data_buf[3];
   recv_check = data_buf[4 + len];
   calc_check = 0;
@@ -80,44 +84,104 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
     calc_check += data_buf[i];
   }
   if (calc_check != recv_check) {
-    LxPrintf("R: checksum error");
+    LxPrintf("DBG: usercom checksum error");
     return;
   }
-  LxPrintf("R: %d %d", option, sub_option);
+  LxPrintf("DBG: option=%d", option);
   switch (option) {
-    case 0x00:  // 握手
+    case 0x00:  // 心跳包
       if (p_data[0] == 0x01) {
-        connected = 1;
-        LxPrintf("Ctrl Connected");
+        if (!user_connected) {
+          user_connected = 1;
+          LxPrintf("DBG: user connected");
+        }
+        user_heartbeat_cnt = 0;
         break;
       }
-    case 0x01:  // 流程控制
-      if (sub_option == 0x10) {
-      }
+    case 0x01:  // 控制32(预留)
       break;
-    case 0x02:  // 实时控制
-      temp_s16 = p_data[1] << 8 | p_data[2];
-      val1 = temp_s16 / 100.0f;
-      temp_s16 = p_data[3] << 8 | p_data[4];
-      val2 = temp_s16 / 100.0f;
-      LxPrintf("R: sub_option:%d,val1:%s,val2:%s", sub_option,
-               FloatToString(val1), FloatToString(val2));
-      switch (sub_option) {
-        case 0x01:
-          break;
-        case 0x02:
-          break;
-        case 0x03:
-          break;
-        case 0x04:
-          break;
-        case 0x05:
-          break;
-        default:
-          break;
+    case 0x02:  // 转发到IMU, 命令格式应遵循匿名通信协议
+      if (dt.wait_ck == 0) {
+        dt.cmd_send.CID = p_data[0];
+        for (u8 i = 0; i < len + 1; i++) {
+          dt.cmd_send.CMD[i] = p_data[i + 1];
+        }
+        CMD_Send(0xFF, &dt.cmd_send);
+        LxPrintf("DBG: cmd 0x%02X sent to imu", dt.cmd_send.CID);
+      } else {
+        LxPrintf("DBG: cmd to imu dropped for wait_ck");
       }
       break;
     default:
       break;
   }
+}
+
+/**
+ * @brief 用户通讯持续性任务，在调度器中调用
+ * @param  dT_s
+ */
+void UserCom_Task(float dT_s) {
+  static u16 data_exchange_cnt = 0;
+  if (user_connected) {
+    //心跳超时检查
+    user_heartbeat_cnt++;
+    if (user_heartbeat_cnt * dT_s >= USER_HEARTBEAT_TIMEOUT_S) {
+      user_connected = 0;
+      LxPrintf("DBG: user disconnected");
+      if (fc_sta.unlock_sta == 1) {  //如果是解锁状态，则采取安全措施
+        // OneKey_Land(); //降落
+        OneKey_Stable();  //恢复悬停
+      }
+    }
+
+    //数据交换
+    data_exchange_cnt++;
+    if (data_exchange_cnt * dT_s >= USER_DATA_EXCHANGE_TIMEOUT_S) {
+      data_exchange_cnt = 0;
+      UserCom_DataExchange();
+    }
+  }
+}
+
+/**
+ * @brief 交换飞控数据
+ */
+void UserCom_DataExchange(void) {
+  static u8 user_data_size = sizeof(to_user_data.byte_data);
+
+  // 初始化数据
+  to_user_data.st_data.head1 = 0xAA;
+  to_user_data.st_data.head2 = 0x55;
+  to_user_data.st_data.length = user_data_size - 4;
+
+  // 数据赋值
+  to_user_data.st_data.rol_x100 = fc_att.st_data.rol_x100;
+  to_user_data.st_data.pit_x100 = fc_att.st_data.pit_x100;
+  to_user_data.st_data.yaw_x100 = fc_att.st_data.yaw_x100;
+  to_user_data.st_data.alt_fused = fc_alt.st_data.alt_fused;
+  to_user_data.st_data.vel_x = fc_vel.st_data.vel_x;
+  to_user_data.st_data.vel_y = fc_vel.st_data.vel_y;
+  to_user_data.st_data.vel_z = fc_vel.st_data.vel_z;
+  to_user_data.st_data.pos_x = fc_pos.st_data.pos_x;
+  to_user_data.st_data.pos_y = fc_pos.st_data.pos_y;
+  to_user_data.st_data.voltage_100 = fc_bat.st_data.voltage_100;
+  to_user_data.st_data.fc_mode_sta = fc_sta.fc_mode_sta;
+  to_user_data.st_data.unlock_sta = fc_sta.unlock_sta;
+  to_user_data.st_data.CID = fc_sta.cmd_fun.CID;
+
+  // 校验和
+  to_user_data.st_data.check_sum = 0;
+  for (u8 i = 0; i < user_data_size - 1; i++) {
+    to_user_data.st_data.check_sum += to_user_data.byte_data[i];
+  }
+
+  UserCom_SendData(to_user_data.byte_data, user_data_size);
+}
+
+/**
+ * @brief 用户通讯数据发送
+ */
+void UserCom_SendData(u8* dataToSend, u8 Length) {
+  DrvUart2SendBuf(dataToSend, Length);
 }

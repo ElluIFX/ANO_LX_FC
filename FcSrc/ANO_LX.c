@@ -11,6 +11,7 @@
 #include "LX_FC_EXT_Sensor.h"
 #include "LX_FC_Fun.h"
 #include "LX_FC_State.h"
+#include "User_Com.h"
 
 /*==========================================================================
  * 描述    ：凌霄飞控输入、输出主程序
@@ -248,7 +249,8 @@ void ANO_LX_Task() {
     LX_FC_State_Task(0.01f);  //
     //匿名光流状态检测
     AnoOF_Check_State(0.01f);
-    //==
+    //下位机任务
+    UserCom_Task(0.01f);
     //计100ms
     tmp_cnt[1]++;
     tmp_cnt[1] %= 10;
