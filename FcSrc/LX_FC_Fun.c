@@ -130,6 +130,21 @@ u8 OneKey_Land() {
     return 0;
   }
 }
+//一键悬停
+u8 OneKey_Stable() {
+  //
+  if (dt.wait_ck == 0)  //没有其他等待校验的CMD时才发送本CMD
+  {
+    //按协议发送指令
+    dt.cmd_send.CID = 0X10;
+    dt.cmd_send.CMD[0] = 0X00;
+    dt.cmd_send.CMD[1] = 0X04;
+    CMD_Send(0xff, &dt.cmd_send);
+    return 1;
+  } else {
+    return 0;
+  }
+}
 //平移(距离cm，速度cmps，方向角度0-360度)
 u8 Horizontal_Move(u16 distance_cm, u16 velocity_cmps, u16 dir_angle_0_360) {
   //
