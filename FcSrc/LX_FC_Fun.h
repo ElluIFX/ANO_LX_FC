@@ -12,9 +12,11 @@
 // static
 
 // public
+
 u8 FC_Unlock(void);
 u8 FC_Lock(void);
 u8 LX_Change_Mode(u8 new_mode);
+u8 OneKey_Stable(void);
 u8 OneKey_Takeoff(u16 height_cm);
 u8 OneKey_Land(void);
 u8 OneKey_Flip(void);
