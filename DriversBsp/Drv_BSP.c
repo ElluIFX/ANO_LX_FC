@@ -13,6 +13,7 @@
 #include "Drv_Uart.h"
 #include "Drv_adc.h"
 #include "Drv_led.h"
+#include "Drv_WS2812.h"
 
 u8 All_Init() {
   DrvSysInit();
@@ -20,6 +21,8 @@ u8 All_Init() {
   MyDelayMs(100);
   // LED功能初始化
   DvrLedInit();
+  // WS2812初始化
+  DrvWS2812Init();
   //初始化电调输出功能
   DrvPwmOutInit();
   MyDelayMs(100);

@@ -87,7 +87,6 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
     LxPrintf("DBG: usercom checksum error");
     return;
   }
-  LxPrintf("DBG: option=%d", option);
   switch (option) {
     case 0x00:  // ÐÄÌø°ü
       if (p_data[0] == 0x01) {

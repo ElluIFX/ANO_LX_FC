@@ -4,7 +4,6 @@ from sys import byteorder as sysByteorder
 from typing import Literal
 
 import serial
-from numpy import byte
 
 
 class SerCom32:
@@ -44,7 +43,10 @@ class SerCom32:
         self.packLengthMulti = packLengthMulti
 
     def read_serial(self):
-        if time.monotonic() - self.readTick > self.readOvertime and len(self.readBuffer) != 0:
+        if (
+            time.monotonic() - self.readTick > self.readOvertime
+            and len(self.readBuffer) != 0
+        ):
             self.readSaveBuffer = copy(self.readBuffer)
             self.readBuffer = bytes()
             return 1
@@ -71,9 +73,15 @@ class SerCom32:
             checksum += self.packLengthBit
             checksum &= 0xFF
             for i in range(0, length):
-                checksum += int.from_bytes(self.readByteBuffer[i : i + 1], byteorder=self.byteOrder, signed=False)
+                checksum += int.from_bytes(
+                    self.readByteBuffer[i : i + 1],
+                    byteorder=self.byteOrder,
+                    signed=False,
+                )
                 checksum &= 0xFF
-            receivedChecksum = int.from_bytes(self.ser.read(1), byteorder=self.byteOrder, signed=False)
+            receivedChecksum = int.from_bytes(
+                self.ser.read(1), byteorder=self.byteOrder, signed=False
+            )
             if receivedChecksum == checksum:
                 return 1
             return 0
@@ -107,7 +115,10 @@ class SerCom32:
             if self.readByteGoingFlag:
                 self.packCount += 1
                 self.readByteBuffer += tmp
-                if self.packCount >= self.packLength * self.packLengthMulti + self.packLengthAdd:
+                if (
+                    self.packCount
+                    >= self.packLength * self.packLengthMulti + self.packLengthAdd
+                ):
                     self.readByteGoingFlag = False
                     if self.check_byte_data():
                         self.readByteSaveBuffer = copy(self.readByteBuffer)
@@ -138,12 +149,16 @@ class SerCom32:
         data_ = copy(data)
         if isinstance(data_, list):
             data_ = bytes(data_)
-        if isinstance(data_, str):
-            data_ = data_.encode("utf-8")
         if not isinstance(data_, bytes):
             raise TypeError("data must be bytes")
         len_as_byte = len(data_).to_bytes(1, self.byteOrder)
-        send_data = bytes(self.startBit) + bytes(self.optionBit) + len_as_byte + data_ + bytes(self.stopBit)
+        send_data = (
+            bytes(self.startBit)
+            + bytes(self.optionBit)
+            + len_as_byte
+            + data_
+            + bytes(self.stopBit)
+        )
         if self.useSumCheck:
             checksum = 0
             for i in range(0, len(send_data)):
