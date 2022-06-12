@@ -10,7 +10,6 @@
 
 #include "Drv_WS2812.h"
 static uint8_t ws2812_buf[3 * WS2812_NUM + 1];
-static uint8_t ws2812_send_flag = 0;
 
 /**
  * @brief Initialize WS2812 GPIO and buffer
@@ -93,28 +92,10 @@ void WS2812_SetRGB(uint32_t rgb_data, uint8_t index) {
  * This function is not thread safe. Will disable interrupts
  * during transmission.
  */
-void WS2812_ForceSendBuf(void) {
+void WS2812_SendBuf(void) {
   __disable_irq();  // disable all interrupts
   WS2812_SendBit(ws2812_buf, WS2812_NUM);
   __enable_irq();  // enable all interrupts
-  ws2812_send_flag = 0;
-}
-
-/**
- * @brief Enable WS2812 send flag, sending will be started by
- * WS2812_SendBufChecker.
- */
-void WS2812_SendBuf(void) { ws2812_send_flag = 1; }
-
-/**
- * @brief Check if WS2812 send flag is set, call in where this function won't be
- * blocked.
- */
-void WS2812_SendBufChecker(void) {
-  if (ws2812_send_flag) {
-    WS2812_SendBit(ws2812_buf, WS2812_NUM);
-    ws2812_send_flag = 0;
-  }
 }
 
 /**
@@ -182,28 +163,11 @@ void WS2812_BufFlip(void) {
 }
 
 void _test_2812(void) {  // TEST
-  static u8 inited = 0;
-  static u32 rgb[] = {0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0x00FFFF, 0xFF00FF,
-               0xFFFFFF};
+  static u32 rgb[] = {0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00,
+                      0x00FFFF, 0xFF00FF, 0xFFFFFF};
   static u8 rgbsize = sizeof(rgb) / sizeof(u32);
-  static uint8_t i = 0;
-  static u8 side = 0;
   static u8 rgb_i = 0;
-  if (!inited) {
-    WS2812_SetRGB(0x66ccff, 0);
-    inited = 1;
-  }
-  if (side)
-    WS2812_BufRightShift();
-  else
-    WS2812_BufLeftShift();
-  if (++i == WS2812_NUM) {
-    i = 1;
-    side = !side;
-    if (++rgb_i == rgbsize)
-      rgb_i = 0;
-    if (side)
-      WS2812_SetRGB(rgb[rgb_i], 0);
-  }
-  WS2812_ForceSendBuf();
+  if (++rgb_i == rgbsize) rgb_i = 0;
+  WS2812_SetAll(rgb[rgb_i] | 0xFF000000);
+  WS2812_SendBuf();
 }
