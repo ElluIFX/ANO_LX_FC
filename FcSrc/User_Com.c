@@ -106,7 +106,8 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           dt.cmd_send.CMD[i] = p_data[i + 1];
         }
         CMD_Send(0xFF, &dt.cmd_send);
-        LxPrintf("DBG: cmd 0x%02X sent to imu", dt.cmd_send.CID);
+        LxPrintf("DBG: to imu: 0x%02X 0x%02X 0x%02X", dt.cmd_send.CID,
+                 dt.cmd_send.CMD[0], dt.cmd_send.CMD[1]);
       } else {
         LxPrintf("DBG: cmd to imu dropped for wait_ck");
       }

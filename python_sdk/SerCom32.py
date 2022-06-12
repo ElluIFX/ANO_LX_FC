@@ -145,7 +145,7 @@ class SerCom32:
         self.ser.write(data)
         self.ser.flush()
 
-    def send_form_data(self, data):
+    def send_from_data(self, data):
         data_ = copy(data)
         if isinstance(data_, list):
             data_ = bytes(data_)
@@ -188,5 +188,5 @@ if __name__ == "__main__":
     data += int16_to_byte(0x0001)
     data += int16_to_byte(2345)
     data += int16_to_byte(6789)
-    sended = ser.send_form_data(data)
+    sended = ser.send_from_data(data)
     print(bytes_to_str(sended))
