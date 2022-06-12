@@ -19,6 +19,7 @@
 
 #include "ANO_DT_LX.h"
 #include "Drv_AnoOf.h"
+#include "User_Com.h"
 
 _fc_ext_sensor_st ext_sens;
 
@@ -70,10 +71,25 @@ static inline void General_Distance_Data_Handle() {
   }
 }
 
+static inline void General_Position_Data_Handle() {
+  static u8 pos_update_cnt;
+  if (pos_update_cnt != user_pos.pos_update_cnt) {
+    //
+    pos_update_cnt = user_pos.pos_update_cnt;
+    //
+    ext_sens.gen_pos.st_data.ulhca_pos_cm[0] = user_pos.pos_x;
+    ext_sens.gen_pos.st_data.ulhca_pos_cm[1] = user_pos.pos_y;
+    ext_sens.gen_pos.st_data.ulhca_pos_cm[2] = user_pos.pos_z;
+    //´¥·¢·¢ËÍ
+    dt.fun[0x32].WTS = 1;
+  }
+}
 void LX_FC_EXT_Sensor_Task(float dT_s)  // 1ms
 {
   //
   General_Velocity_Data_Handle();
   //
   General_Distance_Data_Handle();
+  //
+  General_Position_Data_Handle();
 }

@@ -8,14 +8,25 @@ import traceback
 from logger import Exception_Catcher, logger
 from SerCom32 import SerCom32
 
-##### small functions
-bytes_to_str = lambda data: " ".join([f"{b:02X}" for b in data])
-float_to_byte = lambda value: int(value * 100).to_bytes(2, "little", signed=True)[::-1]
-uint16_to_byte = lambda value: int(value).to_bytes(2, "little", signed=False)[::-1]
-int16_to_byte = lambda value: int(value).to_bytes(2, "little", signed=True)[::-1]
-uint8_to_byte = lambda value: int(value).to_bytes(1, "little", signed=False)
-b_int = lambda b: int.from_bytes(b, "little", signed=True)
-i_byte = lambda i, length: i.to_bytes(length, "little", signed=True)
+# small functions
+
+
+def bytes_to_str(data): return " ".join([f"{b:02X}" for b in data])
+
+
+def float_to_byte(value): return int(
+    value * 100).to_bytes(2, "little", signed=True)[::-1]
+
+
+def uint16_to_byte(value): return int(
+    value).to_bytes(2, "little", signed=False)[::-1]
+def int16_to_byte(value): return int(
+    value).to_bytes(2, "little", signed=True)[::-1]
+
+
+def uint8_to_byte(value): return int(value).to_bytes(1, "little", signed=False)
+def b_int(b): return int.from_bytes(b, "little", signed=True)
+def i_byte(i, length): return i.to_bytes(length, "little", signed=True)
 
 
 class Byte_Var:
@@ -50,7 +61,8 @@ class Byte_Var:
 
     def update_byte(self, value):
         self.__value = (
-            int.from_bytes(value, "little", signed=self.__signed) * self.__multiplier
+            int.from_bytes(value, "little",
+                           signed=self.__signed) * self.__multiplier
         )
         self.__value = self.__var_type(self.__value)
 
@@ -67,8 +79,8 @@ class FC_Base_Comunication:
     def __init__(self, serial_port, bit_rate) -> None:
         self.running = False
         self.connected = False
-        self._start_bit = [0xAA, 0x22]
-        self._stop_bit = []
+        self.__start_bit = [0xAA, 0x22]
+        self.__stop_bit = []
         self.__read_thread = None
         self.__state_update_callback = None
         self.__show_state_flag = False
@@ -76,12 +88,14 @@ class FC_Base_Comunication:
         self.__sending_data = False
         logger.info("FC: Serial port opened")
         self.__set_option(0)
-        self.__ser_32.readConfig(readByteStartBit=[0xAA, 0x55], byteDataCheck="sum")
+        self.__ser_32.readConfig(
+            readByteStartBit=[0xAA, 0x55], byteDataCheck="sum")
         self.drone_state = {
             "rol": Byte_Var("s16", float, 0.01),  # deg
             "pit": Byte_Var("s16", float, 0.01),  # deg
             "yaw": Byte_Var("s16", float, 0.01),  # deg
-            "alt": Byte_Var("s32", int),  # cm
+            "alt_fused": Byte_Var("s32", int),  # cm
+            "alt_add": Byte_Var("s32", int),  # cm
             "vel_x": Byte_Var("s16", int),  # cm/s
             "vel_y": Byte_Var("s16", int),  # cm/s
             "vel_z": Byte_Var("s16", int),  # cm/s
@@ -109,9 +123,9 @@ class FC_Base_Comunication:
 
     def __set_option(self, option: int) -> None:
         self.__ser_32.sendConfig(
-            startBit=self._start_bit,
+            startBit=self.__start_bit,
             optionBit=[option],
-            stopBit=self._stop_bit,
+            stopBit=self.__stop_bit,
             useSumCheck=True,
         )
 
@@ -134,7 +148,8 @@ class FC_Base_Comunication:
                     # logger.debug(f"FC: Read: {bytes_to_str(data)}")
                     self.__update_state(data)
             except Exception as e:
-                logger.error(f"FC: Read thread exception: {traceback.format_exc()}")
+                logger.error(
+                    f"FC: Read thread exception: {traceback.format_exc()}")
             if time.time() - last_heartbeat_time > 0.5:
                 self.send_32_from_data([0x01], 0)  # 心跳包
 
@@ -143,7 +158,7 @@ class FC_Base_Comunication:
             index = 0
             for key, value in self.drone_state.items():
                 length = value.byte_length()
-                self.drone_state[key].update_byte(data[index : index + length])
+                self.drone_state[key].update_byte(data[index: index + length])
                 index += length
             if not self.connected:
                 self.connected = True
@@ -153,7 +168,8 @@ class FC_Base_Comunication:
             if self.__show_state_flag:
                 self.__show_state()
         except Exception as e:
-            logger.error(f"FC: Update state exception: {traceback.format_exc()}")
+            logger.error(
+                f"FC: Update state exception: {traceback.format_exc()}")
 
     def __show_state(self):
         RED = "\033[1;31m"
@@ -193,6 +209,39 @@ class FC_protocol(FC_Base_Comunication):
         self.__byte_temp2 = Byte_Var()
         self.__byte_temp3 = Byte_Var()
 
+    def __send_32_command(self, suboption: int, data: bytes = b"") -> None:
+        suboption = int(suboption).to_bytes(1, "little")
+        data_to_send = suboption + data
+        sended = self.send_32_from_data(data_to_send, 0x01)
+        logger.debug(f"FC: Send: {bytes_to_str(sended)}")
+
+    def set_rgb_led(self, r: int, g: int, b: int) -> None:
+        """
+        设置由32控制的RGB LED
+        r,g,b: 0-255
+        """
+        r = int(r).to_bytes(1, "little")
+        g = int(g).to_bytes(1, "little")
+        b = int(b).to_bytes(1, "little")
+        self.__send_32_command(0x01, r + g + b)
+
+    def send_general_position(self, x: int, y: int, z: int) -> None:
+        """
+        通用数据传感器回传
+        x,y,z: cm
+        """
+        self.__byte_temp1.reset_type(x, "s32", int)
+        self.__byte_temp2.reset_type(y, "s32", int)
+        self.__byte_temp3.reset_type(z, "s32", int)
+        self.__send_32_command(0x02, self.__byte_temp1.bytes() +
+                               self.__byte_temp2.bytes() + self.__byte_temp3.bytes())
+
+    def reset_position_prediction(self):
+        """
+        复位位置融合预测(伪造通用位置传感器)
+        """
+        self.send_general_position(0, 0, 0)
+
     def __send_command_frame(self, CID: int, CMD0: int, CMD1: int, CMD_data=b""):
         CID = int(CID).to_bytes(1, "little")
         CMD0 = int(CMD0).to_bytes(1, "little")
@@ -200,9 +249,9 @@ class FC_protocol(FC_Base_Comunication):
         CMD_data = bytes(CMD_data)
         if len(CMD_data) < 8:
             CMD_data += b"\x00" * (8 - len(CMD_data))
-        data = CID + CMD0 + CMD1 + CMD_data
-        data = self.send_32_from_data(data, 0x02)
-        logger.debug(f"FC: Send: {bytes_to_str(data)}")
+        data_to_send = CID + CMD0 + CMD1 + CMD_data
+        sended = self.send_32_from_data(data_to_send, 0x02)
+        logger.debug(f"FC: Send: {bytes_to_str(sended)}")
 
     def set_flight_mode(self, mode: int) -> None:
         """
@@ -235,7 +284,7 @@ class FC_protocol(FC_Base_Comunication):
         """
         self.__send_command_frame(0x10, 0x00, 0x04)
 
-    def takeoff(self) -> None:
+    def take_off(self) -> None:
         """
         一键起飞
         """
@@ -314,13 +363,17 @@ class FC_protocol(FC_Base_Comunication):
             0x10, 0x02, 0x08, self.__byte_temp1.bytes() + self.__byte_temp2.bytes()
         )
 
-    def set_height(self, height: int, speed: int) -> None:
+    def set_height(self, source: int, height: int, speed: int) -> None:
         """
         设置高度:
+        高度源: 0:融合高度 1:激光高度
         高度:0-10000 cm
         速度:10-300 cm/s
         """
-        current_height = self.drone_state["alt"].value()
+        if source == 0:
+            current_height = self.drone_state["alt_fused"].value()
+        elif source == 1:
+            current_height = self.drone_state["alt_add"].value()
         if height < current_height:
             self.go_down(current_height - height, speed)
         elif height > current_height:
@@ -378,6 +431,7 @@ class FC_Controller(FC_Udp_Server, FC_protocol):
 
 
 if __name__ == "__main__":
+    import random
     fc = FC_Controller("COM23", 500000)
     try:
         fc.start_listen_serial()
@@ -407,13 +461,17 @@ if __name__ == "__main__":
                 elif k == "c":
                     fc.land()
                 elif k == "w":
-                    fc.horizontal_move(horizontal_distance, horizontal_speed, 0)
+                    fc.horizontal_move(horizontal_distance,
+                                       horizontal_speed, 0)
                 elif k == "s":
-                    fc.horizontal_move(horizontal_distance, horizontal_speed, 180)
+                    fc.horizontal_move(horizontal_distance,
+                                       horizontal_speed, 180)
                 elif k == "a":
-                    fc.horizontal_move(horizontal_distance, horizontal_speed, 270)
+                    fc.horizontal_move(horizontal_distance,
+                                       horizontal_speed, 270)
                 elif k == "d":
-                    fc.horizontal_move(horizontal_distance, horizontal_speed, 90)
+                    fc.horizontal_move(horizontal_distance,
+                                       horizontal_speed, 90)
                 elif k == "q":
                     fc.turn_left(yaw_deg, yaw_speed)
                 elif k == "e":
@@ -422,6 +480,13 @@ if __name__ == "__main__":
                     fc.go_up(vertical_distance, vertical_speed)
                 elif k == "f":
                     fc.go_down(vertical_distance, vertical_speed)
+                elif k == 'i':
+                    fc.reset_position_prediction()
+                elif k == 'u':
+                    r, g, b = random.randint(0, 255), random.randint(
+                        0, 255), random.randint(0, 255)
+                    logger.info(f"rgb:{r} {g} {b}")
+                    fc.set_rgb_led(r, g, b)
 
         except KeyboardInterrupt:
             logger.info("FC: Keyboard interrupt")

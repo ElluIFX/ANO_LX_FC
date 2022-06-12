@@ -54,7 +54,6 @@ void WS2812_SetAll(uint32_t argb_data);
 void WS2812_BufRightShift(void);
 void WS2812_BufLeftShift(void);
 void WS2812_BufFlip(void);
-void WS2812_ForceSendBuf(void);
 void WS2812_SendBuf(void);
 
 void _test_2812(void);

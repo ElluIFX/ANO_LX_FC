@@ -13,6 +13,7 @@
 #include "ANO_DT_LX.h"
 #include "ANO_LX.h"
 #include "Drv_Uart.h"
+#include "Drv_WS2812.h"
 #include "LX_FC_Fun.h"
 #include "LX_FC_State.h"
 
@@ -22,6 +23,7 @@ void UserCom_SendData(u8* dataToSend, u8 Length);
 
 static u8 user_connected = 0;       //用户下位机是否连接
 static u16 user_heartbeat_cnt = 0;  //用户下位机心跳计数
+_user_pos_st user_pos;              //用户下位机位置数据
 
 _to_user_un to_user_data;
 
@@ -71,14 +73,19 @@ void UserCom_GetOneByte(u8 data) {
  */
 void UserCom_DataAnl(u8* data_buf, u8 data_len) {
   static u8 option;
+  static u8 suboption;
   static u8 recv_check;
   static u8 calc_check;
   static u8 len;
   static u8* p_data;
+  static s32* p_s32;
+  static u8 u8_temp;
+  static u32 u32_temp;
+
   p_data = (uint8_t*)(data_buf + 4);
   option = data_buf[2];
   len = data_buf[3];
-  recv_check = data_buf[4 + len];
+  recv_check = data_buf[data_len];
   calc_check = 0;
   for (u8 i = 0; i < len + 4; i++) {
     calc_check += data_buf[i];
@@ -98,6 +105,29 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
         break;
       }
     case 0x01:  // 控制32(预留)
+      suboption = p_data[0];
+      switch (suboption) {
+        case 0x01:  // WS2812控制
+          u32_temp = 0xff000000;
+          u8_temp = p_data[1];  // R
+          u32_temp |= u8_temp << 16;
+          u8_temp = p_data[2];  // G
+          u32_temp |= u8_temp << 8;
+          u8_temp = p_data[3];  // B
+          u32_temp |= u8_temp;
+          WS2812_SetAll(u32_temp);
+          WS2812_SendBuf();
+          break;
+        case 0x02:  // 位置信息回传
+          p_s32 = (s32*)(p_data + 1);
+          user_pos.pos_x = *p_s32;
+          p_s32++;
+          user_pos.pos_y = *p_s32;
+          p_s32++;
+          user_pos.pos_z = *p_s32;
+          user_pos.pos_update_cnt++;
+          break;
+      }
       break;
     case 0x02:  // 转发到IMU, 命令格式应遵循匿名通信协议
       if (dt.wait_ck == 0) {
@@ -160,6 +190,7 @@ void UserCom_DataExchange(void) {
   to_user_data.st_data.pit_x100 = fc_att.st_data.pit_x100;
   to_user_data.st_data.yaw_x100 = fc_att.st_data.yaw_x100;
   to_user_data.st_data.alt_fused = fc_alt.st_data.alt_fused;
+  to_user_data.st_data.alt_add = fc_alt.st_data.alt_add;
   to_user_data.st_data.vel_x = fc_vel.st_data.vel_x;
   to_user_data.st_data.vel_y = fc_vel.st_data.vel_y;
   to_user_data.st_data.vel_z = fc_vel.st_data.vel_z;

@@ -25,6 +25,7 @@ typedef struct {
   s16 pit_x100;
   s16 yaw_x100;
   s32 alt_fused;
+  s32 alt_add;
   s16 vel_x;
   s16 vel_y;
   s16 vel_z;
@@ -37,11 +38,21 @@ typedef struct {
   u8 check_sum;
 } __attribute__((__packed__)) _to_user_st;
 
+//通用位置数据结构
+typedef struct {
+  u8 pos_update_cnt;
+  //
+  s32 pos_x;
+  s32 pos_y;
+  s32 pos_z;
+} __attribute__((__packed__)) _user_pos_st;
+
 typedef union {
-  u8 byte_data[33];
+  u8 byte_data[37];
   _to_user_st st_data;
 } _to_user_un;
 
+extern _user_pos_st user_pos;
 
 void UserCom_GetOneByte(u8 data);
 
