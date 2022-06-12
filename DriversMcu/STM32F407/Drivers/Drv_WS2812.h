@@ -46,10 +46,6 @@
   __DELAY_800NS
 ////
 
-#define __2812_WAIT MyDelayUs(70)
-#define __2812_SET(d, t) \
-  WS2812_SendBit((uint8_t*)d, sizeof(d) / sizeof(uint8_t) / 3, t)
-
 void DrvWS2812Init(void);
 void WS2812_SendBit(uint8_t* data, uint8_t len);
 void WS2812_SetARGB(uint32_t argb_data, uint8_t index);
@@ -61,5 +57,7 @@ void WS2812_BufFlip(void);
 void WS2812_ForceSendBuf(void);
 void WS2812_SendBuf(void);
 void WS2812_SendBufChecker(void);
+
+void _test_2812(void);
 
 #endif

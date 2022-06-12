@@ -38,8 +38,8 @@ void DrvWS2812Init(void) {
   WS2812_SendBit(ws2812_buf, WS2812_NUM);
 }
 
-#pragma GCC push_options
-#pragma GCC optimize("O0")
+// #pragma GCC push_options
+// #pragma GCC optimize("O0")
 /**
  * @brief Send data bits to WS2812
  * @param  data             uint32_t LED array, each in G R B order
@@ -59,7 +59,7 @@ void WS2812_SendBit(uint8_t* data, uint8_t len) {
     data++;
   }
 }
-#pragma GCC pop_options
+// #pragma GCC pop_options
 
 /**
  * @brief Set specific LED to ARGB color
@@ -165,10 +165,13 @@ void WS2812_BufLeftShift(void) {
  * @brief Flip the buffer
  */
 void WS2812_BufFlip(void) {
+  uint8_t r_bit0;
+  uint8_t r_bit1;
+  uint8_t r_bit2;
   for (uint8_t i = 0; i < WS2812_NUM / 2; i++) {
-    uint8_t r_bit0 = ws2812_buf[i * 3 + 0];
-    uint8_t r_bit1 = ws2812_buf[i * 3 + 1];
-    uint8_t r_bit2 = ws2812_buf[i * 3 + 2];
+    r_bit0 = ws2812_buf[i * 3 + 0];
+    r_bit1 = ws2812_buf[i * 3 + 1];
+    r_bit2 = ws2812_buf[i * 3 + 2];
     ws2812_buf[i * 3 + 0] = ws2812_buf[(WS2812_NUM - i - 1) * 3 + 0];
     ws2812_buf[i * 3 + 1] = ws2812_buf[(WS2812_NUM - i - 1) * 3 + 1];
     ws2812_buf[i * 3 + 2] = ws2812_buf[(WS2812_NUM - i - 1) * 3 + 2];
@@ -176,4 +179,31 @@ void WS2812_BufFlip(void) {
     ws2812_buf[(WS2812_NUM - i - 1) * 3 + 1] = r_bit1;
     ws2812_buf[(WS2812_NUM - i - 1) * 3 + 2] = r_bit2;
   }
+}
+
+void _test_2812(void) {  // TEST
+  static u8 inited = 0;
+  static u32 rgb[] = {0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0x00FFFF, 0xFF00FF,
+               0xFFFFFF};
+  static u8 rgbsize = sizeof(rgb) / sizeof(u32);
+  static uint8_t i = 0;
+  static u8 side = 0;
+  static u8 rgb_i = 0;
+  if (!inited) {
+    WS2812_SetRGB(0x66ccff, 0);
+    inited = 1;
+  }
+  if (side)
+    WS2812_BufRightShift();
+  else
+    WS2812_BufLeftShift();
+  if (++i == WS2812_NUM) {
+    i = 1;
+    side = !side;
+    if (++rgb_i == rgbsize)
+      rgb_i = 0;
+    if (side)
+      WS2812_SetRGB(rgb[rgb_i], 0);
+  }
+  WS2812_ForceSendBuf();
 }
