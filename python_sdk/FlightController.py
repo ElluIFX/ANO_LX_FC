@@ -41,12 +41,25 @@ def i_byte(i, length):
 
 
 class Byte_Var:
+    """
+    C-like byte类型变量与python泛型变量的转换类
+    使用时直接操作成员bytes和value即可
+    """
+
     __value = 0
 
     def __init__(self, ctype="u8", var_type=int, value_multiplier=1):
-        self.reset_type(0, ctype, var_type, value_multiplier)
+        self.reset(0, ctype, var_type, value_multiplier)
 
-    def reset_type(self, value, ctype, var_type, value_multiplier=1):
+    def reset(self, init_value, ctype: str, py_var_type, value_multiplier=1):
+        """重置变量
+
+        Args:
+            init_value (_type_): 初始值(浮点值或整数值)
+            ctype (str): C-like类型(如u8, u16, u32, s8, s16, s32)
+            py_var_type (_type_): python类型(如int, float)
+            value_multiplier (int, optional): 值在从byte向python转换时的乘数. Defaults to 1.
+        """
         ctype_word_part = ctype[0]
         ctype_number_part = ctype[1:]
         if ctype_word_part.lower() == "u":
@@ -57,32 +70,80 @@ class Byte_Var:
             raise ValueError(f"Invalid ctype: {ctype}")
         if int(ctype_number_part) % 8 != 0:
             raise ValueError(f"Invalid ctype: {ctype}")
-        if var_type not in [int, float, bool]:
-            raise ValueError(f"Invalid var_type: {var_type}")
+        if py_var_type not in [int, float, bool]:
+            raise ValueError(f"Invalid var_type: {py_var_type}")
         self.__byte_length = int(int(ctype_number_part) // 8)
-        self.__var_type = var_type
+        self.__var_type = py_var_type
         self.__multiplier = value_multiplier
-        self.__value = self.__var_type(value)
+        self.__value = self.__var_type(init_value)
 
-    def update_value(self, value):
-        self.__value = self.__var_type(value)
-
+    @property
     def value(self):
         return self.__value
 
-    def update_byte(self, value):
+    @value.setter
+    def value(self, value):
+        self.__value = self.__var_type(value)
+
+    def __update_byte(self, value):
         self.__value = (
             int.from_bytes(value, "little", signed=self.__signed) * self.__multiplier
         )
         self.__value = self.__var_type(self.__value)
 
+    @property
     def bytes(self):
         return int(self.__value / self.__multiplier).to_bytes(
             self.__byte_length, "little", signed=self.__signed
         )
 
+    @bytes.setter
+    def bytes(self, value):
+        self.__update_byte(value)
+
+    @property
     def byte_length(self):
         return self.__byte_length
+
+    @byte_length.setter
+    def byte_length(self, value):
+        raise ValueError("byte_length is read-only")
+
+
+class FC_State_Struct:
+    rol = Byte_Var("s16", float, 0.01)  # deg
+    pit = Byte_Var("s16", float, 0.01)  # deg
+    yaw = Byte_Var("s16", float, 0.01)  # deg
+    alt_fused = Byte_Var("s32", int)  # cm
+    alt_add = Byte_Var("s32", int)  # cm
+    vel_x = Byte_Var("s16", int)  # cm/s
+    vel_y = Byte_Var("s16", int)  # cm/s
+    vel_z = Byte_Var("s16", int)  # cm/s
+    pos_x = Byte_Var("s32", int)  # cm
+    pos_y = Byte_Var("s32", int)  # cm
+    bat = Byte_Var("u16", float, 0.01)  # V
+    mode = Byte_Var("u8", int)  #
+    unlock = Byte_Var("u8", bool)  #
+    cid = Byte_Var("u8", int)  #
+
+    alt = alt_add  # alias
+
+    RECV_ORDER = [
+        rol,
+        pit,
+        yaw,
+        alt_fused,
+        alt_add,
+        vel_x,
+        vel_y,
+        vel_z,
+        pos_x,
+        pos_y,
+        bat,
+        mode,
+        unlock,
+        cid,
+    ]
 
 
 class FC_Base_Comunication:
@@ -91,7 +152,7 @@ class FC_Base_Comunication:
         self.connected = False
         self.__start_bit = [0xAA, 0x22]
         self.__stop_bit = []
-        self.__read_thread = None
+        self.__listen_thread = None
         self.__state_update_callback = None
         self.__show_state_flag = False
         self.__ser_32 = SerCom32(serial_port, bit_rate)
@@ -99,34 +160,19 @@ class FC_Base_Comunication:
         logger.info("FC: Serial port opened")
         self.__set_option(0)
         self.__ser_32.readConfig(readByteStartBit=[0xAA, 0x55], byteDataCheck="sum")
-        self.drone_state = {
-            "rol": Byte_Var("s16", float, 0.01),  # deg
-            "pit": Byte_Var("s16", float, 0.01),  # deg
-            "yaw": Byte_Var("s16", float, 0.01),  # deg
-            "alt_fused": Byte_Var("s32", int),  # cm
-            "alt_add": Byte_Var("s32", int),  # cm
-            "vel_x": Byte_Var("s16", int),  # cm/s
-            "vel_y": Byte_Var("s16", int),  # cm/s
-            "vel_z": Byte_Var("s16", int),  # cm/s
-            "pos_x": Byte_Var("s32", int),  # cm
-            "pos_y": Byte_Var("s32", int),  # cm
-            "bat": Byte_Var("u16", float, 0.01),  # V
-            "mode": Byte_Var("u8", int),
-            "unlock": Byte_Var("u8", bool),
-            "CID": Byte_Var("u8", int),
-        }
+        self.state = FC_State_Struct()
 
-    def start_listen_serial(self, show_state=True, callback=None):
+    def start_listen_serial(self, print_state=True, callback=None):
         self.running = True
         self.__state_update_callback = callback
-        self.__show_state_flag = show_state
-        self.__read_thread = threading.Thread(target=self.__read_serial_task)
-        self.__read_thread.start()
+        self.__print_state_flag = print_state
+        self.__listen_thread = threading.Thread(target=self.__listen_serial_task)
+        self.__listen_thread.start()
 
     def quit(self) -> None:
         self.running = False
-        if self.__read_thread:
-            self.__read_thread.join()
+        if self.__listen_thread:
+            self.__listen_thread.join()
         self.__ser_32.close()
         logger.info("FC: Threads closed, FC offline")
 
@@ -147,8 +193,8 @@ class FC_Base_Comunication:
         self.__sending_data = False
         return _
 
-    def __read_serial_task(self):
-        logger.info("FC: Read thread started")
+    def __listen_serial_task(self):
+        logger.info("FC: listen serial thread started")
         last_heartbeat_time = time.time()
         while self.running:
             try:
@@ -157,28 +203,28 @@ class FC_Base_Comunication:
                     # logger.debug(f"FC: Read: {bytes_to_str(data)}")
                     self.__update_state(data)
             except Exception as e:
-                logger.error(f"FC: Read thread exception: {traceback.format_exc()}")
+                logger.error(f"FC: listen serial exception: {traceback.format_exc()}")
             if time.time() - last_heartbeat_time > 0.5:
                 self.send_32_from_data([0x01], 0)  # 心跳包
 
-    def __update_state(self, data):
+    def __update_state(self, recv_byte):
         try:
             index = 0
-            for key, value in self.drone_state.items():
-                length = value.byte_length()
-                self.drone_state[key].update_byte(data[index : index + length])
+            for var in self.state.RECV_ORDER:
+                length = var.byte_length
+                var.bytes = recv_byte[index : index + length]
                 index += length
             if not self.connected:
                 self.connected = True
                 logger.info("FC: Connected")
             if self.__state_update_callback is not None:
-                self.__state_update_callback(self.drone_state)
-            if self.__show_state_flag:
-                self.__show_state()
+                self.__state_update_callback(self.state)
+            if self.__print_state_flag:
+                self.__print_state()
         except Exception as e:
             logger.error(f"FC: Update state exception: {traceback.format_exc()}")
 
-    def __show_state(self):
+    def __print_state(self):
         RED = "\033[1;31m"
         GREEN = "\033[1;32m"
         YELLOW = "\033[1;33m"
@@ -190,19 +236,19 @@ class FC_Base_Comunication:
         text += (
             " ".join(
                 [
-                    f"{YELLOW}{((key[:2]+key[-1]))}: {f'{GREEN}√ ' if value.value() else f'{RED}x {RESET}'}"
-                    if type(value.value()) == bool
-                    else f"{YELLOW}{((key[:2]+key[-1]))}: {CYAN}{value.value():^3d}{RESET}"
-                    for key, value in self.drone_state.items()
-                    if type(value.value()) != float
+                    f"{YELLOW}{((var.__name__[:2]+var.__name__[-1]))}: {f'{GREEN}√ ' if var.value else f'{RED}x {RESET}'}"
+                    if type(var.value) == bool
+                    else f"{YELLOW}{((var.__name__[:2]+var.__name__[-1]))}: {CYAN}{var.value:^3d}{RESET}"
+                    for var in self.state.RECV_ORDER
+                    if type(var.value) != float
                 ]
             )
             + " "
             + " ".join(
                 [
-                    f"{YELLOW}{((key[:2]+key[-1]))}:{CYAN}{value.value():^7.02f}{RESET}"
-                    for key, value in self.drone_state.items()
-                    if type(value.value()) == float
+                    f"{YELLOW}{((var.__name__[:2]+var.__name__[-1]))}:{CYAN}{var.value:^7.02f}{RESET}"
+                    for var in self.state.RECV_ORDER
+                    if type(var.value) == float
                 ]
             )
         )
@@ -230,24 +276,25 @@ class FC_protocol(FC_Base_Comunication):
         设置由32控制的RGB LED
         r,g,b: 0-255
         """
-        r = int(r).to_bytes(1, "little")
-        g = int(g).to_bytes(1, "little")
-        b = int(b).to_bytes(1, "little")
-        self.__send_32_command(0x01, r + g + b)
+        self.__byte_temp1.reset(r, "u8", int)
+        self.__byte_temp2.reset(g, "u8", int)
+        self.__byte_temp3.reset(b, "u8", int)
+        self.__send_32_command(
+            0x01,
+            self.__byte_temp1.bytes + self.__byte_temp2.bytes + self.__byte_temp3.bytes,
+        )
 
     def send_general_position(self, x: int, y: int, z: int) -> None:
         """
         通用数据传感器回传
         x,y,z: cm
         """
-        self.__byte_temp1.reset_type(x, "s32", int)
-        self.__byte_temp2.reset_type(y, "s32", int)
-        self.__byte_temp3.reset_type(z, "s32", int)
+        self.__byte_temp1.reset(x, "s32", int)
+        self.__byte_temp2.reset(y, "s32", int)
+        self.__byte_temp3.reset(z, "s32", int)
         self.__send_32_command(
             0x02,
-            self.__byte_temp1.bytes()
-            + self.__byte_temp2.bytes()
-            + self.__byte_temp3.bytes(),
+            self.__byte_temp1.bytes + self.__byte_temp2.bytes + self.__byte_temp3.bytes,
         )
 
     def reset_position_prediction(self):
@@ -257,13 +304,18 @@ class FC_protocol(FC_Base_Comunication):
         self.send_general_position(0, 0, 0)
 
     def __send_command_frame(self, CID: int, CMD0: int, CMD1: int, CMD_data=b""):
-        CID = int(CID).to_bytes(1, "little")
-        CMD0 = int(CMD0).to_bytes(1, "little")
-        CMD1 = int(CMD1).to_bytes(1, "little")
-        CMD_data = bytes(CMD_data)
-        if len(CMD_data) < 8:
-            CMD_data += b"\x00" * (8 - len(CMD_data))
-        data_to_send = CID + CMD0 + CMD1 + CMD_data
+        self.__byte_temp1.reset(CID, "u8", int)
+        self.__byte_temp2.reset(CMD0, "u8", int)
+        self.__byte_temp3.reset(CMD1, "u8", int)
+        bytes_data = bytes(CMD_data)
+        if len(bytes_data) < 8:
+            bytes_data += b"\x00" * (8 - len(bytes_data))
+        data_to_send = (
+            self.__byte_temp1.bytes
+            + self.__byte_temp2.bytes
+            + self.__byte_temp3.bytes
+            + bytes_data
+        )
         sended = self.send_32_from_data(data_to_send, 0x02)
         logger.debug(f"FC: Send: {bytes_to_str(sended)}")
 
@@ -277,8 +329,8 @@ class FC_protocol(FC_Base_Comunication):
         """
         if mode not in [1, 2, 3]:
             raise ValueError("mode must be 1,2,3")
-        self.__byte_temp1.reset_type(mode, "u8", int)
-        self.__send_command_frame(0x01, 0x01, 0x01, self.__byte_temp1.bytes())
+        self.__byte_temp1.reset(mode, "u8", int)
+        self.__send_command_frame(0x01, 0x01, 0x01, self.__byte_temp1.bytes)
 
     def unlock(self) -> None:
         """
@@ -317,16 +369,14 @@ class FC_protocol(FC_Base_Comunication):
         移动速度:10-300 cm/s
         移动方向:0-359 度 (当前机头为0参考,顺时针)
         """
-        self.__byte_temp1.reset_type(distance, "u16", int)
-        self.__byte_temp2.reset_type(speed, "u16", int)
-        self.__byte_temp3.reset_type(direction, "u16", int)
+        self.__byte_temp1.reset(distance, "u16", int)
+        self.__byte_temp2.reset(speed, "u16", int)
+        self.__byte_temp3.reset(direction, "u16", int)
         self.__send_command_frame(
             0x10,
             0x02,
             0x03,
-            self.__byte_temp1.bytes()
-            + self.__byte_temp2.bytes()
-            + self.__byte_temp3.bytes(),
+            self.__byte_temp1.bytes + self.__byte_temp2.bytes + self.__byte_temp3.bytes,
         )
 
     def cordinate_move(self, x: int, y: int, speed: int) -> None:
@@ -341,7 +391,7 @@ class FC_protocol(FC_Base_Comunication):
         distance = np.sqrt(x**2 + y**2)
         if target_deg < 0:
             target_deg += 360
-        self.horizontal_move(distance, speed, target_deg)
+        self.horizontal_move(int(distance), speed, int(target_deg))
 
     def go_up(self, distance: int, speed: int) -> None:
         """
@@ -349,10 +399,10 @@ class FC_protocol(FC_Base_Comunication):
         上升距离:0-10000 cm
         上升速度:10-300 cm/s
         """
-        self.__byte_temp1.reset_type(distance, "u16", int)
-        self.__byte_temp2.reset_type(speed, "u16", int)
+        self.__byte_temp1.reset(distance, "u16", int)
+        self.__byte_temp2.reset(speed, "u16", int)
         self.__send_command_frame(
-            0x10, 0x02, 0x01, self.__byte_temp1.bytes() + self.__byte_temp2.bytes()
+            0x10, 0x02, 0x01, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
 
     def go_down(self, distance: int, speed: int) -> None:
@@ -361,10 +411,10 @@ class FC_protocol(FC_Base_Comunication):
         下降距离:0-10000 cm
         下降速度:10-300 cm/s
         """
-        self.__byte_temp1.reset_type(distance, "u16", int)
-        self.__byte_temp2.reset_type(speed, "u16", int)
+        self.__byte_temp1.reset(distance, "u16", int)
+        self.__byte_temp2.reset(speed, "u16", int)
         self.__send_command_frame(
-            0x10, 0x02, 0x02, self.__byte_temp1.bytes() + self.__byte_temp2.bytes()
+            0x10, 0x02, 0x02, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
 
     def turn_left(self, deg: int, speed: int) -> None:
@@ -373,10 +423,10 @@ class FC_protocol(FC_Base_Comunication):
         左转角度:0-359 度
         左转速度:5-90 deg/s
         """
-        self.__byte_temp1.reset_type(deg, "u16", int)
-        self.__byte_temp2.reset_type(speed, "u16", int)
+        self.__byte_temp1.reset(deg, "u16", int)
+        self.__byte_temp2.reset(speed, "u16", int)
         self.__send_command_frame(
-            0x10, 0x02, 0x07, self.__byte_temp1.bytes() + self.__byte_temp2.bytes()
+            0x10, 0x02, 0x07, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
 
     def turn_right(self, deg: int, speed: int) -> None:
@@ -385,10 +435,10 @@ class FC_protocol(FC_Base_Comunication):
         右转角度:0-359 度
         右转速度:5-90 deg/s
         """
-        self.__byte_temp1.reset_type(deg, "u16", int)
-        self.__byte_temp2.reset_type(speed, "u16", int)
+        self.__byte_temp1.reset(deg, "u16", int)
+        self.__byte_temp2.reset(speed, "u16", int)
         self.__send_command_frame(
-            0x10, 0x02, 0x08, self.__byte_temp1.bytes() + self.__byte_temp2.bytes()
+            0x10, 0x02, 0x08, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
 
     def set_height(self, source: int, height: int, speed: int) -> None:
@@ -399,9 +449,9 @@ class FC_protocol(FC_Base_Comunication):
         速度:10-300 cm/s
         """
         if source == 0:
-            current_height = self.drone_state["alt_fused"].value()
+            current_height = self.state.alt_fused.value
         elif source == 1:
-            current_height = self.drone_state["alt_add"].value()
+            current_height = self.state.alt_add.value
         if height < current_height:
             self.go_down(current_height - height, speed)
         elif height > current_height:
@@ -413,7 +463,7 @@ class FC_protocol(FC_Base_Comunication):
         偏航角:-180-180 度
         偏航速度:5-90 deg/s
         """
-        current_yaw = self.drone_state["yaw"].value()
+        current_yaw = self.state.yaw.value
         if yaw < current_yaw:
             left_turn_deg = abs(current_yaw - yaw)
             right_turn_deg = abs(360 - left_turn_deg)
@@ -431,10 +481,10 @@ class FC_protocol(FC_Base_Comunication):
         x:+-100000 cm
         y:+-100000 cm
         """
-        self.__byte_temp1.reset_type(x, "s32", int)
-        self.__byte_temp2.reset_type(y, "s32", int)
+        self.__byte_temp1.reset(x, "s32", int)
+        self.__byte_temp2.reset(y, "s32", int)
         self.__send_command_frame(
-            0x10, 0x01, 0x01, self.__byte_temp1.bytes() + self.__byte_temp2.bytes()
+            0x10, 0x01, 0x01, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
 
     def set_target_height(self, height: int) -> None:
@@ -444,16 +494,16 @@ class FC_protocol(FC_Base_Comunication):
         """
         if height < 0:
             height = 0
-        self.__byte_temp1.reset_type(height, "s32", int)
-        self.__send_command_frame(0x10, 0x01, 0x02, self.__byte_temp1.bytes())
+        self.__byte_temp1.reset(height, "s32", int)
+        self.__send_command_frame(0x10, 0x01, 0x02, self.__byte_temp1.bytes)
 
     def reset_base_position(self) -> None:
         """
         重置基地参考点, 用于按坐标移动时的坐标系计算
         """
-        self.__base_pos_x = self.drone_state["pos_x"].value()
-        self.__base_pos_y = self.drone_state["pos_y"].value()
-        self.__base_yaw = self.drone_state["yaw"].value()
+        self.__base_pos_x = self.state.pos_x.value
+        self.__base_pos_y = self.state.pos_y.value
+        self.__base_yaw = self.state.yaw.value
         logger.info(
             f"FC: reset base position to {self.__base_pos_x}, {self.__base_pos_y} @ {self.__base_yaw}"
         )
@@ -462,9 +512,7 @@ class FC_protocol(FC_Base_Comunication):
         """
         以基地坐标为参考的移动:
         x,y:+-100000 cm
-        """
-        # trans from base to world
-        """
+
         匿名机身参考系(即调用本函数时的参考系):         机头为x+ 机身左侧y+ 机身上方z+
         匿名世界参考系(回传数据中位置偏移采用的参考系):  地磁北(实际上是融合后yaw=0的方向)为x+ 地磁西为y+ 天空为z+
         """
@@ -473,8 +521,8 @@ class FC_protocol(FC_Base_Comunication):
         target_deg = np.arctan(div)
         deg = base_deg + target_deg
         distance = np.sqrt(x**2 + y**2)
-        t_x = np.cos(deg) * distance + self.__base_pos_x
-        t_y = np.sin(deg) * distance + self.__base_pos_y
+        t_x = int(np.cos(deg) * distance + self.__base_pos_x)
+        t_y = int(np.sin(deg) * distance + self.__base_pos_y)
         logger.info(f"FC: go to {t_x} {t_y}")
         self.set_target_position(t_x, t_y)
 
@@ -496,7 +544,6 @@ class FC_Controller(FC_Udp_Server, FC_protocol):
 
 
 if __name__ == "__main__":
-    import random
 
     fc = FC_Controller("COM23", 500000)
     try:

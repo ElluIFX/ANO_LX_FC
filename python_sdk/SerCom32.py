@@ -136,6 +136,7 @@ class SerCom32:
     def close(self):
         if self.ser != None:
             self.ser.close()
+            self.ser = None
 
     def write_str_serial(self, data: str):
         self.ser.write(data.encode("utf-8"))
