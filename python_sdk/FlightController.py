@@ -5,28 +5,39 @@ import threading
 import time
 import traceback
 
+import numpy as np
 from logger import Exception_Catcher, logger
 from SerCom32 import SerCom32
 
 # small functions
 
 
-def bytes_to_str(data): return " ".join([f"{b:02X}" for b in data])
+def bytes_to_str(data):
+    return " ".join([f"{b:02X}" for b in data])
 
 
-def float_to_byte(value): return int(
-    value * 100).to_bytes(2, "little", signed=True)[::-1]
+def float_to_byte(value):
+    return int(value * 100).to_bytes(2, "little", signed=True)[::-1]
 
 
-def uint16_to_byte(value): return int(
-    value).to_bytes(2, "little", signed=False)[::-1]
-def int16_to_byte(value): return int(
-    value).to_bytes(2, "little", signed=True)[::-1]
+def uint16_to_byte(value):
+    return int(value).to_bytes(2, "little", signed=False)[::-1]
 
 
-def uint8_to_byte(value): return int(value).to_bytes(1, "little", signed=False)
-def b_int(b): return int.from_bytes(b, "little", signed=True)
-def i_byte(i, length): return i.to_bytes(length, "little", signed=True)
+def int16_to_byte(value):
+    return int(value).to_bytes(2, "little", signed=True)[::-1]
+
+
+def uint8_to_byte(value):
+    return int(value).to_bytes(1, "little", signed=False)
+
+
+def b_int(b):
+    return int.from_bytes(b, "little", signed=True)
+
+
+def i_byte(i, length):
+    return i.to_bytes(length, "little", signed=True)
 
 
 class Byte_Var:
@@ -61,8 +72,7 @@ class Byte_Var:
 
     def update_byte(self, value):
         self.__value = (
-            int.from_bytes(value, "little",
-                           signed=self.__signed) * self.__multiplier
+            int.from_bytes(value, "little", signed=self.__signed) * self.__multiplier
         )
         self.__value = self.__var_type(self.__value)
 
@@ -88,8 +98,7 @@ class FC_Base_Comunication:
         self.__sending_data = False
         logger.info("FC: Serial port opened")
         self.__set_option(0)
-        self.__ser_32.readConfig(
-            readByteStartBit=[0xAA, 0x55], byteDataCheck="sum")
+        self.__ser_32.readConfig(readByteStartBit=[0xAA, 0x55], byteDataCheck="sum")
         self.drone_state = {
             "rol": Byte_Var("s16", float, 0.01),  # deg
             "pit": Byte_Var("s16", float, 0.01),  # deg
@@ -148,8 +157,7 @@ class FC_Base_Comunication:
                     # logger.debug(f"FC: Read: {bytes_to_str(data)}")
                     self.__update_state(data)
             except Exception as e:
-                logger.error(
-                    f"FC: Read thread exception: {traceback.format_exc()}")
+                logger.error(f"FC: Read thread exception: {traceback.format_exc()}")
             if time.time() - last_heartbeat_time > 0.5:
                 self.send_32_from_data([0x01], 0)  # 心跳包
 
@@ -158,7 +166,7 @@ class FC_Base_Comunication:
             index = 0
             for key, value in self.drone_state.items():
                 length = value.byte_length()
-                self.drone_state[key].update_byte(data[index: index + length])
+                self.drone_state[key].update_byte(data[index : index + length])
                 index += length
             if not self.connected:
                 self.connected = True
@@ -168,8 +176,7 @@ class FC_Base_Comunication:
             if self.__show_state_flag:
                 self.__show_state()
         except Exception as e:
-            logger.error(
-                f"FC: Update state exception: {traceback.format_exc()}")
+            logger.error(f"FC: Update state exception: {traceback.format_exc()}")
 
     def __show_state(self):
         RED = "\033[1;31m"
@@ -208,6 +215,9 @@ class FC_protocol(FC_Base_Comunication):
         self.__byte_temp1 = Byte_Var()
         self.__byte_temp2 = Byte_Var()
         self.__byte_temp3 = Byte_Var()
+        self.__base_pos_x = 0
+        self.__base_pos_y = 0
+        self.__base_yaw = 0
 
     def __send_32_command(self, suboption: int, data: bytes = b"") -> None:
         suboption = int(suboption).to_bytes(1, "little")
@@ -233,8 +243,12 @@ class FC_protocol(FC_Base_Comunication):
         self.__byte_temp1.reset_type(x, "s32", int)
         self.__byte_temp2.reset_type(y, "s32", int)
         self.__byte_temp3.reset_type(z, "s32", int)
-        self.__send_32_command(0x02, self.__byte_temp1.bytes() +
-                               self.__byte_temp2.bytes() + self.__byte_temp3.bytes())
+        self.__send_32_command(
+            0x02,
+            self.__byte_temp1.bytes()
+            + self.__byte_temp2.bytes()
+            + self.__byte_temp3.bytes(),
+        )
 
     def reset_position_prediction(self):
         """
@@ -314,6 +328,20 @@ class FC_protocol(FC_Base_Comunication):
             + self.__byte_temp2.bytes()
             + self.__byte_temp3.bytes(),
         )
+
+    def cordinate_move(self, x: int, y: int, speed: int) -> None:
+        """
+        匿名坐标系下的水平移动:
+        移动半径在0-10000 cm
+        x,y: 匿名坐标系下的坐标
+        speed: 移动速度:10-300 cm/s
+        """
+        div = y / x if x != 0 else np.inf
+        target_deg = np.arctan(div) / np.pi * 180
+        distance = np.sqrt(x**2 + y**2)
+        if target_deg < 0:
+            target_deg += 360
+        self.horizontal_move(distance, speed, target_deg)
 
     def go_up(self, distance: int, speed: int) -> None:
         """
@@ -419,6 +447,43 @@ class FC_protocol(FC_Base_Comunication):
         self.__byte_temp1.reset_type(height, "s32", int)
         self.__send_command_frame(0x10, 0x01, 0x02, self.__byte_temp1.bytes())
 
+    def reset_base_position(self) -> None:
+        """
+        重置基地参考点, 用于按坐标移动时的坐标系计算
+        """
+        self.__base_pos_x = self.drone_state["pos_x"].value()
+        self.__base_pos_y = self.drone_state["pos_y"].value()
+        self.__base_yaw = self.drone_state["yaw"].value()
+        logger.info(
+            f"FC: reset base position to {self.__base_pos_x}, {self.__base_pos_y} @ {self.__base_yaw}"
+        )
+
+    def go_to_position_by_base(self, x: int, y: int) -> None:
+        """
+        以基地坐标为参考的移动:
+        x,y:+-100000 cm
+        """
+        # trans from base to world
+        """
+        匿名机身参考系(即调用本函数时的参考系):         机头为x+ 机身左侧y+ 机身上方z+
+        匿名世界参考系(回传数据中位置偏移采用的参考系):  地磁北(实际上是融合后yaw=0的方向)为x+ 地磁西为y+ 天空为z+
+        """
+        base_deg = -self.__base_yaw / 180 * np.pi
+        div = y / x if x != 0 else np.inf
+        target_deg = np.arctan(div)
+        deg = base_deg + target_deg
+        distance = np.sqrt(x**2 + y**2)
+        t_x = np.cos(deg) * distance + self.__base_pos_x
+        t_y = np.sin(deg) * distance + self.__base_pos_y
+        logger.info(f"FC: go to {t_x} {t_y}")
+        self.set_target_position(t_x, t_y)
+
+    def go_to_base(self) -> None:
+        """
+        回到基地
+        """
+        self.set_target_position(self.__base_pos_x, self.__base_pos_y)
+
 
 class FC_Udp_Server(FC_Base_Comunication):
     def __init__(self, *args, **kwargs) -> None:
@@ -432,12 +497,13 @@ class FC_Controller(FC_Udp_Server, FC_protocol):
 
 if __name__ == "__main__":
     import random
+
     fc = FC_Controller("COM23", 500000)
     try:
         fc.start_listen_serial()
         try:
-            horizontal_distance = 100
-            horizontal_speed = 25
+            horizontal_distance = 50
+            horizontal_speed = 100
             vertical_distance = 20
             vertical_speed = 20
             yaw_deg = 30
@@ -457,21 +523,17 @@ if __name__ == "__main__":
                 elif k == "z":
                     fc.stablize()
                 elif k == "x":
-                    fc.takeoff()
+                    fc.take_off()
                 elif k == "c":
                     fc.land()
                 elif k == "w":
-                    fc.horizontal_move(horizontal_distance,
-                                       horizontal_speed, 0)
+                    fc.horizontal_move(horizontal_distance, horizontal_speed, 0)
                 elif k == "s":
-                    fc.horizontal_move(horizontal_distance,
-                                       horizontal_speed, 180)
+                    fc.horizontal_move(horizontal_distance, horizontal_speed, 180)
                 elif k == "a":
-                    fc.horizontal_move(horizontal_distance,
-                                       horizontal_speed, 270)
+                    fc.horizontal_move(horizontal_distance, horizontal_speed, 270)
                 elif k == "d":
-                    fc.horizontal_move(horizontal_distance,
-                                       horizontal_speed, 90)
+                    fc.horizontal_move(horizontal_distance, horizontal_speed, 90)
                 elif k == "q":
                     fc.turn_left(yaw_deg, yaw_speed)
                 elif k == "e":
@@ -480,13 +542,14 @@ if __name__ == "__main__":
                     fc.go_up(vertical_distance, vertical_speed)
                 elif k == "f":
                     fc.go_down(vertical_distance, vertical_speed)
-                elif k == 'i':
-                    fc.reset_position_prediction()
-                elif k == 'u':
-                    r, g, b = random.randint(0, 255), random.randint(
-                        0, 255), random.randint(0, 255)
-                    logger.info(f"rgb:{r} {g} {b}")
-                    fc.set_rgb_led(r, g, b)
+                elif k == "k":
+                    fc.reset_base_position()
+                    fc.go_to_position(1, -100)
+                elif k == "l":
+                    fc.reset_base_position()
+                    fc.set_target_height(100)
+                elif k == "u":
+                    fc.set_rgb_led(0x66, 0xCC, 0xFF)
 
         except KeyboardInterrupt:
             logger.info("FC: Keyboard interrupt")
