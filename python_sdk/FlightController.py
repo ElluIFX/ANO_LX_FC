@@ -9,35 +9,9 @@ import numpy as np
 from logger import Exception_Catcher, logger
 from SerCom32 import SerCom32
 
-# small functions
-
 
 def bytes_to_str(data):
     return " ".join([f"{b:02X}" for b in data])
-
-
-def float_to_byte(value):
-    return int(value * 100).to_bytes(2, "little", signed=True)[::-1]
-
-
-def uint16_to_byte(value):
-    return int(value).to_bytes(2, "little", signed=False)[::-1]
-
-
-def int16_to_byte(value):
-    return int(value).to_bytes(2, "little", signed=True)[::-1]
-
-
-def uint8_to_byte(value):
-    return int(value).to_bytes(1, "little", signed=False)
-
-
-def b_int(b):
-    return int.from_bytes(b, "little", signed=True)
-
-
-def i_byte(i, length):
-    return i.to_bytes(length, "little", signed=True)
 
 
 class Byte_Var:
