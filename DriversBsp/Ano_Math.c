@@ -1,5 +1,5 @@
 /******************** +++++++++++++++++++++++++++
- ********************************* ÃèÊö    £º¿ìËÙ¼ÆËã
+ ********************************* æè¿°    ï¼šå¿«é€Ÿè®¡ç®—
  **********************************************************************************/
 
 #include "Ano_Math.h"
@@ -144,7 +144,7 @@ REAL fast_atan2(REAL y, REAL x) {
 
 float my_atan(float x, float y) { return fast_atan2(y, x); }
 
-////¼ÆËã¸¡µãÊýÆ½·½
+////è®¡ç®—æµ®ç‚¹æ•°å¹³æ–¹
 // float my_pow(float a)
 //{
 //	return a*a;
@@ -178,7 +178,7 @@ float my_sqrt_reciprocal(float number) {
   return y;
 }
 
-//¿ìËÙÆ½·½¸ùËã·¨
+//å¿«é€Ÿå¹³æ–¹æ ¹ç®—æ³•
 float my_sqrt(float number) {
   //	long i;
   //	float x, y;
@@ -321,25 +321,25 @@ float fifo(u8 arr_num, u8 *cnt, float *arr, float in) {
 |y2|    |sinx, cosx|   |y2|
 */
 void rot_vec_2(float in[2], float sinx,
-               float out[2])  // x = +-90¶ÈÐý×ª£¬È¡sin x
+               float out[2])  // x = +-90åº¦æ—‹è½¬ï¼Œå–sin x
 {
   out[0] = in[0] * my_sqrt(1 - my_pow(sinx)) - in[1] * sinx;
   out[1] = in[1] * my_sqrt(1 - my_pow(sinx)) + in[0] * sinx;
 }
 
 /*
-va x vb = |va||vb| *sinx *vn,vnÎª´¹Ö±ÓÚva,vbµÄµ¥Î»ÏòÁ¿
-¹éÒ»»¯¼ÆËã£¬È¡ va x vb = sinx;
+va x vb = |va||vb| *sinx *vn,vnä¸ºåž‚ç›´äºŽva,vbçš„å•ä½å‘é‡
+å½’ä¸€åŒ–è®¡ç®—ï¼Œå– va x vb = sinx;
 */
 
 float vec_2_cross_product(float in1[2],
-                          float in2[2])  //Õý¸ºÎªin1->in2 ¼Ð½ÇÄæÊ±Õë
+                          float in2[2])  //æ­£è´Ÿä¸ºin1->in2 å¤¹è§’é€†æ—¶é’ˆ
 {
   return (in1[0] * in2[1] - in1[1] * in2[0]);
 }
 
 float vec_2_dot_product(float in1[2],
-                        float in2[2])  //Õý¸ºÎªin1->in2 ¼Ð½Ç£¨¿Õ¼äÊµ¼Ê¼Ð½Ç£©
+                        float in2[2])  //æ­£è´Ÿä¸ºin1->in2 å¤¹è§’ï¼ˆç©ºé—´å®žé™…å¤¹è§’ï¼‰
 {
   return (in1[0] * in2[0] + in1[1] * in2[1]);
 }
@@ -351,7 +351,7 @@ A x B = (AyBz - AzBy)i + (AzBx - AxBz)j + (AxBy - AyBx)k
 
 void vec_3_cross_product_err_sinx(
     float in1[3], float in2[3],
-    float out[3])  //Êä³öxyzÎó²î¼Ð½Çx µÄsin(x)£¬ÓÒÊÖÂÝÐý
+    float out[3])  //è¾“å‡ºxyzè¯¯å·®å¤¹è§’x çš„sin(x)ï¼Œå³æ‰‹èžºæ—‹
 {
   out[0] = (in1[1] * in2[2] - in1[2] * in2[1]);
   out[1] = (in1[2] * in2[0] - in1[0] * in2[2]);
@@ -359,7 +359,7 @@ void vec_3_cross_product_err_sinx(
 }
 
 float vec_3_dot_product(float in1[3],
-                        float in2[3])  //Õý¸ºÎªin1->in2 ¼Ð½Ç£¨¿Õ¼äÊµ¼Ê¼Ð½Ç£©
+                        float in2[3])  //æ­£è´Ÿä¸ºin1->in2 å¤¹è§’ï¼ˆç©ºé—´å®žé™…å¤¹è§’ï¼‰
 {
   return (in1[0] * in2[0] + in1[1] * in2[1] + in1[2] * in2[2]);
 }

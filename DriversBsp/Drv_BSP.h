@@ -20,7 +20,7 @@ typedef struct {
   u8 rc_in_mode_tmp;
 } _rc_input_st;
 
-//==Êı¾İÉùÃ÷
+//==æ•°æ®å£°æ˜
 extern _rc_input_st rc_in;
 
 u8 All_Init(void);

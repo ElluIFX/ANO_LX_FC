@@ -1,10 +1,10 @@
 #ifndef __LX_FC_STATE_H
 #define __LX_FC_STATE_H
 
-//==ÒıÓÃ
+//==å¼•ç”¨
 #include "SysConfig.h"
 
-//==¶¨Òå/ÉùÃ÷
+//==å®šä¹‰/å£°æ˜
 typedef struct {
   u8 pre_locking;
   u8 stick_mit_pos;
@@ -16,17 +16,17 @@ typedef struct {
   u8 CMD_0;
   u8 CMD_1;
 } _cmd_fun_st;
-//·É¿Ø×´Ì¬
+//é£æ§çŠ¶æ€
 typedef struct {
-  //Ä£Ê½
+  //æ¨¡å¼
   u8 fc_mode_cmd;
   u8 fc_mode_sta;
 
-  //½âËøÉÏËø
+  //è§£é”ä¸Šé”
   u8 unlock_cmd;
   u8 unlock_sta;
 
-  //Ö¸Áî¹¦ÄÜ
+  //æŒ‡ä»¤åŠŸèƒ½
   _cmd_fun_st cmd_fun;
 
   // state
@@ -37,10 +37,10 @@ typedef struct {
 
 } _fc_state_st;
 
-//==Êı¾İÉùÃ÷
+//==æ•°æ®å£°æ˜
 extern _fc_state_st fc_sta;
 extern _sticks_fun_st sti_fun;
-//==º¯ÊıÉùÃ÷
+//==å‡½æ•°å£°æ˜
 // static
 
 // public

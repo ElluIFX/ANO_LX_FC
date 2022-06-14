@@ -21,7 +21,7 @@ typedef s16 vec2_s16[2];
 #define BYTE2(dwTemp) (*((char *)(&dwTemp) + 2))
 #define BYTE3(dwTemp) (*((char *)(&dwTemp) + 3))
 
-//================ϵͳ===================
+//================系统===================
 #define HW_ALL 0xFF
 #define SWJ_ADDR 0xAF
 #define HW_TYPE 0x61

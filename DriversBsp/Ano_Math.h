@@ -59,7 +59,7 @@ double To_180_degrees_db(double x);
 // float safe_div(float numerator ,float denominator,float sv);
 float fifo(u8 arr_num, u8 *cnt, float *arr, float in);
 float linear_interpolation_5(float range[5], float interpolation[5],
-                             float in);  // range ±ØÐë´ÓÐ¡µ½´ó
+                             float in);  // range å¿…é¡»ä»Žå°åˆ°å¤§
 
 void length_limit(float *in1, float *in2, float limit, float *out1,
                   float *out2);
@@ -67,12 +67,12 @@ void length_limit(float *in1, float *in2, float limit, float *out1,
 //====
 void rot_vec_2(float in[2], float sinx, float out[2]);
 float vec_2_cross_product(float in1[2],
-                          float in2[2]);  //Õý¸ºÎªin1->in2 ¼Ð½ÇÄæÊ±Õë
+                          float in2[2]);  //æ­£è´Ÿä¸ºin1->in2 å¤¹è§’é€†æ—¶é’ˆ
 float vec_2_dot_product(float in1[2],
-                        float in2[2]);  //Õý¸ºÎªin1->in2 ¼Ð½Ç£¨¿Õ¼äÊµ¼Ê¼Ð½Ç£©
+                        float in2[2]);  //æ­£è´Ÿä¸ºin1->in2 å¤¹è§’ï¼ˆç©ºé—´å®žé™…å¤¹è§’ï¼‰
 void vec_3_cross_product_err_sinx(
     float in1[3], float in2[3],
-    float out[3]);  //Êä³öxyzÎó²î¼Ð½Çx µÄsin(x)£¬ÓÒÊÖÂÝÐý
+    float out[3]);  //è¾“å‡ºxyzè¯¯å·®å¤¹è§’x çš„sin(x)ï¼Œå³æ‰‹èžºæ—‹
 float vec_3_dot_product(float in1[3],
-                        float in2[3]);  //Õý¸ºÎªin1->in2 ¼Ð½Ç£¨¿Õ¼äÊµ¼Ê¼Ð½Ç£©
+                        float in2[3]);  //æ­£è´Ÿä¸ºin1->in2 å¤¹è§’ï¼ˆç©ºé—´å®žé™…å¤¹è§’ï¼‰
 #endif

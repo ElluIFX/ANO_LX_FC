@@ -1,18 +1,18 @@
 #ifndef __DRV_ANO_OF_H
 #define __DRV_ANO_OF_H
 
-//==ÒıÓÃ
+//==å¼•ç”¨
 #include "SysConfig.h"
 
-//==¶¨Òå/ÉùÃ÷
+//==å®šä¹‰/å£°æ˜
 
 typedef struct {
   //
-  u8 of_update_cnt;   //¹âÁ÷Êı¾İ¸üĞÂ¼ÆÊı¡£
-  u8 alt_update_cnt;  //¸ß¶ÈÊı¾İ¸üĞÂ¼ÆÊı¡£
+  u8 of_update_cnt;   //å…‰æµæ•°æ®æ›´æ–°è®¡æ•°ã€‚
+  u8 alt_update_cnt;  //é«˜åº¦æ•°æ®æ›´æ–°è®¡æ•°ã€‚
   //
-  u8 link_sta;  //Á¬½Ó×´Ì¬£º0£¬Î´Á¬½Ó¡£1£¬ÒÑÁ¬½Ó¡£
-  u8 work_sta;  //¹¤×÷×´Ì¬£º0£¬Òì³£¡£1£¬Õı³£
+  u8 link_sta;  //è¿æ¥çŠ¶æ€ï¼š0ï¼Œæœªè¿æ¥ã€‚1ï¼Œå·²è¿æ¥ã€‚
+  u8 work_sta;  //å·¥ä½œçŠ¶æ€ï¼š0ï¼Œå¼‚å¸¸ã€‚1ï¼Œæ­£å¸¸
   //
   u8 of_quality;
   //
@@ -45,11 +45,11 @@ typedef struct {
 
 } _ano_of_st;
 
-//·É¿Ø×´Ì¬
+//é£æ§çŠ¶æ€
 
-//==Êı¾İÉùÃ÷
+//==æ•°æ®å£°æ˜
 extern _ano_of_st ano_of;
-//==º¯ÊıÉùÃ÷
+//==å‡½æ•°å£°æ˜
 // static
 static void AnoOF_DataAnl(uint8_t *data_buf, uint8_t num);
 

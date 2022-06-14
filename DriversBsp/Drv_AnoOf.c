@@ -5,28 +5,28 @@ static uint8_t _datatemp[50];
 static float check_time_ms[3];
 void AnoOF_Check_State(float dT_s) {
   u8 tmp[2];
-  //Á¬½Ó¼ì²é
+  //è¿žæŽ¥æ£€æŸ¥
   if (check_time_ms[0] < 500) {
     check_time_ms[0]++;
     ano_of.link_sta = 1;
   } else {
     ano_of.link_sta = 0;
   }
-  //Êý¾Ý¼ì²é1
+  //æ•°æ®æ£€æŸ¥1
   if (check_time_ms[1] < 500) {
     check_time_ms[1]++;
     tmp[0] = 1;
   } else {
     tmp[0] = 0;
   }
-  //Êý¾Ý¼ì²é2
+  //æ•°æ®æ£€æŸ¥2
   if (check_time_ms[2] < 500) {
     check_time_ms[2]++;
     tmp[1] = 1;
   } else {
     tmp[1] = 0;
   }
-  //ÉèÖÃ¹¤×÷×´Ì¬
+  //è®¾ç½®å·¥ä½œçŠ¶æ€
   if (tmp[0] && tmp[1]) {
     ano_of.work_sta = 1;
   } else {
@@ -34,8 +34,8 @@ void AnoOF_Check_State(float dT_s) {
   }
 }
 
-// AnoOF_GetOneByteÊÇ³õ¼¶Êý¾Ý½âÎöº¯Êý£¬´®¿ÚÃ¿½ÓÊÕµ½Ò»×Ö½Ú¹âÁ÷Êý¾Ý£¬µ÷ÓÃ±¾º¯ÊýÒ»´Î£¬º¯Êý²ÎÊý¾ÍÊÇ´®¿ÚÊÕµ½µÄÊý¾Ý
-//µ±±¾º¯Êý¶à´Î±»µ÷ÓÃ£¬×îÖÕ½ÓÊÕµ½ÍêÕûµÄÒ»Ö¡Êý¾Ýºó£¬»á×Ô¶¯µ÷ÓÃÊý¾Ý½âÎöº¯ÊýAnoOF_DataAnl
+// AnoOF_GetOneByteæ˜¯åˆçº§æ•°æ®è§£æžå‡½æ•°ï¼Œä¸²å£æ¯æŽ¥æ”¶åˆ°ä¸€å­—èŠ‚å…‰æµæ•°æ®ï¼Œè°ƒç”¨æœ¬å‡½æ•°ä¸€æ¬¡ï¼Œå‡½æ•°å‚æ•°å°±æ˜¯ä¸²å£æ”¶åˆ°çš„æ•°æ®
+//å½“æœ¬å‡½æ•°å¤šæ¬¡è¢«è°ƒç”¨ï¼Œæœ€ç»ˆæŽ¥æ”¶åˆ°å®Œæ•´çš„ä¸€å¸§æ•°æ®åŽï¼Œä¼šè‡ªåŠ¨è°ƒç”¨æ•°æ®è§£æžå‡½æ•°AnoOF_DataAnl
 void AnoOF_GetOneByte(uint8_t data) {
   static u8 _data_len = 0, _data_cnt = 0;
   static u8 rxstate = 0;
@@ -71,31 +71,31 @@ void AnoOF_GetOneByte(uint8_t data) {
     rxstate = 0;
   }
 }
-// AnoOF_DataAnlÎª¹âÁ÷Êý¾Ý½âÎöº¯Êý£¬¿ÉÒÔÍ¨¹ý±¾º¯ÊýµÃµ½¹âÁ÷Ä£¿éÊä³öµÄ¸÷ÏîÊý¾Ý
-//¾ßÌåÊý¾ÝµÄÒâÒå£¬Çë²ÎÕÕÄäÃû¹âÁ÷Ä£¿éÊ¹ÓÃÊÖ²á£¬ÓÐÏêÏ¸µÄ½éÉÜ
+// AnoOF_DataAnlä¸ºå…‰æµæ•°æ®è§£æžå‡½æ•°ï¼Œå¯ä»¥é€šè¿‡æœ¬å‡½æ•°å¾—åˆ°å…‰æµæ¨¡å—è¾“å‡ºçš„å„é¡¹æ•°æ®
+//å…·ä½“æ•°æ®çš„æ„ä¹‰ï¼Œè¯·å‚ç…§åŒ¿åå…‰æµæ¨¡å—ä½¿ç”¨æ‰‹å†Œï¼Œæœ‰è¯¦ç»†çš„ä»‹ç»
 
 static void AnoOF_DataAnl(uint8_t *data, uint8_t len) {
   u8 check_sum1 = 0, check_sum2 = 0;
-  if (*(data + 3) != (len - 6))  //ÅÐ¶ÏÊý¾Ý³¤¶ÈÊÇ·ñÕýÈ·
+  if (*(data + 3) != (len - 6))  //åˆ¤æ–­æ•°æ®é•¿åº¦æ˜¯å¦æ­£ç¡®
     return;
   for (u8 i = 0; i < len - 2; i++) {
     check_sum1 += *(data + i);
     check_sum2 += check_sum1;
   }
   if ((check_sum1 != *(data + len - 2)) ||
-      (check_sum2 != *(data + len - 1)))  //ÅÐ¶ÏsumÐ£Ñé
+      (check_sum2 != *(data + len - 1)))  //åˆ¤æ–­sumæ ¡éªŒ
     return;
   //================================================================================
 
-  if (*(data + 2) == 0X51)  //¹âÁ÷ÐÅÏ¢
+  if (*(data + 2) == 0X51)  //å…‰æµä¿¡æ¯
   {
-    if (*(data + 4) == 0)  //Ô­Ê¼¹âÁ÷ÐÅÏ¢
+    if (*(data + 4) == 0)  //åŽŸå§‹å…‰æµä¿¡æ¯
     {
       ano_of.of0_sta = *(data + 5);
       ano_of.of0_dx = *(data + 6);
       ano_of.of0_dy = *(data + 7);
       ano_of.of_quality = *(data + 8);
-    } else if (*(data + 4) == 1)  //¸ß¶ÈÈÚºÏºó¹âÁ÷ÐÅÏ¢
+    } else if (*(data + 4) == 1)  //é«˜åº¦èžåˆåŽå…‰æµä¿¡æ¯
     {
       ano_of.of1_sta = *(data + 5);
       ano_of.of1_dx = *((s16 *)(data + 6));
@@ -104,7 +104,7 @@ static void AnoOF_DataAnl(uint8_t *data, uint8_t len) {
       //
       check_time_ms[1] = 0;
       ano_of.of_update_cnt++;
-    } else if (*(data + 4) == 2)  //¹ßµ¼ÈÚºÏºó¹âÁ÷ÐÅÏ¢
+    } else if (*(data + 4) == 2)  //æƒ¯å¯¼èžåˆåŽå…‰æµä¿¡æ¯
     {
       ano_of.of2_sta = *(data + 5);
       ano_of.of2_dx = *((s16 *)(data + 6));
@@ -116,13 +116,13 @@ static void AnoOF_DataAnl(uint8_t *data, uint8_t len) {
       ano_of.of_quality = *(data + 18);
       //
     }
-  } else if (*(data + 2) == 0X34)  //¸ß¶ÈÐÅÏ¢
+  } else if (*(data + 2) == 0X34)  //é«˜åº¦ä¿¡æ¯
   {
     ano_of.of_alt_cm = *((u32 *)(data + 7));
     //
     check_time_ms[2] = 0;
     ano_of.alt_update_cnt++;
-  } else if (*(data + 2) == 0X01)  //¹ßÐÔÊý¾Ý
+  } else if (*(data + 2) == 0X01)  //æƒ¯æ€§æ•°æ®
   {
     ano_of.acc_data_x = *((s16 *)(data + 4));
     ano_of.acc_data_y = *((s16 *)(data + 6));
@@ -131,9 +131,9 @@ static void AnoOF_DataAnl(uint8_t *data, uint8_t len) {
     ano_of.gyr_data_y = *((s16 *)(data + 12));
     ano_of.gyr_data_z = *((s16 *)(data + 14));
     // shock_sta+16
-  } else if (*(data + 2) == 0X04)  //×ËÌ¬ÐÅÏ¢
+  } else if (*(data + 2) == 0X04)  //å§¿æ€ä¿¡æ¯
   {
-    //ËÄÔªÊý¸ñÊ½
+    //å››å…ƒæ•°æ ¼å¼
     ano_of.quaternion[0] = (*((s16 *)(data + 4))) * 0.0001f;
     ano_of.quaternion[1] = (*((s16 *)(data + 6))) * 0.0001f;
     ano_of.quaternion[2] = (*((s16 *)(data + 8))) * 0.0001f;

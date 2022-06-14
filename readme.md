@@ -1,19 +1,19 @@
-# `<center>`STM32F4·É¿Ø£¨ÁèÏöMCU£©
+# STM32F4é£žæŽ§ï¼ˆå‡Œéœ„MCUï¼‰
 
-> »ùÓÚ[ÄäÃû¿Æ´´](http://www.anotc.com/wiki/%E5%8C%BF%E5%90%8D%E4%BA%A7%E5%93%81%E8%B5%84%E6%96%99/%E8%B5%84%E6%96%99%E4%B8%8B%E8%BD%BD%E9%93%BE%E6%8E%A5%E6%B1%87%E6%80%BB)¹Ù·½´úÂë
+> åŸºäºŽ[åŒ¿åç§‘åˆ›](http://www.anotc.com/wiki/%E5%8C%BF%E5%90%8D%E4%BA%A7%E5%93%81%E8%B5%84%E6%96%99/%E8%B5%84%E6%96%99%E4%B8%8B%E8%BD%BD%E9%93%BE%E6%8E%A5%E6%B1%87%E6%80%BB)å®˜æ–¹ä»£ç 
 
-## ÎÄ¼þ½á¹¹
+## æ–‡ä»¶ç»“æž„
 
-* DriversBsp - Í¨ÓÃÇý¶¯
-* DriversMcu/STM32F407 - °å¼¶Çý¶¯
-* FcSrc - ÁèÏö·É¿ØÏà¹ØÍ¨Ñ¶Ä£¿éºÍ·É¿ØÈÎÎñµ÷¶ÈÄ£¿é
-* python_sdk - ¶þ¼¶ÏÂÎ»»ú£¨Ê÷Ý®ÅÉ£©pythonÍ¨Ñ¶½Ó¿Ú
+* DriversBsp - é€šç”¨é©±åŠ¨
+* DriversMcu/STM32F407 - æ¿çº§é©±åŠ¨
+* FcSrc - å‡Œéœ„é£žæŽ§ç›¸å…³é€šè®¯æ¨¡å—å’Œé£žæŽ§ä»»åŠ¡è°ƒåº¦æ¨¡å—
+* python_sdk - äºŒçº§ä¸‹ä½æœºï¼ˆæ ‘èŽ“æ´¾ï¼‰pythoné€šè®¯æŽ¥å£
 
 ## TODO
 
-1. ~~´Ó¾É·É¿ØÒÆÖ²Ê÷Ý®ÅÉÍ¨Ñ¶´úÂë¹ýÀ´~~
-2. ~~¸ü¸Äpython sdkÊÊÅäÁèÏöµÄÃüÁîÊ÷~~
-3. Ìí¼ÓÈÆÈ¦µÈÁ¬Ðø²Ù×÷µÄsdk
-4. ÍêÉÆ·É¿Ø×´Ì¬Êý¾ÝÏÂ·¢µ½Ê÷Ý®ÅÉµÄÁ÷³Ì
-5. ³¢ÊÔ°Ñ¼¤¹âÀ×´ï½âËã´ò°ü·¢¸øÁèÏö
+1. ~~ä»Žæ—§é£žæŽ§ç§»æ¤æ ‘èŽ“æ´¾é€šè®¯ä»£ç è¿‡æ¥~~
+2. ~~æ›´æ”¹python sdké€‚é…å‡Œéœ„çš„å‘½ä»¤æ ‘~~
+3. æ·»åŠ ç»•åœˆç­‰è¿žç»­æ“ä½œçš„sdk
+4. å®Œå–„é£žæŽ§çŠ¶æ€æ•°æ®ä¸‹å‘åˆ°æ ‘èŽ“æ´¾çš„æµç¨‹
+5. å°è¯•æŠŠæ¿€å…‰é›·è¾¾è§£ç®—æ‰“åŒ…å‘ç»™å‡Œéœ„
 6. more

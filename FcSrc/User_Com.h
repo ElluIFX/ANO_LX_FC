@@ -16,7 +16,7 @@
 #define USER_DATA_EXCHANGE_TIMEOUT_S (0.05f - 0.001f)
 #define USER_HEARTBEAT_TIMEOUT_S (1.0f - 0.001f)
 
-//回传数据结构
+//鍥炰紶鏁版嵁缁撴瀯
 typedef struct {
   u8 head1;
   u8 head2;
@@ -49,13 +49,13 @@ typedef union {
   _to_user_st st_data;
 } _to_user_un;
 
-// ACK数据结构
+// ACK鏁版嵁缁撴瀯
 typedef struct {
   u8 ack_data;
   u8 WTS;
 } __attribute__((__packed__)) _user_ack_st;
 
-//通用位置数据结构
+//閫氱敤浣嶇疆鏁版嵁缁撴瀯
 typedef struct {
   u8 pos_update_cnt;
   //

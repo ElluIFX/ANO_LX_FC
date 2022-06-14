@@ -1,6 +1,6 @@
 /**
  * @file User_Com.c
- * @brief ÓÃ»§ÏÂÎ»»úÍ¨ĞÅÄ£¿é
+ * @brief ç”¨æˆ·ä¸‹ä½æœºé€šä¿¡æ¨¡å—
  * @author Ellu (lutaoyu@163.com)
  * @version 1.0
  * @date 2022-06-08
@@ -22,16 +22,16 @@ void UserCom_DataExchange(void);
 void UserCom_SendData(u8* dataToSend, u8 Length);
 void UserCom_SendAck(u8 ack_data);
 
-static u8 user_connected = 0;       //ÓÃ»§ÏÂÎ»»úÊÇ·ñÁ¬½Ó
-static u16 user_heartbeat_cnt = 0;  //ÓÃ»§ÏÂÎ»»úĞÄÌø¼ÆÊı
-_user_pos_st user_pos;              //ÓÃ»§ÏÂÎ»»úÎ»ÖÃÊı¾İ
+static u8 user_connected = 0;       //ç”¨æˆ·ä¸‹ä½æœºæ˜¯å¦è¿æ¥
+static u16 user_heartbeat_cnt = 0;  //ç”¨æˆ·ä¸‹ä½æœºå¿ƒè·³è®¡æ•°
+_user_pos_st user_pos;              //ç”¨æˆ·ä¸‹ä½æœºä½ç½®æ•°æ®
 
 _to_user_un to_user_data;
 _user_ack_st user_ack;
 
 /**
- * @brief ÓÃ»§Ğ­ÒéÊı¾İ»ñÈ¡,ÔÚ´®¿ÚÖĞ¶ÏÖĞµ÷ÓÃ,½âÎöÍê³Éºóµ÷ÓÃUserCom_DataAnl
- * @param  data             Êı¾İ
+ * @brief ç”¨æˆ·åè®®æ•°æ®è·å–,åœ¨ä¸²å£ä¸­æ–­ä¸­è°ƒç”¨,è§£æå®Œæˆåè°ƒç”¨UserCom_DataAnl
+ * @param  data             æ•°æ®
  */
 void UserCom_GetOneByte(u8 data) {
   static u8 _user_data_temp[50];
@@ -44,20 +44,20 @@ void UserCom_GetOneByte(u8 data) {
   } else if (state == 1 && data == 0x22) {
     state = 2;
     _user_data_temp[1] = data;
-  } else if (state == 2)  //¹¦ÄÜ×Ö
+  } else if (state == 2)  //åŠŸèƒ½å­—
   {
     state = 3;
     _user_data_temp[2] = data;
-  } else if (state == 3)  //³¤¶È
+  } else if (state == 3)  //é•¿åº¦
   {
     state = 4;
     _user_data_temp[3] = data;
-    _data_len = data;  //Êı¾İ³¤¶È
+    _data_len = data;  //æ•°æ®é•¿åº¦
     _user_data_cnt = 0;
     // if (_data_len == 1) state = 5;
   } else if (state == 4 && _data_len > 0) {
     _data_len--;
-    _user_data_temp[4 + _user_data_cnt++] = data;  //Êı¾İ
+    _user_data_temp[4 + _user_data_cnt++] = data;  //æ•°æ®
     if (_data_len == 0) state = 5;
   } else if (state == 5) {
     state = 0;
@@ -69,9 +69,9 @@ void UserCom_GetOneByte(u8 data) {
 }
 
 /**
- * @brief ÓÃ»§ÃüÁî½âÎöÖ´ĞĞ,Êı¾İ½ÓÊÕÍê³Éºó×Ô¶¯µ÷ÓÃ
- * @param  data_buf         Êı¾İ»º´æ
- * @param  data_len         Êı¾İ³¤¶È
+ * @brief ç”¨æˆ·å‘½ä»¤è§£ææ‰§è¡Œ,æ•°æ®æ¥æ”¶å®Œæˆåè‡ªåŠ¨è°ƒç”¨
+ * @param  data_buf         æ•°æ®ç¼“å­˜
+ * @param  data_len         æ•°æ®é•¿åº¦
  */
 void UserCom_DataAnl(u8* data_buf, u8 data_len) {
   static u8 option;
@@ -97,7 +97,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
     return;
   }
   switch (option) {
-    case 0x00:  // ĞÄÌø°ü
+    case 0x00:  // å¿ƒè·³åŒ…
       if (p_data[0] == 0x01) {
         if (!user_connected) {
           user_connected = 1;
@@ -106,10 +106,10 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
         user_heartbeat_cnt = 0;
         break;
       }
-    case 0x01:  // ¿ØÖÆ32(Ô¤Áô)
+    case 0x01:  // æ§åˆ¶32(é¢„ç•™)
       suboption = p_data[0];
       switch (suboption) {
-        case 0x01:  // WS2812¿ØÖÆ
+        case 0x01:  // WS2812æ§åˆ¶
           u32_temp = 0xff000000;
           u8_temp = p_data[1];  // R
           u32_temp |= u8_temp << 16;
@@ -120,7 +120,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           WS2812_SetAll(u32_temp);
           WS2812_SendBuf();
           break;
-        case 0x02:  // Î»ÖÃĞÅÏ¢»Ø´«
+        case 0x02:  // ä½ç½®ä¿¡æ¯å›ä¼ 
           p_s32 = (s32*)(p_data + 1);
           user_pos.pos_x = *p_s32;
           p_s32++;
@@ -131,7 +131,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           break;
       }
       break;
-    case 0x02:  // ×ª·¢µ½IMU, ÃüÁî¸ñÊ½Ó¦×ñÑ­ÄäÃûÍ¨ĞÅĞ­Òé, ´ËÃüÁîĞèÒª·µ»ØACK
+    case 0x02:  // è½¬å‘åˆ°IMU, å‘½ä»¤æ ¼å¼åº”éµå¾ªåŒ¿åé€šä¿¡åè®®, æ­¤å‘½ä»¤éœ€è¦è¿”å›ACK
       if (dt.wait_ck == 0) {
         dt.cmd_send.CID = p_data[0];
         user_ack.ack_data = (0x02 + p_data[0]) % 0xFF;
@@ -140,7 +140,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           user_ack.ack_data += p_data[i + 1];
         }
         CMD_Send(0xFF, &dt.cmd_send);
-        user_ack.WTS = 1;  // ´¥·¢ACK
+        user_ack.WTS = 1;  // è§¦å‘ACK
         LxPrintf("DBG: to imu: 0x%02X 0x%02X 0x%02X", dt.cmd_send.CID,
                  dt.cmd_send.CMD[0], dt.cmd_send.CMD[1]);
       } else {
@@ -153,31 +153,31 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
 }
 
 /**
- * @brief ÓÃ»§Í¨Ñ¶³ÖĞøĞÔÈÎÎñ£¬ÔÚµ÷¶ÈÆ÷ÖĞµ÷ÓÃ
+ * @brief ç”¨æˆ·é€šè®¯æŒç»­æ€§ä»»åŠ¡ï¼Œåœ¨è°ƒåº¦å™¨ä¸­è°ƒç”¨
  * @param  dT_s
  */
 void UserCom_Task(float dT_s) {
   static u16 data_exchange_cnt = 0;
   if (user_connected) {
-    //ĞÄÌø³¬Ê±¼ì²é
+    //å¿ƒè·³è¶…æ—¶æ£€æŸ¥
     user_heartbeat_cnt++;
     if (user_heartbeat_cnt * dT_s >= USER_HEARTBEAT_TIMEOUT_S) {
       user_connected = 0;
       LxPrintf("DBG: user disconnected");
-      if (fc_sta.unlock_sta == 1) {  //Èç¹ûÊÇ½âËø×´Ì¬£¬Ôò²ÉÈ¡°²È«´ëÊ©
-        // OneKey_Land(); //½µÂä
-        OneKey_Stable();  //»Ö¸´ĞüÍ£
+      if (fc_sta.unlock_sta == 1) {  //å¦‚æœæ˜¯è§£é”çŠ¶æ€ï¼Œåˆ™é‡‡å–å®‰å…¨æªæ–½
+        // OneKey_Land(); //é™è½
+        OneKey_Stable();  //æ¢å¤æ‚¬åœ
       }
     }
 
-    // ACK·¢ËÍ¼ì²é
+    // ACKå‘é€æ£€æŸ¥
     if (user_ack.WTS == 1) {
       user_ack.WTS = 0;
       UserCom_SendAck(user_ack.ack_data);
       user_ack.ack_data = 0;
     }
 
-    //Êı¾İ½»»»
+    //æ•°æ®äº¤æ¢
     data_exchange_cnt++;
     if (data_exchange_cnt * dT_s >= USER_DATA_EXCHANGE_TIMEOUT_S) {
       data_exchange_cnt = 0;
@@ -187,18 +187,18 @@ void UserCom_Task(float dT_s) {
 }
 
 /**
- * @brief ½»»»·É¿ØÊı¾İ
+ * @brief äº¤æ¢é£æ§æ•°æ®
  */
 void UserCom_DataExchange(void) {
   static u8 user_data_size = sizeof(to_user_data.byte_data);
 
-  // ³õÊ¼»¯Êı¾İ
+  // åˆå§‹åŒ–æ•°æ®
   to_user_data.st_data.head1 = 0xAA;
   to_user_data.st_data.head2 = 0x55;
   to_user_data.st_data.length = user_data_size - 4;
   to_user_data.st_data.cmd = 0x01;
 
-  // Êı¾İ¸³Öµ
+  // æ•°æ®èµ‹å€¼
   to_user_data.st_data.rol_x100 = fc_att.st_data.rol_x100;
   to_user_data.st_data.pit_x100 = fc_att.st_data.pit_x100;
   to_user_data.st_data.yaw_x100 = fc_att.st_data.yaw_x100;
@@ -216,7 +216,7 @@ void UserCom_DataExchange(void) {
   to_user_data.st_data.CMD_0 = fc_sta.cmd_fun.CMD_0;
   to_user_data.st_data.CMD_1 = fc_sta.cmd_fun.CMD_1;
 
-  // Ğ£ÑéºÍ
+  // æ ¡éªŒå’Œ
   to_user_data.st_data.check_sum = 0;
   for (u8 i = 0; i < user_data_size - 1; i++) {
     to_user_data.st_data.check_sum += to_user_data.byte_data[i];
@@ -240,7 +240,7 @@ void UserCom_SendAck(u8 ack_data) {
 }
 
 /**
- * @brief ÓÃ»§Í¨Ñ¶Êı¾İ·¢ËÍ
+ * @brief ç”¨æˆ·é€šè®¯æ•°æ®å‘é€
  */
 void UserCom_SendData(u8* dataToSend, u8 Length) {
   DrvUart2SendBuf(dataToSend, Length);

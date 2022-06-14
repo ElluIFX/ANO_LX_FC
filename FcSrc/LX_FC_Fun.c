@@ -4,32 +4,32 @@
 #include "LX_FC_State.h"
 
 /*==========================================================================
- * ����    �������ɿػ�������������
- * ����ʱ�䣺2020-03-31
- * ����		 �������ƴ�-Jyoun
- * ����    ��www.anotc.com
- * �Ա�    ��anotc.taobao.com
- * ����QȺ ��190169595
- * ��Ŀ������18084888982��18061373080
+ * 描述    ：凌霄飞控基本功能主程序
+ * 更新时间：2020-03-31
+ * 作者		 ：匿名科创-Jyoun
+ * 官网    ：www.anotc.com
+ * 淘宝    ：anotc.taobao.com
+ * 技术Q群 ：190169595
+ * 项目合作：18084888982，18061373080
 ============================================================================
- * �����ƴ��ŶӸ�л��ҵ�֧�֣���ӭ��ҽ�Ⱥ���ཻ�������ۡ�ѧϰ��
- * �������������в��õĵط�����ӭ����ש�������
- * �������������ã�����������Ƽ���֧�����ǡ�
- * ������Դ������뻶ӭ�������á��������չ��������ϣ������ʹ��ʱ��ע��������
- * ����̹������С�˳����ݣ��������������ˮ���������ӣ�Ҳ��δ�й�Ĩ��ͬ�е���Ϊ��
- * ��Դ���ף�����������ף�ϣ����һ������ء����ﻥ������ͬ������
- * ֻ������֧�֣������������ø��á�
+ * 匿名科创团队感谢大家的支持，欢迎大家进群互相交流、讨论、学习。
+ * 若您觉得匿名有不好的地方，欢迎您拍砖提意见。
+ * 若您觉得匿名好，请多多帮我们推荐，支持我们。
+ * 匿名开源程序代码欢迎您的引用、延伸和拓展，不过在希望您在使用时能注明出处。
+ * 君子坦荡荡，小人常戚戚，匿名坚决不会请水军、请喷子，也从未有过抹黑同行的行为。
+ * 开源不易，生活更不容易，希望大家互相尊重、互帮互助，共同进步。
+ * 只有您的支持，匿名才能做得更好。
 ===========================================================================*/
 
 //////////////////////////////////////////////////////////////////////
-//�������ܺ���
+//基本功能函数
 //////////////////////////////////////////////////////////////////////
 //
 u8 FC_Unlock() {
   //
-  fc_sta.unlock_cmd = 1;  //����
-  //��Э�鷢��ָ��
-  if (dt.wait_ck == 0)  //û�������ȴ�У���CMDʱ�ŷ��ͱ�CMD
+  fc_sta.unlock_cmd = 1;  //解锁
+  //按协议发送指令
+  if (dt.wait_ck == 0)  //没有其他等待校验的CMD时才发送本CMD
   {
     dt.cmd_send.CID = 0x10;
     dt.cmd_send.CMD[0] = 0x00;
@@ -43,9 +43,9 @@ u8 FC_Unlock() {
 //
 u8 FC_Lock() {
   //
-  fc_sta.unlock_cmd = 0;  //����
-  //��Э�鷢��ָ��
-  if (dt.wait_ck == 0)  //û�������ȴ�У���CMDʱ�ŷ��ͱ�CMD
+  fc_sta.unlock_cmd = 0;  //上锁
+  //按协议发送指令
+  if (dt.wait_ck == 0)  //没有其他等待校验的CMD时才发送本CMD
   {
     dt.cmd_send.CID = 0x10;
     dt.cmd_send.CMD[0] = 0x00;
@@ -57,15 +57,15 @@ u8 FC_Lock() {
   }
 }
 
-//�ı�ɿ�ģʽ(ģʽ0-3)
+//改变飞控模式(模式0-3)
 u8 LX_Change_Mode(u8 new_mode) {
   static u8 old_mode;
   if (old_mode != new_mode) {
     //
-    if (dt.wait_ck == 0)  //û�������ȴ�У���CMDʱ�ŷ��ͱ�CMD
+    if (dt.wait_ck == 0)  //没有其他等待校验的CMD时才发送本CMD
     {
       old_mode = fc_sta.fc_mode_cmd = new_mode;
-      //��Э�鷢��ָ��
+      //按协议发送指令
       dt.cmd_send.CID = 0X01;
       dt.cmd_send.CMD[0] = 0X01;
       dt.cmd_send.CMD[1] = 0X01;
@@ -75,19 +75,19 @@ u8 LX_Change_Mode(u8 new_mode) {
     } else {
       return 0;
     }
-  } else  //�Ѿ��ڵ�ǰģʽ
+  } else  //已经在当前模式
   {
     return 1;
   }
 }
 
-//һ������
-//��Ҫע�⣬�̿�ģʽ�²���ִ�з���
+//一键返航
+//需要注意，程控模式下才能执行返航
 u8 OneKey_Return_Home() {
   //
-  if (dt.wait_ck == 0)  //û�������ȴ�У���CMDʱ�ŷ��ͱ�CMD
+  if (dt.wait_ck == 0)  //没有其他等待校验的CMD时才发送本CMD
   {
-    //��Э�鷢��ָ��
+    //按协议发送指令
     dt.cmd_send.CID = 0X10;
     dt.cmd_send.CMD[0] = 0X00;
     dt.cmd_send.CMD[1] = 0X07;
@@ -98,12 +98,12 @@ u8 OneKey_Return_Home() {
   }
 }
 
-//һ�����(�߶�cm)
+//一键起飞(高度cm)
 u8 OneKey_Takeoff(u16 height_cm) {
   //
-  if (dt.wait_ck == 0)  //û�������ȴ�У���CMDʱ�ŷ��ͱ�CMD
+  if (dt.wait_ck == 0)  //没有其他等待校验的CMD时才发送本CMD
   {
-    //��Э�鷢��ָ��
+    //按协议发送指令
     dt.cmd_send.CID = 0X10;
     dt.cmd_send.CMD[0] = 0X00;
     dt.cmd_send.CMD[1] = 0X05;
@@ -115,12 +115,12 @@ u8 OneKey_Takeoff(u16 height_cm) {
     return 0;
   }
 }
-//һ������
+//一键降落
 u8 OneKey_Land() {
   //
-  if (dt.wait_ck == 0)  //û�������ȴ�У���CMDʱ�ŷ��ͱ�CMD
+  if (dt.wait_ck == 0)  //没有其他等待校验的CMD时才发送本CMD
   {
-    //��Э�鷢��ָ��
+    //按协议发送指令
     dt.cmd_send.CID = 0X10;
     dt.cmd_send.CMD[0] = 0X00;
     dt.cmd_send.CMD[1] = 0X06;
@@ -130,12 +130,12 @@ u8 OneKey_Land() {
     return 0;
   }
 }
-//һ����ͣ
+//一键悬停
 u8 OneKey_Stable() {
   //
-  if (dt.wait_ck == 0)  //û�������ȴ�У���CMDʱ�ŷ��ͱ�CMD
+  if (dt.wait_ck == 0)  //没有其他等待校验的CMD时才发送本CMD
   {
-    //��Э�鷢��ָ��
+    //按协议发送指令
     dt.cmd_send.CID = 0X10;
     dt.cmd_send.CMD[0] = 0X00;
     dt.cmd_send.CMD[1] = 0X04;
@@ -145,12 +145,12 @@ u8 OneKey_Stable() {
     return 0;
   }
 }
-//ƽ��(����cm���ٶ�cmps������Ƕ�0-360��)
+//平移(距离cm，速度cmps，方向角度0-360度)
 u8 Horizontal_Move(u16 distance_cm, u16 velocity_cmps, u16 dir_angle_0_360) {
   //
-  if (dt.wait_ck == 0)  //û�������ȴ�У���CMDʱ�ŷ��ͱ�CMD
+  if (dt.wait_ck == 0)  //没有其他等待校验的CMD时才发送本CMD
   {
-    //��Э�鷢��ָ��
+    //按协议发送指令
     dt.cmd_send.CID = 0X10;
     dt.cmd_send.CMD[0] = 0X02;
     dt.cmd_send.CMD[1] = 0X03;
@@ -169,12 +169,12 @@ u8 Horizontal_Move(u16 distance_cm, u16 velocity_cmps, u16 dir_angle_0_360) {
   }
 }
 
-//ˮƽУ׼
+//水平校准
 u8 Horizontal_Calibrate() {
   //
-  if (dt.wait_ck == 0)  //û�������ȴ�У���CMDʱ�ŷ��ͱ�CMD
+  if (dt.wait_ck == 0)  //没有其他等待校验的CMD时才发送本CMD
   {
-    //��Э�鷢��ָ��
+    //按协议发送指令
     dt.cmd_send.CID = 0X01;
     dt.cmd_send.CMD[0] = 0X00;
     dt.cmd_send.CMD[1] = 0X03;
@@ -185,12 +185,12 @@ u8 Horizontal_Calibrate() {
   }
 }
 
-//������У׼
+//磁力计校准
 u8 Mag_Calibrate() {
   //
-  if (dt.wait_ck == 0)  //û�������ȴ�У���CMDʱ�ŷ��ͱ�CMD
+  if (dt.wait_ck == 0)  //没有其他等待校验的CMD时才发送本CMD
   {
-    //��Э�鷢��ָ��
+    //按协议发送指令
     dt.cmd_send.CID = 0X01;
     dt.cmd_send.CMD[0] = 0X00;
     dt.cmd_send.CMD[1] = 0X04;
@@ -201,12 +201,12 @@ u8 Mag_Calibrate() {
   }
 }
 
-// 6����ٶ�У׼
+// 6面加速度校准
 u8 ACC_Calibrate() {
   //
-  if (dt.wait_ck == 0)  //û�������ȴ�У���CMDʱ�ŷ��ͱ�CMD
+  if (dt.wait_ck == 0)  //没有其他等待校验的CMD时才发送本CMD
   {
-    //��Э�鷢��ָ��
+    //按协议发送指令
     dt.cmd_send.CID = 0X01;
     dt.cmd_send.CMD[0] = 0X00;
     dt.cmd_send.CMD[1] = 0X05;
@@ -217,12 +217,12 @@ u8 ACC_Calibrate() {
   }
 }
 
-//������У׼
+//陀螺仪校准
 u8 GYR_Calibrate() {
   //
-  if (dt.wait_ck == 0)  //û�������ȴ�У���CMDʱ�ŷ��ͱ�CMD
+  if (dt.wait_ck == 0)  //没有其他等待校验的CMD时才发送本CMD
   {
-    //��Э�鷢��ָ��
+    //按协议发送指令
     dt.cmd_send.CID = 0X01;
     dt.cmd_send.CMD[0] = 0X00;
     dt.cmd_send.CMD[1] = 0X02;

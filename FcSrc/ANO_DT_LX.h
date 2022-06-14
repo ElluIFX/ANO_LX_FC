@@ -1,18 +1,18 @@
 #ifndef __ANO_DT_LX_H
 #define __ANO_DT_LX_H
-//==ÒıÓÃ
+//==å¼•ç”¨
 #include "SysConfig.h"
 
-//==¶¨Òå/ÉùÃ÷
+//==å®šä¹‰/å£°æ˜
 #define FUN_NUM_LEN 256
-#define STRLENMAX 128     //×Ö·û´®×î´ó³¤¶È
-#define USE_DEBUG_PRINTF  //ÊÇ·ñÊ¹ÓÃprintfµ÷ÊÔ
+#define STRLENMAX 128     //å­—ç¬¦ä¸²æœ€å¤§é•¿åº¦
+#define USE_DEBUG_PRINTF  //æ˜¯å¦ä½¿ç”¨printfè°ƒè¯•
 
 typedef struct {
-  u8 D_Addr;        //Ä¿±êµØÖ·
-  u8 WTS;           // wait to sendµÈ´ı·¢ËÍ±ê¼Ç
-  u16 fre_ms;       //·¢ËÍÖÜÆÚ
-  u16 time_cnt_ms;  //¼ÆÊ±±äÁ¿
+  u8 D_Addr;        //ç›®æ ‡åœ°å€
+  u8 WTS;           // wait to sendç­‰å¾…å‘é€æ ‡è®°
+  u16 fre_ms;       //å‘é€å‘¨æœŸ
+  u16 time_cnt_ms;  //è®¡æ—¶å˜é‡
 } _dt_frame_st;
 
 // cmd
@@ -45,9 +45,9 @@ typedef struct {
   _par_st par_data;
 } _dt_st;
 
-//==Êı¾İÉùÃ÷
+//==æ•°æ®å£°æ˜
 extern _dt_st dt;
-//==º¯ÊıÉùÃ÷
+//==å‡½æ•°å£°æ˜
 // static
 static void ANO_DT_LX_Send_Data(u8 *dataToSend, u8 length);
 static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len);

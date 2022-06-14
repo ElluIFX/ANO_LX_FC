@@ -57,7 +57,7 @@ void PPM_IRQH() {
     //			u16 _tmp;
     //			_tmp = temp_cnt[1] - temp_cnt[0];
 
-    //			DrvPpmGetOneCh(_tmp + 400);//×ª»»µ½1000-2000
+    //			DrvPpmGetOneCh(_tmp + 400);//è½¬æ¢åˆ°1000-2000
     //		}
     //==
     if (!(GPIOC->IDR & GPIO_Pin_7)) {
