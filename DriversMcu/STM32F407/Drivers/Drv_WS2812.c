@@ -10,7 +10,6 @@
 
 #include "Drv_WS2812.h"
 static uint8_t ws2812_buf[3 * WS2812_NUM + 1];
-static uint8_t ws2812_send_flag = 0;
 
 /**
  * @brief Initialize WS2812 GPIO and buffer
@@ -38,8 +37,8 @@ void DrvWS2812Init(void) {
   WS2812_SendBit(ws2812_buf, WS2812_NUM);
 }
 
-#pragma GCC push_options
-#pragma GCC optimize("O0")
+// #pragma GCC push_options
+// #pragma GCC optimize("O0")
 /**
  * @brief Send data bits to WS2812
  * @param  data             uint32_t LED array, each in G R B order
@@ -59,7 +58,7 @@ void WS2812_SendBit(uint8_t* data, uint8_t len) {
     data++;
   }
 }
-#pragma GCC pop_options
+// #pragma GCC pop_options
 
 /**
  * @brief Set specific LED to ARGB color
@@ -93,28 +92,10 @@ void WS2812_SetRGB(uint32_t rgb_data, uint8_t index) {
  * This function is not thread safe. Will disable interrupts
  * during transmission.
  */
-void WS2812_ForceSendBuf(void) {
+void WS2812_SendBuf(void) {
   __disable_irq();  // disable all interrupts
   WS2812_SendBit(ws2812_buf, WS2812_NUM);
   __enable_irq();  // enable all interrupts
-  ws2812_send_flag = 0;
-}
-
-/**
- * @brief Enable WS2812 send flag, sending will be started by
- * WS2812_SendBufChecker.
- */
-void WS2812_SendBuf(void) { ws2812_send_flag = 1; }
-
-/**
- * @brief Check if WS2812 send flag is set, call in where this function won't be
- * blocked.
- */
-void WS2812_SendBufChecker(void) {
-  if (ws2812_send_flag) {
-    WS2812_SendBit(ws2812_buf, WS2812_NUM);
-    ws2812_send_flag = 0;
-  }
 }
 
 /**
@@ -165,10 +146,13 @@ void WS2812_BufLeftShift(void) {
  * @brief Flip the buffer
  */
 void WS2812_BufFlip(void) {
+  uint8_t r_bit0;
+  uint8_t r_bit1;
+  uint8_t r_bit2;
   for (uint8_t i = 0; i < WS2812_NUM / 2; i++) {
-    uint8_t r_bit0 = ws2812_buf[i * 3 + 0];
-    uint8_t r_bit1 = ws2812_buf[i * 3 + 1];
-    uint8_t r_bit2 = ws2812_buf[i * 3 + 2];
+    r_bit0 = ws2812_buf[i * 3 + 0];
+    r_bit1 = ws2812_buf[i * 3 + 1];
+    r_bit2 = ws2812_buf[i * 3 + 2];
     ws2812_buf[i * 3 + 0] = ws2812_buf[(WS2812_NUM - i - 1) * 3 + 0];
     ws2812_buf[i * 3 + 1] = ws2812_buf[(WS2812_NUM - i - 1) * 3 + 1];
     ws2812_buf[i * 3 + 2] = ws2812_buf[(WS2812_NUM - i - 1) * 3 + 2];
@@ -176,4 +160,15 @@ void WS2812_BufFlip(void) {
     ws2812_buf[(WS2812_NUM - i - 1) * 3 + 1] = r_bit1;
     ws2812_buf[(WS2812_NUM - i - 1) * 3 + 2] = r_bit2;
   }
+}
+
+void _test_2812(void) {  // TEST
+  return;
+  static u32 rgb[] = {0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00,
+                      0x00FFFF, 0xFF00FF, 0xFFFFFF};
+  static u8 rgbsize = sizeof(rgb) / sizeof(u32);
+  static u8 rgb_i = 0;
+  if (++rgb_i == rgbsize) rgb_i = 0;
+  WS2812_SetAll(rgb[rgb_i] | 0xFF000000);
+  WS2812_SendBuf();
 }

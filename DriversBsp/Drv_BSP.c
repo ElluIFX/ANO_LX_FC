@@ -1,8 +1,8 @@
 /******************** (C) COPYRIGHT 2017 ANO Tech
- ********************************* ×÷Õß    £ºÄäÃû¿Æ´´ ¹ÙÍø    £ºwww.anotc.com
- * ÌÔ±¦    £ºanotc.taobao.com
- * ¼¼ÊõQÈº £º190169595
- * ÃèÊö    £º·É¿Ø³õÊ¼»¯
+ ********************************* ä½œè€…    ï¼šåŒ¿åç§‘åˆ› å®˜ç½‘    ï¼šwww.anotc.com
+ * æ·˜å®    ï¼šanotc.taobao.com
+ * æŠ€æœ¯Qç¾¤ ï¼š190169595
+ * æè¿°    ï¼šé£žæŽ§åˆå§‹åŒ–
  **********************************************************************************/
 #include "Drv_BSP.h"
 
@@ -11,53 +11,54 @@
 #include "Drv_RcIn.h"
 #include "Drv_Timer.h"
 #include "Drv_Uart.h"
+#include "Drv_WS2812.h"
 #include "Drv_adc.h"
 #include "Drv_led.h"
-#include "Drv_WS2812.h"
+
 
 u8 All_Init() {
   DrvSysInit();
-  //ÑÓÊ±
+  //å»¶æ—¶
   MyDelayMs(100);
-  // LED¹¦ÄÜ³õÊ¼»¯
+  // LEDåŠŸèƒ½åˆå§‹åŒ–
   DvrLedInit();
-  // WS2812³õÊ¼»¯
+  // WS2812åˆå§‹åŒ–
   DrvWS2812Init();
-  //³õÊ¼»¯µçµ÷Êä³ö¹¦ÄÜ
+  //åˆå§‹åŒ–ç”µè°ƒè¾“å‡ºåŠŸèƒ½
   DrvPwmOutInit();
   MyDelayMs(100);
-  //´®¿Ú1³õÊ¼»¯£¬º¯Êý²ÎÊýÎª²¨ÌØÂÊ
+  //ä¸²å£1åˆå§‹åŒ–ï¼Œå‡½æ•°å‚æ•°ä¸ºæ³¢ç‰¹çŽ‡
   DrvUart1Init(500000);
-  //´®¿Ú2³õÊ¼»¯£¬º¯Êý²ÎÊýÎª²¨ÌØÂÊ
-  DrvUart2Init(115200);
-  //´®¿Ú3³õÊ¼»¯
+  //ä¸²å£2åˆå§‹åŒ–ï¼Œå‡½æ•°å‚æ•°ä¸ºæ³¢ç‰¹çŽ‡
+  DrvUart2Init(500000);
+  //ä¸²å£3åˆå§‹åŒ–
   DrvUart3Init(500000);
-  //½ÓÄäÃû¹âÁ÷
+  //æŽ¥åŒ¿åå…‰æµ
   DrvUart4Init(500000);
-  //´®¿Ú5½Óimu
+  //ä¸²å£5æŽ¥imu
   DrvUart5Init(500000);
   MyDelayMs(100);
-  // SBUSÊäÈë²É¼¯³õÊ¼»¯
+  // SBUSè¾“å…¥é‡‡é›†åˆå§‹åŒ–
   DrvRcInputInit();
-  //µç³ØµçÑ¹²É¼¯³õÊ¼»¯
+  //ç”µæ± ç”µåŽ‹é‡‡é›†åˆå§‹åŒ–
   DrvAdcInit();
   MyDelayMs(100);
-  //Êý´«Ä£¿é³õÊ¼»¯
+  //æ•°ä¼ æ¨¡å—åˆå§‹åŒ–
   ANO_DT_Init();
   MyDelayMs(800);
-  //³õÊ¼»¯¶¨Ê±ÖÐ¶Ï
+  //åˆå§‹åŒ–å®šæ—¶ä¸­æ–­
   DrvTimerFcInit();
-  //³õÊ¼»¯Íê³É£¬·µ»Ø1
+  //åˆå§‹åŒ–å®Œæˆï¼Œè¿”å›ž1
   return (1);
 }
 
 _rc_input_st rc_in;
 void DrvRcInputInit(void) {
-  //ÈÎÒâ³õÊ¼»¯Ò»¸öÄ£Ê½
+  //ä»»æ„åˆå§‹åŒ–ä¸€ä¸ªæ¨¡å¼
   DrvRcPpmInit();
   // DrvRcSbusInit();
 
-  //ÏÈ±ê¼ÇÎ»¶ªÊ§
+  //å…ˆæ ‡è®°ä½ä¸¢å¤±
   rc_in.no_signal = 1;
   rc_in.fail_safe = 1;
 }
@@ -66,8 +67,8 @@ void DrvPpmGetOneCh(u16 data) {
   if ((data > 2500 && ch_sta > 3) || ch_sta == 10) {
     ch_sta = 0;
     rc_in.signal_cnt_tmp++;
-    rc_in.rc_in_mode_tmp = 1;            //ÇÐ»»Ä£Ê½±ê¼ÇÎªppm
-  } else if (data > 300 && data < 3000)  //Òì³£µÄÂö³å¹ýÂËµô
+    rc_in.rc_in_mode_tmp = 1;            //åˆ‡æ¢æ¨¡å¼æ ‡è®°ä¸ºppm
+  } else if (data > 300 && data < 3000)  //å¼‚å¸¸çš„è„‰å†²è¿‡æ»¤æŽ‰
   {
     //
     rc_in.ppm_ch[ch_sta] = data;
@@ -76,8 +77,8 @@ void DrvPpmGetOneCh(u16 data) {
 }
 void DrvSbusGetOneByte(u8 data) {
   /*
-  sbus flagsµÄ½á¹¹ÈçÏÂËùÊ¾£º
-  flags£º
+  sbus flagsçš„ç»“æž„å¦‚ä¸‹æ‰€ç¤ºï¼š
+  flagsï¼š
   bit7 = ch17 = digital channel (0x80)
   bit6 = ch18 = digital channel (0x40)
   bit5 = Frame lost, equivalent red LED on receiver (0x20)
@@ -137,12 +138,12 @@ void DrvSbusGetOneByte(u8 data) {
       // user
       //
       if (rc_in.sbus_flag & 0x08) {
-        //Èç¹ûÓÐÊý¾ÝÇÒÄÜ½ÓÊÕµ½ÓÐÊ§¿Ø±ê¼Ç£¬Ôò²»´¦Àí£¬×ª¼Þ³ÉÎÞÊý¾ÝÊ§¿Ø¡£
+        //å¦‚æžœæœ‰æ•°æ®ä¸”èƒ½æŽ¥æ”¶åˆ°æœ‰å¤±æŽ§æ ‡è®°ï¼Œåˆ™ä¸å¤„ç†ï¼Œè½¬å«æˆæ— æ•°æ®å¤±æŽ§ã€‚
       } else {
         rc_in.signal_cnt_tmp++;
-        rc_in.rc_in_mode_tmp = 2;  //ÇÐ»»Ä£Ê½±ê¼ÇÎªsbus
+        rc_in.rc_in_mode_tmp = 2;  //åˆ‡æ¢æ¨¡å¼æ ‡è®°ä¸ºsbus
       }
-      //Ö¡Î²´¦Àí
+      //å¸§å°¾å¤„ç†
       frame_cnt++;
       frame_cnt %= 4;
     } else {
@@ -163,15 +164,15 @@ static void rcSignalCheck(float *dT_s) {
     //
     rc_in.signal_fre = rc_in.signal_cnt_tmp;
 
-    //==ÅÐ¶ÏÐÅºÅÊÇ·ñ¶ªÊ§
+    //==åˆ¤æ–­ä¿¡å·æ˜¯å¦ä¸¢å¤±
     if (rc_in.signal_fre < 5) {
       rc_in.no_signal = 1;
     } else {
       rc_in.no_signal = 0;
     }
-    //==ÅÐ¶ÏÊÇ·ñÇÐ»»ÊäÈë·½Ê½
+    //==åˆ¤æ–­æ˜¯å¦åˆ‡æ¢è¾“å…¥æ–¹å¼
     if (rc_in.no_signal) {
-      //³õÊ¼0
+      //åˆå§‹0
       if (rc_in.sig_mode == 0) {
         cnt_tmp++;
         cnt_tmp %= 2;
@@ -189,61 +190,61 @@ static void rcSignalCheck(float *dT_s) {
   }
 }
 
-#define RC_NO_CHECK 0  // 0£º¼à²âÒ£¿ØÐÅºÅ£»1£º²»¼ì²âÒ£¿ØÐÅºÅ
+#define RC_NO_CHECK 0  // 0ï¼šç›‘æµ‹é¥æŽ§ä¿¡å·ï¼›1ï¼šä¸æ£€æµ‹é¥æŽ§ä¿¡å·
 //
 void DrvRcInputTask(float dT_s) {
   static u8 failsafe;
-  //ÐÅºÅ¼ì²â
+  //ä¿¡å·æ£€æµ‹
   rcSignalCheck(&dT_s);
-  //ÓÐÐÅºÅ
+  //æœ‰ä¿¡å·
   if (rc_in.no_signal == 0) {
     // ppm
     if (rc_in.sig_mode == 1) {
-      for (u8 i = 0; i < 10; i++)  //×¢ÒâÖ»ÓÐ10¸öÍ¨µÀ
+      for (u8 i = 0; i < 10; i++)  //æ³¨æ„åªæœ‰10ä¸ªé€šé“
       {
         rc_in.rc_ch.st_data.ch_[i] = rc_in.ppm_ch[i];
       }
     }
     // sbus
     else if (rc_in.sig_mode == 2) {
-      for (u8 i = 0; i < 10; i++)  //×¢ÒâÖ»ÓÐ10¸öÍ¨µÀ
+      for (u8 i = 0; i < 10; i++)  //æ³¨æ„åªæœ‰10ä¸ªé€šé“
       {
         rc_in.rc_ch.st_data.ch_[i] = 0.644f * (rc_in.sbus_ch[i] - 1024) +
-                                     1500;  // 248 --1024 --1800×ª»»µ½1000-2000
+                                     1500;  // 248 --1024 --1800è½¬æ¢åˆ°1000-2000
       }
     }
-    //¼ì²éÊ§¿Ø±£»¤ÉèÖÃ
+    //æ£€æŸ¥å¤±æŽ§ä¿æŠ¤è®¾ç½®
     if ((rc_in.rc_ch.st_data.ch_[ch_5_aux1] > 1200 &&
          rc_in.rc_ch.st_data.ch_[ch_5_aux1] < 1400) ||
         (rc_in.rc_ch.st_data.ch_[ch_5_aux1] > 1600 &&
          rc_in.rc_ch.st_data.ch_[ch_5_aux1] < 1800)) {
-      //Âú×ãÉèÖÃ£¬±ê¼ÇÎªÊ§¿Ø
+      //æ»¡è¶³è®¾ç½®ï¼Œæ ‡è®°ä¸ºå¤±æŽ§
       failsafe = 1;
     } else {
       failsafe = 0;
     }
   }
-  //ÎÞÐÅºÅ
+  //æ— ä¿¡å·
   else {
-    //Ê§¿Ø±ê¼ÇÖÃÎ»
+    //å¤±æŽ§æ ‡è®°ç½®ä½
     failsafe = 1;
     //
-    for (u8 i = 0; i < 10; i++)  //×¢ÒâÖ»ÓÐ10¸öÍ¨µÀ
+    for (u8 i = 0; i < 10; i++)  //æ³¨æ„åªæœ‰10ä¸ªé€šé“
     {
       rc_in.rc_ch.st_data.ch_[i] = 0;  //
     }
   }
 #if (RC_NO_CHECK == 0)
-  //Ê§¿Ø±ê¼Ç
+  //å¤±æŽ§æ ‡è®°
   rc_in.fail_safe = failsafe;
 #else
-  //ÎÞÐÅºÅ»òÕß¼ì²âµ½Ê§¿Ø
+  //æ— ä¿¡å·æˆ–è€…æ£€æµ‹åˆ°å¤±æŽ§
   if (rc_in.no_signal != 0 || failsafe != 0) {
     for (u8 i = 0; i < 10; i++) {
       rc_in.rc_ch.st_data.ch_[i] = 1500;
     }
   }
-  //²»±ê¼ÇÊ§¿Ø
+  //ä¸æ ‡è®°å¤±æŽ§
   rc_in.fail_safe = 0;
 #endif
 }

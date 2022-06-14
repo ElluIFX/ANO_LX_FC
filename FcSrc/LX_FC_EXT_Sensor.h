@@ -1,11 +1,11 @@
 #ifndef __LX_FC_EXT_SENSOR_H
 #define __LX_FC_EXT_SENSOR_H
 
-//==ÒıÓÃ
+//==å¼•ç”¨
 #include "SysConfig.h"
 
-//==¶¨Òå/ÉùÃ÷
-//====Í¨ÓÃ´«¸ĞÆ÷Êı¾İ====
+//==å®šä¹‰/å£°æ˜
+//====é€šç”¨ä¼ æ„Ÿå™¨æ•°æ®====
 typedef struct {
   //
   vec3_s16 hca_velocity_cmps;
@@ -48,9 +48,9 @@ typedef struct {
   _general_dis_un gen_dis;
 
 } _fc_ext_sensor_st;
-//==Êı¾İÉùÃ÷
+//==æ•°æ®å£°æ˜
 extern _fc_ext_sensor_st ext_sens;
-//==º¯ÊıÉùÃ÷
+//==å‡½æ•°å£°æ˜
 // static
 
 // public

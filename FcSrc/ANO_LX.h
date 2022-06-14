@@ -1,9 +1,9 @@
 #ifndef __ANO_LX_H
 #define __ANO_LX_H
-//==引用
+//==寮曠敤
 #include "McuConfig.h"
 
-//==定义/声明
+//==瀹氫箟/澹版槑
 
 enum {
   ch_1_rol = 0,
@@ -134,7 +134,7 @@ typedef struct {
   u16 pwm_m8;
 } _pwm_st;
 
-//==数据声明
+//==鏁版嵁澹版槑
 extern _fc_att_un fc_att;
 extern _fc_att_qua_un fc_att_qua;
 extern _fc_alt_un fc_alt;
@@ -143,7 +143,7 @@ extern _fc_pos_un fc_pos;
 extern _rt_tar_un rt_tar;
 extern _fc_bat_un fc_bat;
 extern _pwm_st pwm_to_esc;
-//==函数声明
+//==鍑芥暟澹版槑
 // static
 
 // public

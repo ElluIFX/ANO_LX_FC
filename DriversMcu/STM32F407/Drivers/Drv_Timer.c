@@ -1,8 +1,8 @@
 /******************** (C) COPYRIGHT 2017 ANO Tech
- ********************************* ×÷Õß    £ºÄäÃû¿Æ´´ ¹ÙÍø    £ºwww.anotc.com
- * ÌÔ±¦    £ºanotc.taobao.com
- * ¼¼ÊõQÈº £º190169595
- * ÃèÊö    £º¶¨Ê±Æ÷Çı¶¯
+ ********************************* ä½œè€…    ï¼šåŒ¿åç§‘åˆ› å®˜ç½‘    ï¼šwww.anotc.com
+ * æ·˜å®    ï¼šanotc.taobao.com
+ * æŠ€æœ¯Qç¾¤ ï¼š190169595
+ * æè¿°    ï¼šå®šæ—¶å™¨é©±åŠ¨
  **********************************************************************************/
 
 #include "Drv_Timer.h"
@@ -17,22 +17,22 @@ void TIM_CONF(u16 period_ms)  // APB1  84M
 {
   TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
 
-  /* Ê¹ÄÜÊ±ÖÓ */
+  /* ä½¿èƒ½æ—¶é’Ÿ */
   RCC_APB1PeriphClockCmd(SYS_RCC_TIMx, ENABLE);
 
   TIM_DeInit(SYS_TIMx);
 
-  /* ×Ô¶¯ÖØ×°ÔØ¼Ä´æÆ÷ÖÜÆÚµÄÖµ(¼ÆÊıÖµ) */
+  /* è‡ªåŠ¨é‡è£…è½½å¯„å­˜å™¨å‘¨æœŸçš„å€¼(è®¡æ•°å€¼) */
   TIM_TimeBaseStructure.TIM_Period = period_ms;
 
-  /* ÀÛ¼Æ TIM_Period¸öÆµÂÊºó²úÉúÒ»¸ö¸üĞÂ»òÕßÖĞ¶Ï */
-  /* Ê±ÖÓÔ¤·ÖÆµÊıÎª */
+  /* ç´¯è®¡ TIM_Periodä¸ªé¢‘ç‡åäº§ç”Ÿä¸€ä¸ªæ›´æ–°æˆ–è€…ä¸­æ–­ */
+  /* æ—¶é’Ÿé¢„åˆ†é¢‘æ•°ä¸º */
   TIM_TimeBaseStructure.TIM_Prescaler = 84 - 1;
 
-  /* ¶ÔÍâ²¿Ê±ÖÓ½øĞĞ²ÉÑùµÄÊ±ÖÓ·ÖÆµ,ÕâÀïÃ»ÓĞÓÃµ½ */
+  /* å¯¹å¤–éƒ¨æ—¶é’Ÿè¿›è¡Œé‡‡æ ·çš„æ—¶é’Ÿåˆ†é¢‘,è¿™é‡Œæ²¡æœ‰ç”¨åˆ° */
   TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 
-  TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;  //ÏòÉÏ¼ÆÊı
+  TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;  //å‘ä¸Šè®¡æ•°
 
   TIM_TimeBaseInit(SYS_TIMx, &TIM_TimeBaseStructure);
 
@@ -42,7 +42,7 @@ void TIM_CONF(u16 period_ms)  // APB1  84M
 
   TIM_Cmd(SYS_TIMx, ENABLE);
 
-  RCC_APB1PeriphClockCmd(SYS_RCC_TIMx, DISABLE); /*ÏÈ¹Ø±ÕµÈ´ıÊ¹ÓÃ*/
+  RCC_APB1PeriphClockCmd(SYS_RCC_TIMx, DISABLE); /*å…ˆå…³é—­ç­‰å¾…ä½¿ç”¨*/
 }
 void TIM_NVIC() {
   NVIC_InitTypeDef NVIC_InitStructure;
@@ -59,7 +59,7 @@ void DrvTimerFcInit(void) {
   TIM_CONF(1000);
   TIM_NVIC();
 
-  /* TIM7 ÖØĞÂ¿ªÊ±ÖÓ£¬¿ªÊ¼¼ÆÊ± */
+  /* TIM7 é‡æ–°å¼€æ—¶é’Ÿï¼Œå¼€å§‹è®¡æ—¶ */
   RCC_APB1PeriphClockCmd(SYS_RCC_TIMx, ENABLE);
 }
 /******************* (C) COPYRIGHT 2014 ANO TECH *****END OF FILE************/

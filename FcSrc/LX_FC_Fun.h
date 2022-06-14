@@ -1,14 +1,14 @@
 #ifndef __LX_FC_FUN_H
 #define __LX_FC_FUN_H
 
-//==引用
+//==寮曠敤
 #include "SysConfig.h"
 
-//==定义/声明
+//==瀹氫箟/澹版槑
 
-//==数据声明
+//==鏁版嵁澹版槑
 
-//==函数声明
+//==鍑芥暟澹版槑
 // static
 
 // public

@@ -37,8 +37,8 @@ void MyDelayMs(u32 time) {
 }
 
 void DrvSysInit(void) {
-  //ÖÐ¶ÏÓÅÏÈ¼¶×é±ðÉèÖÃ
+  //ä¸­æ–­ä¼˜å…ˆçº§ç»„åˆ«è®¾ç½®
   NVIC_PriorityGroupConfig(NVIC_GROUP);
-  //µÎ´ðÊ±ÖÓ
+  //æ»´ç­”æ—¶é’Ÿ
   SysTick_Init();
 }

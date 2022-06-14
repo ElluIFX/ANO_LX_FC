@@ -8,112 +8,116 @@
 #include "LX_FC_State.h"
 
 /*==========================================================================
- * ÃèÊö    £ºÁèÏö·É¿ØÍ¨ĞÅÖ÷³ÌĞò
- * ¸üĞÂÊ±¼ä£º2020-01-22
- * ×÷Õß		 £ºÄäÃû¿Æ´´-²è²»Ë¼
- * ¹ÙÍø    £ºwww.anotc.com
- * ÌÔ±¦    £ºanotc.taobao.com
- * ¼¼ÊõQÈº £º190169595
- * ÏîÄ¿ºÏ×÷£º18084888982£¬18061373080
+ * æè¿°    ï¼šå‡Œéœ„é£æ§é€šä¿¡ä¸»ç¨‹åº
+ * æ›´æ–°æ—¶é—´ï¼š2020-01-22
+ * ä½œè€…		 ï¼šåŒ¿åç§‘åˆ›-èŒ¶ä¸æ€
+ * å®˜ç½‘    ï¼šwww.anotc.com
+ * æ·˜å®    ï¼šanotc.taobao.com
+ * æŠ€æœ¯Qç¾¤ ï¼š190169595
+ * é¡¹ç›®åˆä½œï¼š18084888982ï¼Œ18061373080
 ============================================================================
- * ÄäÃû¿Æ´´ÍÅ¶Ó¸ĞĞ»´ó¼ÒµÄÖ§³Ö£¬»¶Ó­´ó¼Ò½øÈº»¥Ïà½»Á÷¡¢ÌÖÂÛ¡¢Ñ§Ï°¡£
- * ÈôÄú¾õµÃÄäÃûÓĞ²»ºÃµÄµØ·½£¬»¶Ó­ÄúÅÄ×©ÌáÒâ¼û¡£
- * ÈôÄú¾õµÃÄäÃûºÃ£¬Çë¶à¶à°ïÎÒÃÇÍÆ¼ö£¬Ö§³ÖÎÒÃÇ¡£
- * ÄäÃû¿ªÔ´³ÌĞò´úÂë»¶Ó­ÄúµÄÒıÓÃ¡¢ÑÓÉìºÍÍØÕ¹£¬²»¹ıÔÚÏ£ÍûÄúÔÚÊ¹ÓÃÊ±ÄÜ×¢Ã÷³ö´¦¡£
- * ¾ı×ÓÌ¹µ´µ´£¬Ğ¡ÈË³£ÆİÆİ£¬ÄäÃû¼á¾ö²»»áÇëË®¾ü¡¢ÇëÅç×Ó£¬Ò²´ÓÎ´ÓĞ¹ıÄ¨ºÚÍ¬ĞĞµÄĞĞÎª¡£
- * ¿ªÔ´²»Ò×£¬Éú»î¸ü²»ÈİÒ×£¬Ï£Íû´ó¼Ò»¥Ïà×ğÖØ¡¢»¥°ï»¥Öú£¬¹²Í¬½ø²½¡£
- * Ö»ÓĞÄúµÄÖ§³Ö£¬ÄäÃû²ÅÄÜ×öµÃ¸üºÃ¡£
+ * åŒ¿åç§‘åˆ›å›¢é˜Ÿæ„Ÿè°¢å¤§å®¶çš„æ”¯æŒï¼Œæ¬¢è¿å¤§å®¶è¿›ç¾¤äº’ç›¸äº¤æµã€è®¨è®ºã€å­¦ä¹ ã€‚
+ * è‹¥æ‚¨è§‰å¾—åŒ¿åæœ‰ä¸å¥½çš„åœ°æ–¹ï¼Œæ¬¢è¿æ‚¨æ‹ç –ææ„è§ã€‚
+ * è‹¥æ‚¨è§‰å¾—åŒ¿åå¥½ï¼Œè¯·å¤šå¤šå¸®æˆ‘ä»¬æ¨èï¼Œæ”¯æŒæˆ‘ä»¬ã€‚
+ * åŒ¿åå¼€æºç¨‹åºä»£ç æ¬¢è¿æ‚¨çš„å¼•ç”¨ã€å»¶ä¼¸å’Œæ‹“å±•ï¼Œä¸è¿‡åœ¨å¸Œæœ›æ‚¨åœ¨ä½¿ç”¨æ—¶èƒ½æ³¨æ˜å‡ºå¤„ã€‚
+ * å›å­å¦è¡è¡ï¼Œå°äººå¸¸æˆšæˆšï¼ŒåŒ¿ååšå†³ä¸ä¼šè¯·æ°´å†›ã€è¯·å–·å­ï¼Œä¹Ÿä»æœªæœ‰è¿‡æŠ¹é»‘åŒè¡Œçš„è¡Œä¸ºã€‚
+ * å¼€æºä¸æ˜“ï¼Œç”Ÿæ´»æ›´ä¸å®¹æ˜“ï¼Œå¸Œæœ›å¤§å®¶äº’ç›¸å°Šé‡ã€äº’å¸®äº’åŠ©ï¼Œå…±åŒè¿›æ­¥ã€‚
+ * åªæœ‰æ‚¨çš„æ”¯æŒï¼ŒåŒ¿åæ‰èƒ½åšå¾—æ›´å¥½ã€‚
 ===========================================================================*/
 
-u8 send_buffer[50];  //·¢ËÍÊı¾İ»º´æ
+u8 send_buffer[50];  //å‘é€æ•°æ®ç¼“å­˜
 _dt_st dt;
 
 //===================================================================
 void ANO_DT_Init(void) {
-  //========¶¨Ê±´¥·¢
+  //========å®šæ—¶è§¦å‘
   //
   dt.fun[0x0d].D_Addr = 0xff;
-  dt.fun[0x0d].fre_ms = 100;     //´¥·¢·¢ËÍµÄÖÜÆÚ100ms
-  dt.fun[0x0d].time_cnt_ms = 1;  //ÉèÖÃ³õÊ¼ÏàÎ»£¬µ¥Î»1ms
+  dt.fun[0x0d].fre_ms = 100;     //è§¦å‘å‘é€çš„å‘¨æœŸ100ms
+  dt.fun[0x0d].time_cnt_ms = 1;  //è®¾ç½®åˆå§‹ç›¸ä½ï¼Œå•ä½1ms
   //
   dt.fun[0x40].D_Addr = 0xff;
-  dt.fun[0x40].fre_ms = 20;      //´¥·¢·¢ËÍµÄÖÜÆÚ100ms
-  dt.fun[0x40].time_cnt_ms = 0;  //ÉèÖÃ³õÊ¼ÏàÎ»£¬µ¥Î»1ms
-  //========Íâ²¿´¥·¢
+  dt.fun[0x40].fre_ms = 20;      //è§¦å‘å‘é€çš„å‘¨æœŸ100ms
+  dt.fun[0x40].time_cnt_ms = 0;  //è®¾ç½®åˆå§‹ç›¸ä½ï¼Œå•ä½1ms
+  //========å¤–éƒ¨è§¦å‘
   //
   dt.fun[0x30].D_Addr = 0xff;
-  dt.fun[0x30].fre_ms = 0;       // 0 ÓÉÍâ²¿´¥·¢
-  dt.fun[0x30].time_cnt_ms = 0;  //ÉèÖÃ³õÊ¼ÏàÎ»£¬µ¥Î»1ms
+  dt.fun[0x30].fre_ms = 0;       // 0 ç”±å¤–éƒ¨è§¦å‘
+  dt.fun[0x30].time_cnt_ms = 0;  //è®¾ç½®åˆå§‹ç›¸ä½ï¼Œå•ä½1ms
+  //
+  dt.fun[0x32].D_Addr = 0xff;
+  dt.fun[0x32].fre_ms = 0;       // 0 ç”±å¤–éƒ¨è§¦å‘
+  dt.fun[0x32].time_cnt_ms = 0;  //è®¾ç½®åˆå§‹ç›¸ä½ï¼Œå•ä½1ms
   //
   dt.fun[0x33].D_Addr = 0xff;
-  dt.fun[0x33].fre_ms = 0;       // 0 ÓÉÍâ²¿´¥·¢
-  dt.fun[0x33].time_cnt_ms = 0;  //ÉèÖÃ³õÊ¼ÏàÎ»£¬µ¥Î»1ms
+  dt.fun[0x33].fre_ms = 0;       // 0 ç”±å¤–éƒ¨è§¦å‘
+  dt.fun[0x33].time_cnt_ms = 0;  //è®¾ç½®åˆå§‹ç›¸ä½ï¼Œå•ä½1ms
   //
   dt.fun[0x34].D_Addr = 0xff;
-  dt.fun[0x34].fre_ms = 0;       // 0 ÓÉÍâ²¿´¥·¢
-  dt.fun[0x34].time_cnt_ms = 0;  //ÉèÖÃ³õÊ¼ÏàÎ»£¬µ¥Î»1ms
+  dt.fun[0x34].fre_ms = 0;       // 0 ç”±å¤–éƒ¨è§¦å‘
+  dt.fun[0x34].time_cnt_ms = 0;  //è®¾ç½®åˆå§‹ç›¸ä½ï¼Œå•ä½1ms
   //
   dt.fun[0x41].D_Addr = 0xff;
-  dt.fun[0x41].fre_ms = 0;       // 0 ÓÉÍâ²¿´¥·¢
-  dt.fun[0x41].time_cnt_ms = 0;  //ÉèÖÃ³õÊ¼ÏàÎ»£¬µ¥Î»1ms
+  dt.fun[0x41].fre_ms = 0;       // 0 ç”±å¤–éƒ¨è§¦å‘
+  dt.fun[0x41].time_cnt_ms = 0;  //è®¾ç½®åˆå§‹ç›¸ä½ï¼Œå•ä½1ms
   //
   dt.fun[0xe0].D_Addr = 0xff;
-  dt.fun[0xe0].fre_ms = 0;       // 0 ÓÉÍâ²¿´¥·¢
-  dt.fun[0xe0].time_cnt_ms = 0;  //ÉèÖÃ³õÊ¼ÏàÎ»£¬µ¥Î»1ms
+  dt.fun[0xe0].fre_ms = 0;       // 0 ç”±å¤–éƒ¨è§¦å‘
+  dt.fun[0xe0].time_cnt_ms = 0;  //è®¾ç½®åˆå§‹ç›¸ä½ï¼Œå•ä½1ms
   //
   dt.fun[0xe2].D_Addr = 0xff;
-  dt.fun[0xe2].fre_ms = 0;       // 0 ÓÉÍâ²¿´¥·¢
-  dt.fun[0xe2].time_cnt_ms = 0;  //ÉèÖÃ³õÊ¼ÏàÎ»£¬µ¥Î»1ms
+  dt.fun[0xe2].fre_ms = 0;       // 0 ç”±å¤–éƒ¨è§¦å‘
+  dt.fun[0xe2].time_cnt_ms = 0;  //è®¾ç½®åˆå§‹ç›¸ä½ï¼Œå•ä½1ms
 }
 
-//Êı¾İ·¢ËÍ½Ó¿Ú
+//æ•°æ®å‘é€æ¥å£
 static void ANO_DT_LX_Send_Data(u8 *dataToSend, u8 length) {
   //
   UartSendLXIMU(dataToSend, length);
 }
 
 //===================================================================
-//Êı¾İ½ÓÊÕ³ÌĞò
+//æ•°æ®æ¥æ”¶ç¨‹åº
 //===================================================================
 static u8 DT_RxBuffer[256], DT_data_cnt = 0;
 void ANO_DT_LX_Data_Receive_Prepare(u8 data) {
   static u8 _data_len = 0, _data_cnt = 0;
   static u8 rxstate = 0;
 
-  //ÅĞ¶ÏÖ¡Í·ÊÇ·ñÂú×ãÄäÃûĞ­ÒéµÄ0xAA
+  //åˆ¤æ–­å¸§å¤´æ˜¯å¦æ»¡è¶³åŒ¿ååè®®çš„0xAA
   if (rxstate == 0 && data == 0xAA) {
     rxstate = 1;
     DT_RxBuffer[0] = data;
   }
-  //ÅĞ¶ÏÊÇ²»ÊÇ·¢ËÍ¸ø±¾Ä£¿éµÄÊı¾İ»òÕßÊÇ¹ã²¥Êı¾İ
+  //åˆ¤æ–­æ˜¯ä¸æ˜¯å‘é€ç»™æœ¬æ¨¡å—çš„æ•°æ®æˆ–è€…æ˜¯å¹¿æ’­æ•°æ®
   else if (rxstate == 1 && (data == HW_TYPE || data == HW_ALL)) {
     rxstate = 2;
     DT_RxBuffer[1] = data;
   }
-  //½ÓÊÕÖ¡CMD×Ö½Ú
+  //æ¥æ”¶å¸§CMDå­—èŠ‚
   else if (rxstate == 2) {
     rxstate = 3;
     DT_RxBuffer[2] = data;
   }
-  //½ÓÊÕÊı¾İ³¤¶È×Ö½Ú
+  //æ¥æ”¶æ•°æ®é•¿åº¦å­—èŠ‚
   else if (rxstate == 3 && data < 250) {
     rxstate = 4;
     DT_RxBuffer[3] = data;
     _data_len = data;
     _data_cnt = 0;
   }
-  //½ÓÊÕÊı¾İÇø
+  //æ¥æ”¶æ•°æ®åŒº
   else if (rxstate == 4 && _data_len > 0) {
     _data_len--;
     DT_RxBuffer[4 + _data_cnt++] = data;
     if (_data_len == 0) rxstate = 5;
   }
-  //½ÓÊÕĞ£Ñé×Ö½Ú1
+  //æ¥æ”¶æ ¡éªŒå­—èŠ‚1
   else if (rxstate == 5) {
     rxstate = 6;
     DT_RxBuffer[4 + _data_cnt++] = data;
   }
-  //½ÓÊÕĞ£Ñé×Ö½Ú2£¬±íÊ¾Ò»Ö¡Êı¾İ½ÓÊÕÍê±Ï£¬µ÷ÓÃÊı¾İ½âÎöº¯Êı
+  //æ¥æ”¶æ ¡éªŒå­—èŠ‚2ï¼Œè¡¨ç¤ºä¸€å¸§æ•°æ®æ¥æ”¶å®Œæ¯•ï¼Œè°ƒç”¨æ•°æ®è§£æå‡½æ•°
   else if (rxstate == 6) {
     rxstate = 0;
     DT_RxBuffer[4 + _data_cnt] = data;
@@ -125,28 +129,28 @@ void ANO_DT_LX_Data_Receive_Prepare(u8 data) {
   }
 }
 /////////////////////////////////////////////////////////////////////////////////////
-// Data_Receive_Anlº¯ÊıÊÇĞ­ÒéÊı¾İ½âÎöº¯Êı£¬º¯Êı²ÎÊıÊÇ·ûºÏĞ­Òé¸ñÊ½µÄÒ»¸öÊı¾İÖ¡£¬¸Ãº¯Êı»áÊ×ÏÈ¶ÔĞ­ÒéÊı¾İ½øĞĞĞ£Ñé
-//Ğ£ÑéÍ¨¹ıºó¶ÔÊı¾İ½øĞĞ½âÎö£¬ÊµÏÖÏàÓ¦¹¦ÄÜ
-//´Ëº¯Êı¿ÉÒÔ²»ÓÃÓÃ»§×ÔĞĞµ÷ÓÃ£¬ÓÉº¯ÊıANO_Data_Receive_Prepare×Ô¶¯µ÷ÓÃ
+// Data_Receive_Anlå‡½æ•°æ˜¯åè®®æ•°æ®è§£æå‡½æ•°ï¼Œå‡½æ•°å‚æ•°æ˜¯ç¬¦åˆåè®®æ ¼å¼çš„ä¸€ä¸ªæ•°æ®å¸§ï¼Œè¯¥å‡½æ•°ä¼šé¦–å…ˆå¯¹åè®®æ•°æ®è¿›è¡Œæ ¡éªŒ
+//æ ¡éªŒé€šè¿‡åå¯¹æ•°æ®è¿›è¡Œè§£æï¼Œå®ç°ç›¸åº”åŠŸèƒ½
+//æ­¤å‡½æ•°å¯ä»¥ä¸ç”¨ç”¨æˆ·è‡ªè¡Œè°ƒç”¨ï¼Œç”±å‡½æ•°ANO_Data_Receive_Prepareè‡ªåŠ¨è°ƒç”¨
 static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len) {
   u8 check_sum1 = 0, check_sum2 = 0;
-  //ÅĞ¶ÏÊı¾İ³¤¶ÈÊÇ·ñÕıÈ·
+  //åˆ¤æ–­æ•°æ®é•¿åº¦æ˜¯å¦æ­£ç¡®
   if (*(data + 3) != (len - 6)) return;
-  //¸ù¾İÊÕµ½µÄÊı¾İ¼ÆËãĞ£Ñé×Ö½Ú1ºÍ2
+  //æ ¹æ®æ”¶åˆ°çš„æ•°æ®è®¡ç®—æ ¡éªŒå­—èŠ‚1å’Œ2
   for (u8 i = 0; i < len - 2; i++) {
     check_sum1 += *(data + i);
     check_sum2 += check_sum1;
   }
-  //¼ÆËã³öµÄĞ£Ñé×Ö½ÚºÍÊÕµ½µÄĞ£Ñé×Ö½Ú×ö¶Ô±È£¬ÍêÈ«Ò»ÖÂ´ú±í±¾Ö¡Êı¾İºÏ·¨£¬²»Ò»ÖÂÔòÌø³ö½âÎöº¯Êı
+  //è®¡ç®—å‡ºçš„æ ¡éªŒå­—èŠ‚å’Œæ”¶åˆ°çš„æ ¡éªŒå­—èŠ‚åšå¯¹æ¯”ï¼Œå®Œå…¨ä¸€è‡´ä»£è¡¨æœ¬å¸§æ•°æ®åˆæ³•ï¼Œä¸ä¸€è‡´åˆ™è·³å‡ºè§£æå‡½æ•°
   if ((check_sum1 != *(data + len - 2)) ||
-      (check_sum2 != *(data + len - 1)))  //ÅĞ¶ÏsumĞ£Ñé
+      (check_sum2 != *(data + len - 1)))  //åˆ¤æ–­sumæ ¡éªŒ
     return;
-  //ÔÙ´ÎÅĞ¶ÏÖ¡Í·ÒÔ¼°Ä¿±êµØÖ·ÊÇ·ñºÏ·¨
+  //å†æ¬¡åˆ¤æ–­å¸§å¤´ä»¥åŠç›®æ ‡åœ°å€æ˜¯å¦åˆæ³•
   if (*(data) != 0xAA || (*(data + 1) != HW_TYPE && *(data + 1) != HW_ALL))
     return;
   //=============================================================================
-  //¸ù¾İÖ¡µÄCMD£¬Ò²¾ÍÊÇµÚ3×Ö½Ú£¬½øĞĞ¶ÔÓ¦Êı¾İµÄ½âÎö
-  // PWMÊı¾İ
+  //æ ¹æ®å¸§çš„CMDï¼Œä¹Ÿå°±æ˜¯ç¬¬3å­—èŠ‚ï¼Œè¿›è¡Œå¯¹åº”æ•°æ®çš„è§£æ
+  // PWMæ•°æ®
   if (*(data + 2) == 0X20) {
     pwm_to_esc.pwm_m1 = *((u16 *)(data + 4));
     pwm_to_esc.pwm_m2 = *((u16 *)(data + 6));
@@ -157,20 +161,20 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len) {
     pwm_to_esc.pwm_m7 = *((u16 *)(data + 16));
     pwm_to_esc.pwm_m8 = *((u16 *)(data + 18));
   }
-  //ÁèÏöIMU·¢³öµÄRGBµÆ¹âÊı¾İ
+  //å‡Œéœ„IMUå‘å‡ºçš„RGBç¯å…‰æ•°æ®
   else if (*(data + 2) == 0X0f) {
     lx_led.brightness[0] = *(data + 4);
     lx_led.brightness[1] = *(data + 5);
     lx_led.brightness[2] = *(data + 6);
     lx_led.brightness[3] = *(data + 7);
   }
-  //ÈÚºÏ¸ß¶È
+  //èåˆé«˜åº¦
   else if (*(data + 2) == 0X05) {
     for (u8 i = 0; i < 9; i++) {
       fc_alt.byte_data[i] = *(data + 4 + i);
     }
   }
-  //ÁèÏö·É¿Øµ±Ç°µÄÔËĞĞ×´Ì¬
+  //å‡Œéœ„é£æ§å½“å‰çš„è¿è¡ŒçŠ¶æ€
   else if (*(data + 2) == 0X06) {
     fc_sta.fc_mode_sta = *(data + 4);
     fc_sta.unlock_sta = *(data + 5);
@@ -178,31 +182,31 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len) {
     fc_sta.cmd_fun.CMD_0 = *(data + 7);
     fc_sta.cmd_fun.CMD_1 = *(data + 8);
   }
-  //·ÉĞĞËÙ¶È
+  //é£è¡Œé€Ÿåº¦
   else if (*(data + 2) == 0X07) {
     for (u8 i = 0; i < 6; i++) {
       fc_vel.byte_data[i] = *(data + 4 + i);
     }
   }
-  //Î»ÖÃÆ«ÒÆ
+  //ä½ç½®åç§»
   else if (*(data + 2) == 0X08) {
     for (u8 i = 0; i < 8; i++) {
       fc_pos.byte_data[i] = *(data + 4 + i);
     }
   }
-  //×ËÌ¬½Ç£¨ĞèÒªÔÚÉÏÎ»»úÁèÏöIMU½çÃæÅäÖÃÊä³ö¹¦ÄÜ£©
+  //å§¿æ€è§’ï¼ˆéœ€è¦åœ¨ä¸Šä½æœºå‡Œéœ„IMUç•Œé¢é…ç½®è¾“å‡ºåŠŸèƒ½ï¼‰
   else if (*(data + 2) == 0X03) {
     for (u8 i = 0; i < 7; i++) {
       fc_att.byte_data[i] = *(data + 4 + i);
     }
   }
-  //×ËÌ¬ËÄÔªÊı
+  //å§¿æ€å››å…ƒæ•°
   else if (*(data + 2) == 0X04) {
     for (u8 i = 0; i < 9; i++) {
       fc_att_qua.byte_data[i] = *(data + 4 + i);
     }
   }
-  //´«¸ĞÆ÷Êı¾İ
+  //ä¼ æ„Ÿå™¨æ•°æ®
   else if (*(data + 2) == 0X01) {
     /*
     acc_x = *((s16 *)(data + 4));
@@ -214,9 +218,9 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len) {
     state = *(data + 16);
     */
   }
-  //ÃüÁîE0£¬¾ßÌåÃüÁî¸ñÊ½¼°¹¦ÄÜ£¬²Î¼ûÄäÃûÍ¨ĞÅĞ­ÒéV7°æ
+  //å‘½ä»¤E0ï¼Œå…·ä½“å‘½ä»¤æ ¼å¼åŠåŠŸèƒ½ï¼Œå‚è§åŒ¿åé€šä¿¡åè®®V7ç‰ˆ
   else if (*(data + 2) == 0XE0) {
-    //¸ù¾İÃüÁîID£º(*(data + 4)) £¬À´Ö´ĞĞ²»Í¬µÄÃüÁî
+    //æ ¹æ®å‘½ä»¤IDï¼š(*(data + 4)) ï¼Œæ¥æ‰§è¡Œä¸åŒçš„å‘½ä»¤
     switch (*(data + 4)) {
       case 0x01: {
       } break;
@@ -229,33 +233,33 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len) {
       default:
         break;
     }
-    //ÊÕµ½ÃüÁîºó£¬ĞèÒª·µ»Ø¶ÔÓ¦µÄÓ¦´ğĞÅÏ¢£¬Ò²¾ÍÊÇCK_Backº¯Êı
+    //æ”¶åˆ°å‘½ä»¤åï¼Œéœ€è¦è¿”å›å¯¹åº”çš„åº”ç­”ä¿¡æ¯ï¼Œä¹Ÿå°±æ˜¯CK_Backå‡½æ•°
     dt.ck_send.ID = *(data + 4);
     dt.ck_send.SC = check_sum1;
     dt.ck_send.AC = check_sum2;
     CK_Back(SWJ_ADDR, &dt.ck_send);
   }
-  //ÊÕµ½µÄÊÇck·µ»Ø
+  //æ”¶åˆ°çš„æ˜¯ckè¿”å›
   else if (*(data + 2) == 0X00) {
-    //ÅĞ¶ÏÊÕµ½µÄCKĞÅÏ¢ºÍ·¢ËÍµÄCKĞÅÏ¢ÊÇ·ñÏàµÈ
+    //åˆ¤æ–­æ”¶åˆ°çš„CKä¿¡æ¯å’Œå‘é€çš„CKä¿¡æ¯æ˜¯å¦ç›¸ç­‰
     if ((dt.ck_back.ID == *(data + 4)) && (dt.ck_back.SC == *(data + 5)) &&
         (dt.ck_back.AC == *(data + 6))) {
-      //Ğ£Ñé³É¹¦
+      //æ ¡éªŒæˆåŠŸ
       dt.wait_ck = 0;
     }
   }
-  //¶ÁÈ¡²ÎÊı
+  //è¯»å–å‚æ•°
   else if (*(data + 2) == 0XE1) {
-    //»ñÈ¡ĞèÒª¶ÁÈ¡µÄ²ÎÊıµÄid
+    //è·å–éœ€è¦è¯»å–çš„å‚æ•°çš„id
     u16 _par = *(data + 4) + *(data + 5) * 256;
     dt.par_data.par_id = _par;
     dt.par_data.par_val = 0;
-    //·¢ËÍ¸Ã²ÎÊı
+    //å‘é€è¯¥å‚æ•°
     PAR_Back(0xff, &dt.par_data);
   }
-  //Ğ´Èë²ÎÊı
+  //å†™å…¥å‚æ•°
   else if (*(data + 2) == 0xE2) {
-    //Ä¿Ç°ÁèÏö¿ªÔ´MCU²»Éæ¼°²ÎÊıµÄĞ´Èë£¬ÍÆ¼ö´ó¼ÒÖ±½ÓÊ¹ÓÃÔ´Âë·½Ê½µ÷Õû×Ô¼º¶¨ÒåµÄ²ÎÊı£¬¹Ê´Ë´¦Ö»·µ»Ø¶ÔÓ¦µÄCKĞ£ÑéĞÅÏ¢
+    //ç›®å‰å‡Œéœ„å¼€æºMCUä¸æ¶‰åŠå‚æ•°çš„å†™å…¥ï¼Œæ¨èå¤§å®¶ç›´æ¥ä½¿ç”¨æºç æ–¹å¼è°ƒæ•´è‡ªå·±å®šä¹‰çš„å‚æ•°ï¼Œæ•…æ­¤å¤„åªè¿”å›å¯¹åº”çš„CKæ ¡éªŒä¿¡æ¯
     //		u16 _par = *(data+4)+*(data+5)*256;
     //		u32 _val = (s32)(((*(data+6))) + ((*(data+7))<<8) +
     //((*(data+8))<<16)
@@ -265,65 +269,72 @@ static void ANO_DT_LX_Data_Receive_Anl(u8 *data, u8 len) {
     dt.ck_send.SC = check_sum1;
     dt.ck_send.AC = check_sum2;
     CK_Back(0xff, &dt.ck_send);
-    //¸³Öµ²ÎÊı
+    //èµ‹å€¼å‚æ•°
     // Parameter_Set(_par,_val);
   }
 }
 
 //===================================================================
-//Êı¾İ·¢ËÍÊµÏÖ³ÌĞò
+//æ•°æ®å‘é€å®ç°ç¨‹åº
 //===================================================================
 static void Add_Send_Data(u8 frame_num, u8 *_cnt, u8 send_buffer[]) {
   s16 temp_data;
   s32 temp_data_32;
-  //¸ù¾İĞèÒª·¢ËÍµÄÖ¡ID£¬Ò²¾ÍÊÇframe_num£¬À´Ìî³äÊı¾İ£¬Ìî³äµ½send_bufferÊı×éÄÚ
+  //æ ¹æ®éœ€è¦å‘é€çš„å¸§IDï¼Œä¹Ÿå°±æ˜¯frame_numï¼Œæ¥å¡«å……æ•°æ®ï¼Œå¡«å……åˆ°send_bufferæ•°ç»„å†…
   switch (frame_num) {
-    case 0x00:  // CHECK·µ»Ø
+    case 0x00:  // CHECKè¿”å›
     {
       send_buffer[(*_cnt)++] = dt.ck_send.ID;
       send_buffer[(*_cnt)++] = dt.ck_send.SC;
       send_buffer[(*_cnt)++] = dt.ck_send.AC;
     } break;
-    case 0x0d:  //µç³ØÊı¾İ
+    case 0x0d:  //ç”µæ± æ•°æ®
     {
       for (u8 i = 0; i < 4; i++) {
         send_buffer[(*_cnt)++] = fc_bat.byte_data[i];
       }
     } break;
-    case 0x33:  //Í¨ÓÃËÙ¶È²âÁ¿Êı¾İ
+    case 0x32:  //é€šç”¨ä½ç½®æµ‹é‡æ•°æ®
+    {
+      //
+      for (u8 i = 0; i < 12; i++) {
+        send_buffer[(*_cnt)++] = ext_sens.gen_pos.byte[i];
+      }
+    } break;
+    case 0x33:  //é€šç”¨é€Ÿåº¦æµ‹é‡æ•°æ®
     {
       //
       for (u8 i = 0; i < 6; i++) {
         send_buffer[(*_cnt)++] = ext_sens.gen_vel.byte[i];
       }
     } break;
-    case 0x34:  //Í¨ÓÃ¾àÀë²âÁ¿Êı¾İ
+    case 0x34:  //é€šç”¨è·ç¦»æµ‹é‡æ•°æ®
     {
       //
       for (u8 i = 0; i < 7; i++) {
         send_buffer[(*_cnt)++] = ext_sens.gen_dis.byte[i];
       }
     } break;
-    case 0x40:  //Ò£¿ØÊı¾İÖ¡
+    case 0x40:  //é¥æ§æ•°æ®å¸§
     {
       for (u8 i = 0; i < 20; i++) {
         send_buffer[(*_cnt)++] = rc_in.rc_ch.byte_data[i];
       }
     } break;
-    case 0x41:  //ÊµÊ±¿ØÖÆÊı¾İÖ¡
+    case 0x41:  //å®æ—¶æ§åˆ¶æ•°æ®å¸§
     {
       for (u8 i = 0; i < 14; i++) {
         send_buffer[(*_cnt)++] = rt_tar.byte_data[i];
       }
     } break;
-    case 0xe0:  // CMDÃüÁîÖ¡
+    case 0xe0:  // CMDå‘½ä»¤å¸§
     {
       send_buffer[(*_cnt)++] = dt.cmd_send.CID;
       for (u8 i = 0; i < 10; i++) {
         send_buffer[(*_cnt)++] = dt.cmd_send.CMD[i];
       }
     } break;
-    case 0xe2:  // PARA·µ»Ø
+    case 0xe2:  // PARAè¿”å›
     {
       temp_data = dt.par_data.par_id;
       send_buffer[(*_cnt)++] = BYTE0(temp_data);
@@ -379,38 +390,38 @@ static void Check_To_Send(u8 frame_num) {
       dt.fun[frame_num].time_cnt_ms++;
     } else {
       dt.fun[frame_num].time_cnt_ms = 1;
-      dt.fun[frame_num].WTS = 1;  //±ê¼ÇµÈ´ı·¢ËÍ
+      dt.fun[frame_num].WTS = 1;  //æ ‡è®°ç­‰å¾…å‘é€
     }
   } else {
-    //µÈ´ıÍâ²¿´¥·¢
+    //ç­‰å¾…å¤–éƒ¨è§¦å‘
   }
   //
   if (dt.fun[frame_num].WTS) {
     dt.fun[frame_num].WTS = 0;
-    //Êµ¼Ê·¢ËÍ
+    //å®é™…å‘é€
     Frame_Send(frame_num, &dt.fun[frame_num]);
   }
 }
 //===================================================================
 
-// CMD·¢ËÍ
+// CMDå‘é€
 void CMD_Send(u8 dest_addr, _cmd_st *cmd) {
   dt.fun[0xe0].D_Addr = dest_addr;
-  dt.fun[0xe0].WTS = 1;  //±ê¼ÇCMDµÈ´ı·¢ËÍ
-  dt.wait_ck = 1;        //±ê¼ÇµÈ´ıĞ£Ñé
+  dt.fun[0xe0].WTS = 1;  //æ ‡è®°CMDç­‰å¾…å‘é€
+  dt.wait_ck = 1;        //æ ‡è®°ç­‰å¾…æ ¡éªŒ
 }
-// CHECK·µ»Ø
+// CHECKè¿”å›
 void CK_Back(u8 dest_addr, _ck_st *ck) {
   dt.fun[0x00].D_Addr = dest_addr;
-  dt.fun[0x00].WTS = 1;  //±ê¼ÇCMDµÈ´ı·¢ËÍ
+  dt.fun[0x00].WTS = 1;  //æ ‡è®°CMDç­‰å¾…å‘é€
 }
-// PARA·µ»Ø
+// PARAè¿”å›
 void PAR_Back(u8 dest_addr, _par_st *par) {
   dt.fun[0xe2].D_Addr = dest_addr;
-  dt.fun[0xe2].WTS = 1;  //±ê¼ÇCMDµÈ´ı·¢ËÍ
+  dt.fun[0xe2].WTS = 1;  //æ ‡è®°CMDç­‰å¾…å‘é€
 }
 
-//ÈôÖ¸ÁîÃ»·¢ËÍ³É¹¦£¬»á³ÖĞøÖØĞÂ·¢ËÍ£¬¼ä¸ô50ms¡£
+//è‹¥æŒ‡ä»¤æ²¡å‘é€æˆåŠŸï¼Œä¼šæŒç»­é‡æ–°å‘é€ï¼Œé—´éš”50msã€‚
 static u8 repeat_cnt;
 static inline void CK_Back_Check() {
   static u8 time_dly;
@@ -422,7 +433,7 @@ static inline void CK_Back_Check() {
       time_dly = 0;
       repeat_cnt++;
       if (repeat_cnt < 5) {
-        dt.fun[0xe0].WTS = 1;  //±ê¼ÇµÈ´ı·¢ËÍ£¬ÖØ·¢
+        dt.fun[0xe0].WTS = 1;  //æ ‡è®°ç­‰å¾…å‘é€ï¼Œé‡å‘
       } else {
         repeat_cnt = 0;
         dt.wait_ck = 0;
@@ -441,10 +452,10 @@ static u8 strColor;
 static u8 strLen;
 
 /**
- * @brief ·¢ËÍLOGµ½ÉÏÎ»»ú
- * @param  string_color     ×Ö·û´®ÑÕÉ« (LOG_COLOR_BLACK, LOG_COLOR_RED,
+ * @brief å‘é€LOGåˆ°ä¸Šä½æœº
+ * @param  string_color     å­—ç¬¦ä¸²é¢œè‰² (LOG_COLOR_BLACK, LOG_COLOR_RED,
  * LOG_COLOR_GREEN)
- * @param  str             ×Ö·û´®
+ * @param  str             å­—ç¬¦ä¸²
  */
 void LxStringSend(u8 string_color, char *str) {
   u8 i = 0;
@@ -466,9 +477,9 @@ void LxStringSend(u8 string_color, char *str) {
 #include <stdio.h>
 
 /**
- * @brief Ê¹ÓÃprintf¸ñÊ½»¯Óï·¨·¢ËÍLOGµ½ÉÏÎ»»ú, ¾¯¸æ:
- * printfº¯Êı¿ªÏú¼«´ó£¬²»½¨ÒéÓÃÓÚ´òÓ¡¸¡µãÊı£¬²»ÒªÔÚÑ­»·ÖĞÊ¹ÓÃ£¬µ÷ÊÔ½áÊøºóÈ¡ÏûÊ¹ÄÜUSE_DEBUG_PRINTF
- * @param  fmt            ¸ñÊ½»¯×Ö·û´®
+ * @brief ä½¿ç”¨printfæ ¼å¼åŒ–è¯­æ³•å‘é€LOGåˆ°ä¸Šä½æœº, è­¦å‘Š:
+ * printfå‡½æ•°å¼€é”€æå¤§ï¼Œä¸å»ºè®®ç”¨äºæ‰“å°æµ®ç‚¹æ•°ï¼Œä¸è¦åœ¨å¾ªç¯ä¸­ä½¿ç”¨ï¼Œè°ƒè¯•ç»“æŸåå–æ¶ˆä½¿èƒ½USE_DEBUG_PRINTF
+ * @param  fmt            æ ¼å¼åŒ–å­—ç¬¦ä¸²
  * @param  ...
  * @retval
  */
@@ -490,7 +501,7 @@ int LxPrintf(const char *fmt, ...) {
 #else
 
 /**
- * @brief ÒÑ½ûÓÃ
+ * @brief å·²ç¦ç”¨
  */
 int LxPrintf(const char *fmt, ...) { return 0; }
 
@@ -539,12 +550,13 @@ static void stringSendCheck(void) {
 }
 ////////////////////////////////////////////////////////////////
 
-// 1msµ÷ÓÃÒ»´Î£¬ÓÃÓÚÍ¨ĞÅ½»»»Êı¾İ
+// 1msè°ƒç”¨ä¸€æ¬¡ï¼Œç”¨äºé€šä¿¡äº¤æ¢æ•°æ®
 void ANO_LX_Data_Exchange_Task(float dT_s) {
-  //=====¼ì²âCMDÊÇ·ñ·µ»ØÁËĞ£Ñé
+  //=====æ£€æµ‹CMDæ˜¯å¦è¿”å›äº†æ ¡éªŒ
   CK_Back_Check();
-  //=====¼ì²âÊÇ·ñ´¥·¢·¢ËÍ
+  //=====æ£€æµ‹æ˜¯å¦è§¦å‘å‘é€
   Check_To_Send(0x30);
+  Check_To_Send(0x32);
   Check_To_Send(0x33);
   Check_To_Send(0x34);
   Check_To_Send(0x40);

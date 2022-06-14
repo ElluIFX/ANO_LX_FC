@@ -48,7 +48,7 @@ void LED_On_Off(uint16_t leds) {
   }
 }
 
-// LEDÇı¶¯£¬ÔÚ1ms¶¨Ê±ÖĞ¶ÏÀïµ÷ÓÃ
+// LEDé©±åŠ¨ï¼Œåœ¨1mså®šæ—¶ä¸­æ–­é‡Œè°ƒç”¨
 _led_st lx_led;
 _led_st user_led;
 #ifdef LED_CONTROLED_BY_LX
@@ -78,10 +78,10 @@ void LED_1ms_DRV()  //
 }
 
 /**
- * @brief ÉèÖÃRGB LEDÉ«Öµ
- * @param  r                ºìÉ«Öµ
- * @param  g                ÂÌÉ«Öµ
- * @param  b                À¶É«Öµ
+ * @brief è®¾ç½®RGB LEDè‰²å€¼
+ * @param  r                çº¢è‰²å€¼
+ * @param  g                ç»¿è‰²å€¼
+ * @param  b                è“è‰²å€¼
  */
 void Set_RGB_LED(u8 r, u8 g, u8 b) {
   const float MAX_BRIGHTNESS = 20.0f;
