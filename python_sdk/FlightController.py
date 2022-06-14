@@ -27,7 +27,7 @@ class Byte_Var:
         self.reset(0, ctype, var_type, value_multiplier)
         self.name = name
 
-    def reset(self, init_value, ctype: str, py_var_type, value_multiplier=1):
+    def reset(self, init_value, ctype: str, py_var_type, value_multiplier=1, name=None):
         """重置变量
 
         Args:
@@ -53,6 +53,7 @@ class Byte_Var:
         self.__multiplier = value_multiplier
         self.__value = self.__var_type(init_value)
         self.__last_update_time = time.time()
+        self.name = name
         return self
 
     @property
@@ -110,6 +111,8 @@ class FC_State_Struct:
     mode = Byte_Var("u8", int, name="mode")  #
     unlock = Byte_Var("u8", bool, name="unlock")  #
     cid = Byte_Var("u8", int, name="cid")  #
+    cmd_0 = Byte_Var("u8", int, name="cmd_0")  #
+    cmd_1 = Byte_Var("u8", int, name="cmd_1")  #
 
     alt = alt_add  # alias
 
@@ -128,7 +131,13 @@ class FC_State_Struct:
         mode,
         unlock,
         cid,
+        cmd_0,
+        cmd_1,
     ]
+
+    @property
+    def command_now(self):
+        return (self.cid.value, self.cmd_0.value, self.cmd_1.value)
 
 
 class FC_Base_Comunication:
@@ -251,12 +260,12 @@ class FC_Base_Comunication:
         text = ""
         text += " ".join(
             [
-                f"{YELLOW}{((var.name[:2]+var.name[-1]))}: {f'{GREEN}√ ' if var.value else f'{RED}x {RESET}'}"
+                f"{YELLOW}{((var.name[0]+var.name[-1]))}: {f'{GREEN}√ ' if var.value else f'{RED}x {RESET}'}"
                 if type(var.value) == bool
                 else (
-                    f"{YELLOW}{((var.name[:2]+var.name[-1]))}:{CYAN}{var.value:^7.02f}{RESET}"
+                    f"{YELLOW}{((var.name[0]+var.name[-1]))}:{CYAN}{var.value:^7.02f}{RESET}"
                     if type(var.value) == float
-                    else f"{YELLOW}{((var.name[:2]+var.name[-1]))}: {CYAN}{var.value:^3d}{RESET}"
+                    else f"{YELLOW}{((var.name[0]+var.name[-1]))}:{CYAN}{var.value:^4d}{RESET}"
                 )
                 for var in self.state.RECV_ORDER
             ]
@@ -273,6 +282,7 @@ class FC_Protocol(FC_Base_Comunication):
         self.__base_pos_x = 0
         self.__base_pos_y = 0
         self.__base_yaw = 0
+        self.last_command = (0, 0, 0)  # (CID,CMD_0,CMD_1)
 
     def __send_32_command(self, suboption: int, data: bytes = b"") -> None:
         self.__byte_temp1.reset(suboption, "u8", int)
@@ -328,6 +338,7 @@ class FC_Protocol(FC_Base_Comunication):
             + bytes_data
         )
         sended = self.send_32_from_data(data_to_send, 0x02, need_ack=True)
+        self.last_command = (CID, CMD0, CMD1)
         # logger.debug(f"FC: Send: {bytes_to_str(sended)}")
 
     def set_flight_mode(self, mode: int) -> None:
@@ -542,6 +553,21 @@ class FC_Protocol(FC_Base_Comunication):
         回到基地
         """
         self.set_target_position(self.__base_pos_x, self.__base_pos_y)
+
+    @property
+    def last_command_done(self) -> bool:
+        """
+        最后一次指令是否完成
+        """
+        return self.last_command != self.state.command_now
+
+    @property
+    def is_stablizing(self) -> bool:
+        """
+        是否正在悬停
+        """
+        stable_command = (0x10, 0x00, 0x04)
+        return self.state.command_now == stable_command
 
 
 class FC_Udp_Server(FC_Base_Comunication):

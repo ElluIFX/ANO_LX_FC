@@ -213,6 +213,8 @@ void UserCom_DataExchange(void) {
   to_user_data.st_data.fc_mode_sta = fc_sta.fc_mode_sta;
   to_user_data.st_data.unlock_sta = fc_sta.unlock_sta;
   to_user_data.st_data.CID = fc_sta.cmd_fun.CID;
+  to_user_data.st_data.CMD_0 = fc_sta.cmd_fun.CMD_0;
+  to_user_data.st_data.CMD_1 = fc_sta.cmd_fun.CMD_1;
 
   // Ð£ÑéºÍ
   to_user_data.st_data.check_sum = 0;

@@ -38,12 +38,14 @@ typedef struct {
   u8 fc_mode_sta;
   u8 unlock_sta;
   u8 CID;
+  u8 CMD_0;
+  u8 CMD_1;
   //
   u8 check_sum;
 } __attribute__((__packed__)) _to_user_st;
 
 typedef union {
-  u8 byte_data[38];
+  u8 byte_data[40];
   _to_user_st st_data;
 } _to_user_un;
 
