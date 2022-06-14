@@ -1,6 +1,3 @@
-# vscode-fold=2
-import copy
-import re
 import threading
 import time
 import traceback
@@ -21,6 +18,10 @@ class Byte_Var:
     """
 
     __value = 0
+    __last_update_time = 0
+    __byte_length = 0
+    __multiplier = 1
+    __var_type = None
 
     def __init__(self, ctype="u8", var_type=int, value_multiplier=1):
         self.reset(0, ctype, var_type, value_multiplier)
@@ -50,6 +51,8 @@ class Byte_Var:
         self.__var_type = py_var_type
         self.__multiplier = value_multiplier
         self.__value = self.__var_type(init_value)
+        self.__last_update_time = time.time()
+        return self
 
     @property
     def value(self):
@@ -58,12 +61,7 @@ class Byte_Var:
     @value.setter
     def value(self, value):
         self.__value = self.__var_type(value)
-
-    def __update_byte(self, value):
-        self.__value = (
-            int.from_bytes(value, "little", signed=self.__signed) * self.__multiplier
-        )
-        self.__value = self.__var_type(self.__value)
+        self.__last_update_time = time.time()
 
     @property
     def bytes(self):
@@ -73,7 +71,11 @@ class Byte_Var:
 
     @bytes.setter
     def bytes(self, value):
-        self.__update_byte(value)
+        self.__value = (
+            int.from_bytes(value, "little", signed=self.__signed) * self.__multiplier
+        )
+        self.__value = self.__var_type(self.__value)
+        self.__last_update_time = time.time()
 
     @property
     def byte_length(self):
@@ -82,6 +84,14 @@ class Byte_Var:
     @byte_length.setter
     def byte_length(self, value):
         raise ValueError("byte_length is read-only")
+
+    @property
+    def last_update_time(self):
+        return self.__last_update_time
+
+    @last_update_time.setter
+    def last_update_time(self, value):
+        raise ValueError("last_update_time is read-only")
 
 
 class FC_State_Struct:
@@ -102,7 +112,7 @@ class FC_State_Struct:
 
     alt = alt_add  # alias
 
-    RECV_ORDER = [
+    RECV_ORDER = [  # 数据包顺序
         rol,
         pit,
         yaw,
@@ -125,15 +135,16 @@ class FC_Base_Comunication:
         self.running = False
         self.connected = False
         self.__start_bit = [0xAA, 0x22]
-        self.__stop_bit = []
         self.__listen_thread = None
         self.__state_update_callback = None
-        self.__show_state_flag = False
+        self.__print_state_flag = False
         self.__ser_32 = SerCom32(serial_port, bit_rate)
         self.__sending_data = False
+        self.__waiting_ack = False
+        self.__recivied_ack = None
         logger.info("FC: Serial port opened")
         self.__set_option(0)
-        self.__ser_32.readConfig(readByteStartBit=[0xAA, 0x55], byteDataCheck="sum")
+        self.__ser_32.read_config(startBit=[0xAA, 0x55])
         self.state = FC_State_Struct()
 
     def start_listen_serial(self, print_state=True, callback=None):
@@ -151,35 +162,62 @@ class FC_Base_Comunication:
         logger.info("FC: Threads closed, FC offline")
 
     def __set_option(self, option: int) -> None:
-        self.__ser_32.sendConfig(
+        self.__ser_32.send_config(
             startBit=self.__start_bit,
             optionBit=[option],
-            stopBit=self.__stop_bit,
-            useSumCheck=True,
         )
 
-    def send_32_from_data(self, data, option: int) -> None:
+    def send_32_from_data(
+        self, data: bytes, option: int, need_ack: bool = False, ack_max_retry: int = 3
+    ) -> None:
         while self.__sending_data:
             time.sleep(0.01)  # wait for previous data to be sent
         self.__sending_data = True
+        if need_ack:
+            if ack_max_retry < 0:
+                # raise Exception("Wait ACK reached max retry")
+                logger.error("Wait ACK reached max retry")
+                return None
+            self.__waiting_ack = True
+            self.__recivied_ack = None
         self.__set_option(option)
-        _ = self.__ser_32.send_from_data(data)
+        sended = self.__ser_32.write(data)
         self.__sending_data = False
-        return _
+        if need_ack:
+            send_time = time.time()
+            check_ack = (option + data[0]) & 0xFF
+            while self.__waiting_ack:
+                if time.time() - send_time > 1:
+                    logger.warning("FC: ACK timeout, retrying")
+                    return self.send_32_from_data(
+                        data, option, need_ack, ack_max_retry - 1
+                    )
+                time.sleep(0.001)
+            if self.__recivied_ack is None or self.__recivied_ack != check_ack:
+                logger.warning("FC: ACK not received or invalid, retrying")
+                return self.send_32_from_data(data, option, need_ack, ack_max_retry - 1)
+        return sended
 
     def __listen_serial_task(self):
         logger.info("FC: listen serial thread started")
         last_heartbeat_time = time.time()
         while self.running:
             try:
-                if self.__ser_32.read_byte_serial():
-                    data = self.__ser_32.rx_byte_data
-                    # logger.debug(f"FC: Read: {bytes_to_str(data)}")
-                    self.__update_state(data)
+                if self.__ser_32.read():
+                    _data = self.__ser_32.rx_data
+                    # logger.debug(f"FC: Read: {bytes_to_str(_data)}")
+                    cmd = _data[0]
+                    data = _data[1:]
+                    if cmd == 0x01:  # 状态回传
+                        self.__update_state(data)
+                    elif cmd == 0x02:  # ACK返回
+                        self.__recivied_ack = data[0]
+                        self.__waiting_ack = False
             except Exception as e:
                 logger.error(f"FC: listen serial exception: {traceback.format_exc()}")
-            if time.time() - last_heartbeat_time > 0.5:
-                self.send_32_from_data([0x01], 0)  # 心跳包
+            if time.time() - last_heartbeat_time > 0.25:
+                self.send_32_from_data(b"\x01", 0x00)  # 心跳包
+                last_heartbeat_time = time.time()
 
     def __update_state(self, recv_byte):
         try:
@@ -191,7 +229,7 @@ class FC_Base_Comunication:
             if not self.connected:
                 self.connected = True
                 logger.info("FC: Connected")
-            if self.__state_update_callback is not None:
+            if callable(self.__state_update_callback):
                 self.__state_update_callback(self.state)
             if self.__print_state_flag:
                 self.__print_state()
@@ -229,7 +267,7 @@ class FC_Base_Comunication:
         print(f"\r {text}\r", end="")
 
 
-class FC_protocol(FC_Base_Comunication):
+class FC_Protocol(FC_Base_Comunication):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.__byte_temp1 = Byte_Var()
@@ -240,8 +278,8 @@ class FC_protocol(FC_Base_Comunication):
         self.__base_yaw = 0
 
     def __send_32_command(self, suboption: int, data: bytes = b"") -> None:
-        suboption = int(suboption).to_bytes(1, "little")
-        data_to_send = suboption + data
+        self.__byte_temp1.reset(suboption, "u8", int)
+        data_to_send = self.__byte_temp1.bytes + data
         sended = self.send_32_from_data(data_to_send, 0x01)
         logger.debug(f"FC: Send: {bytes_to_str(sended)}")
 
@@ -277,21 +315,23 @@ class FC_protocol(FC_Base_Comunication):
         """
         self.send_general_position(0, 0, 0)
 
-    def __send_command_frame(self, CID: int, CMD0: int, CMD1: int, CMD_data=b""):
+    def __send_imu_command_frame(self, CID: int, CMD0: int, CMD1: int, CMD_data=b""):
         self.__byte_temp1.reset(CID, "u8", int)
         self.__byte_temp2.reset(CMD0, "u8", int)
         self.__byte_temp3.reset(CMD1, "u8", int)
         bytes_data = bytes(CMD_data)
         if len(bytes_data) < 8:
             bytes_data += b"\x00" * (8 - len(bytes_data))
+        if len(bytes_data) > 8:
+            raise Exception("CMD_data length is too long")
         data_to_send = (
             self.__byte_temp1.bytes
             + self.__byte_temp2.bytes
             + self.__byte_temp3.bytes
             + bytes_data
         )
-        sended = self.send_32_from_data(data_to_send, 0x02)
-        logger.debug(f"FC: Send: {bytes_to_str(sended)}")
+        sended = self.send_32_from_data(data_to_send, 0x02, need_ack=True)
+        # logger.debug(f"FC: Send: {bytes_to_str(sended)}")
 
     def set_flight_mode(self, mode: int) -> None:
         """
@@ -304,37 +344,37 @@ class FC_protocol(FC_Base_Comunication):
         if mode not in [1, 2, 3]:
             raise ValueError("mode must be 1,2,3")
         self.__byte_temp1.reset(mode, "u8", int)
-        self.__send_command_frame(0x01, 0x01, 0x01, self.__byte_temp1.bytes)
+        self.__send_imu_command_frame(0x01, 0x01, 0x01, self.__byte_temp1.bytes)
 
     def unlock(self) -> None:
         """
         解锁电机
         """
-        self.__send_command_frame(0x10, 0x00, 0x01)
+        self.__send_imu_command_frame(0x10, 0x00, 0x01)
 
     def lock(self) -> None:
         """
         锁定电机 / 紧急锁浆
         """
-        self.__send_command_frame(0x10, 0x00, 0x02)
+        self.__send_imu_command_frame(0x10, 0x00, 0x02)
 
     def stablize(self) -> None:
         """
         恢复定点悬停, 将终止正在进行的所有控制
         """
-        self.__send_command_frame(0x10, 0x00, 0x04)
+        self.__send_imu_command_frame(0x10, 0x00, 0x04)
 
     def take_off(self) -> None:
         """
         一键起飞
         """
-        self.__send_command_frame(0x10, 0x00, 0x05)
+        self.__send_imu_command_frame(0x10, 0x00, 0x05)
 
     def land(self) -> None:
         """
         一键降落
         """
-        self.__send_command_frame(0x10, 0x00, 0x06)
+        self.__send_imu_command_frame(0x10, 0x00, 0x06)
 
     def horizontal_move(self, distance: int, speed: int, direction: int) -> None:
         """
@@ -346,7 +386,7 @@ class FC_protocol(FC_Base_Comunication):
         self.__byte_temp1.reset(distance, "u16", int)
         self.__byte_temp2.reset(speed, "u16", int)
         self.__byte_temp3.reset(direction, "u16", int)
-        self.__send_command_frame(
+        self.__send_imu_command_frame(
             0x10,
             0x02,
             0x03,
@@ -375,7 +415,7 @@ class FC_protocol(FC_Base_Comunication):
         """
         self.__byte_temp1.reset(distance, "u16", int)
         self.__byte_temp2.reset(speed, "u16", int)
-        self.__send_command_frame(
+        self.__send_imu_command_frame(
             0x10, 0x02, 0x01, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
 
@@ -387,7 +427,7 @@ class FC_protocol(FC_Base_Comunication):
         """
         self.__byte_temp1.reset(distance, "u16", int)
         self.__byte_temp2.reset(speed, "u16", int)
-        self.__send_command_frame(
+        self.__send_imu_command_frame(
             0x10, 0x02, 0x02, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
 
@@ -399,7 +439,7 @@ class FC_protocol(FC_Base_Comunication):
         """
         self.__byte_temp1.reset(deg, "u16", int)
         self.__byte_temp2.reset(speed, "u16", int)
-        self.__send_command_frame(
+        self.__send_imu_command_frame(
             0x10, 0x02, 0x07, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
 
@@ -411,7 +451,7 @@ class FC_protocol(FC_Base_Comunication):
         """
         self.__byte_temp1.reset(deg, "u16", int)
         self.__byte_temp2.reset(speed, "u16", int)
-        self.__send_command_frame(
+        self.__send_imu_command_frame(
             0x10, 0x02, 0x08, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
 
@@ -457,7 +497,7 @@ class FC_protocol(FC_Base_Comunication):
         """
         self.__byte_temp1.reset(x, "s32", int)
         self.__byte_temp2.reset(y, "s32", int)
-        self.__send_command_frame(
+        self.__send_imu_command_frame(
             0x10, 0x01, 0x01, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
 
@@ -469,7 +509,7 @@ class FC_protocol(FC_Base_Comunication):
         if height < 0:
             height = 0
         self.__byte_temp1.reset(height, "s32", int)
-        self.__send_command_frame(0x10, 0x01, 0x02, self.__byte_temp1.bytes)
+        self.__send_imu_command_frame(0x10, 0x01, 0x02, self.__byte_temp1.bytes)
 
     def reset_base_position(self) -> None:
         """
@@ -512,7 +552,7 @@ class FC_Udp_Server(FC_Base_Comunication):
         super().__init__(*args, **kwargs)
 
 
-class FC_Controller(FC_Udp_Server, FC_protocol):
+class FC_Controller(FC_Udp_Server, FC_Protocol):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 

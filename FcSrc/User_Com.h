@@ -21,6 +21,9 @@ typedef struct {
   u8 head1;
   u8 head2;
   u8 length;
+  //
+  u8 cmd;
+  //
   s16 rol_x100;
   s16 pit_x100;
   s16 yaw_x100;
@@ -35,8 +38,20 @@ typedef struct {
   u8 fc_mode_sta;
   u8 unlock_sta;
   u8 CID;
+  //
   u8 check_sum;
 } __attribute__((__packed__)) _to_user_st;
+
+typedef union {
+  u8 byte_data[38];
+  _to_user_st st_data;
+} _to_user_un;
+
+// ACK数据结构
+typedef struct {
+  u8 ack_data;
+  u8 WTS;
+} __attribute__((__packed__)) _user_ack_st;
 
 //通用位置数据结构
 typedef struct {
@@ -46,11 +61,6 @@ typedef struct {
   s32 pos_y;
   s32 pos_z;
 } __attribute__((__packed__)) _user_pos_st;
-
-typedef union {
-  u8 byte_data[37];
-  _to_user_st st_data;
-} _to_user_un;
 
 extern _user_pos_st user_pos;
 

@@ -20,12 +20,14 @@
 void UserCom_DataAnl(u8* data_buf, u8 data_len);
 void UserCom_DataExchange(void);
 void UserCom_SendData(u8* dataToSend, u8 Length);
+void UserCom_SendAck(u8 ack_data);
 
 static u8 user_connected = 0;       //用户下位机是否连接
 static u16 user_heartbeat_cnt = 0;  //用户下位机心跳计数
 _user_pos_st user_pos;              //用户下位机位置数据
 
 _to_user_un to_user_data;
+_user_ack_st user_ack;
 
 /**
  * @brief 用户协议数据获取,在串口中断中调用,解析完成后调用UserCom_DataAnl
@@ -129,13 +131,15 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           break;
       }
       break;
-    case 0x02:  // 转发到IMU, 命令格式应遵循匿名通信协议
+    case 0x02:  // 转发到IMU, 命令格式应遵循匿名通信协议, 此命令需要返回ACK
       if (dt.wait_ck == 0) {
         dt.cmd_send.CID = p_data[0];
         for (u8 i = 0; i < len + 1; i++) {
           dt.cmd_send.CMD[i] = p_data[i + 1];
         }
         CMD_Send(0xFF, &dt.cmd_send);
+        user_ack.ack_data = 0x02 + p_data[0];
+        user_ack.WTS = 1;  // 触发ACK
         LxPrintf("DBG: to imu: 0x%02X 0x%02X 0x%02X", dt.cmd_send.CID,
                  dt.cmd_send.CMD[0], dt.cmd_send.CMD[1]);
       } else {
@@ -165,6 +169,12 @@ void UserCom_Task(float dT_s) {
       }
     }
 
+    // ACK发送检查
+    if (user_ack.WTS == 1) {
+      user_ack.WTS = 0;
+      UserCom_SendAck(user_ack.ack_data);
+    }
+
     //数据交换
     data_exchange_cnt++;
     if (data_exchange_cnt * dT_s >= USER_DATA_EXCHANGE_TIMEOUT_S) {
@@ -184,6 +194,7 @@ void UserCom_DataExchange(void) {
   to_user_data.st_data.head1 = 0xAA;
   to_user_data.st_data.head2 = 0x55;
   to_user_data.st_data.length = user_data_size - 4;
+  to_user_data.st_data.cmd = 0x01;
 
   // 数据赋值
   to_user_data.st_data.rol_x100 = fc_att.st_data.rol_x100;
@@ -208,6 +219,20 @@ void UserCom_DataExchange(void) {
   }
 
   UserCom_SendData(to_user_data.byte_data, user_data_size);
+}
+
+void UserCom_SendAck(u8 ack_data) {
+  static u8 data_to_send[6];
+  data_to_send[0] = 0xAA;      // head1
+  data_to_send[1] = 0x55;      // head2
+  data_to_send[2] = 0x02;      // length
+  data_to_send[3] = 0x02;      // cmd
+  data_to_send[4] = ack_data;  // data
+  data_to_send[5] = 0;         // check_sum
+  for (u8 i = 0; i < 5; i++) {
+    data_to_send[5] += data_to_send[i];
+  }
+  UserCom_SendData(data_to_send, 6);
 }
 
 /**
