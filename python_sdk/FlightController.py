@@ -23,8 +23,9 @@ class Byte_Var:
     __multiplier = 1
     __var_type = None
 
-    def __init__(self, ctype="u8", var_type=int, value_multiplier=1):
+    def __init__(self, ctype="u8", var_type=int, value_multiplier=1, name=None):
         self.reset(0, ctype, var_type, value_multiplier)
+        self.name = name
 
     def reset(self, init_value, ctype: str, py_var_type, value_multiplier=1):
         """重置变量
@@ -95,20 +96,20 @@ class Byte_Var:
 
 
 class FC_State_Struct:
-    rol = Byte_Var("s16", float, 0.01)  # deg
-    pit = Byte_Var("s16", float, 0.01)  # deg
-    yaw = Byte_Var("s16", float, 0.01)  # deg
-    alt_fused = Byte_Var("s32", int)  # cm
-    alt_add = Byte_Var("s32", int)  # cm
-    vel_x = Byte_Var("s16", int)  # cm/s
-    vel_y = Byte_Var("s16", int)  # cm/s
-    vel_z = Byte_Var("s16", int)  # cm/s
-    pos_x = Byte_Var("s32", int)  # cm
-    pos_y = Byte_Var("s32", int)  # cm
-    bat = Byte_Var("u16", float, 0.01)  # V
-    mode = Byte_Var("u8", int)  #
-    unlock = Byte_Var("u8", bool)  #
-    cid = Byte_Var("u8", int)  #
+    rol = Byte_Var("s16", float, 0.01, name="rol")  # deg
+    pit = Byte_Var("s16", float, 0.01, name="pit")  # deg
+    yaw = Byte_Var("s16", float, 0.01, name="yaw")  # deg
+    alt_fused = Byte_Var("s32", int, name="alt_fused")  # cm
+    alt_add = Byte_Var("s32", int, name="alt_add")  # cm
+    vel_x = Byte_Var("s16", int, name="vel_x")  # cm/s
+    vel_y = Byte_Var("s16", int, name="vel_y")  # cm/s
+    vel_z = Byte_Var("s16", int, name="vel_z")  # cm/s
+    pos_x = Byte_Var("s32", int, name="pos_x")  # cm
+    pos_y = Byte_Var("s32", int, name="pos_y")  # cm
+    bat = Byte_Var("u16", float, 0.01, name="bat")  # V
+    mode = Byte_Var("u8", int, name="mode")  #
+    unlock = Byte_Var("u8", bool, name="unlock")  #
+    cid = Byte_Var("u8", int, name="cid")  #
 
     alt = alt_add  # alias
 
@@ -180,14 +181,16 @@ class FC_Base_Comunication:
                 return None
             self.__waiting_ack = True
             self.__recivied_ack = None
+            send_time = time.time()
+            check_ack = option
+            for add_bit in data:
+                check_ack = (check_ack + add_bit) & 0xFF
         self.__set_option(option)
         sended = self.__ser_32.write(data)
         self.__sending_data = False
         if need_ack:
-            send_time = time.time()
-            check_ack = (option + data[0]) & 0xFF
             while self.__waiting_ack:
-                if time.time() - send_time > 1:
+                if time.time() - send_time > 0.1:
                     logger.warning("FC: ACK timeout, retrying")
                     return self.send_32_from_data(
                         data, option, need_ack, ack_max_retry - 1
@@ -213,6 +216,7 @@ class FC_Base_Comunication:
                     elif cmd == 0x02:  # ACK返回
                         self.__recivied_ack = data[0]
                         self.__waiting_ack = False
+                        logger.debug(f"FC: ACK received: {self.__recivied_ack}")
             except Exception as e:
                 logger.error(f"FC: listen serial exception: {traceback.format_exc()}")
             if time.time() - last_heartbeat_time > 0.25:
@@ -245,24 +249,17 @@ class FC_Base_Comunication:
         PURPLE = "\033[1;35m"
         RESET = "\033[0m"
         text = ""
-        text += (
-            " ".join(
-                [
-                    f"{YELLOW}{((var.__name__[:2]+var.__name__[-1]))}: {f'{GREEN}√ ' if var.value else f'{RED}x {RESET}'}"
-                    if type(var.value) == bool
-                    else f"{YELLOW}{((var.__name__[:2]+var.__name__[-1]))}: {CYAN}{var.value:^3d}{RESET}"
-                    for var in self.state.RECV_ORDER
-                    if type(var.value) != float
-                ]
-            )
-            + " "
-            + " ".join(
-                [
-                    f"{YELLOW}{((var.__name__[:2]+var.__name__[-1]))}:{CYAN}{var.value:^7.02f}{RESET}"
-                    for var in self.state.RECV_ORDER
+        text += " ".join(
+            [
+                f"{YELLOW}{((var.name[:2]+var.name[-1]))}: {f'{GREEN}√ ' if var.value else f'{RED}x {RESET}'}"
+                if type(var.value) == bool
+                else (
+                    f"{YELLOW}{((var.name[:2]+var.name[-1]))}:{CYAN}{var.value:^7.02f}{RESET}"
                     if type(var.value) == float
-                ]
-            )
+                    else f"{YELLOW}{((var.name[:2]+var.name[-1]))}: {CYAN}{var.value:^3d}{RESET}"
+                )
+                for var in self.state.RECV_ORDER
+            ]
         )
         print(f"\r {text}\r", end="")
 
@@ -558,13 +555,14 @@ class FC_Controller(FC_Udp_Server, FC_Protocol):
 
 
 if __name__ == "__main__":
+    import random
 
     fc = FC_Controller("COM23", 500000)
     try:
         fc.start_listen_serial()
         try:
             horizontal_distance = 50
-            horizontal_speed = 100
+            horizontal_speed = 50
             vertical_distance = 20
             vertical_speed = 20
             yaw_deg = 30
@@ -605,12 +603,16 @@ if __name__ == "__main__":
                     fc.go_down(vertical_distance, vertical_speed)
                 elif k == "k":
                     fc.reset_base_position()
-                    fc.go_to_position(1, -100)
+                    fc.go_to_position_by_base(50, 50)
                 elif k == "l":
-                    fc.reset_base_position()
-                    fc.set_target_height(100)
+                    fc.cordinate_move(50, 50, horizontal_speed)
                 elif k == "u":
-                    fc.set_rgb_led(0x66, 0xCC, 0xFF)
+                    r, g, b = (
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                    )
+                    fc.set_rgb_led(r, g, b)
 
         except KeyboardInterrupt:
             logger.info("FC: Keyboard interrupt")
