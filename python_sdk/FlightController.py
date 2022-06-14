@@ -409,7 +409,7 @@ class FC_Protocol(FC_Base_Comunication):
         speed: 移动速度:10-300 cm/s
         """
         div = y / x if x != 0 else np.inf
-        target_deg = np.arctan(div) / np.pi * 180
+        target_deg = -np.arctan(div) / np.pi * 180
         distance = np.sqrt(x**2 + y**2)
         if target_deg < 0:
             target_deg += 360
@@ -519,40 +519,42 @@ class FC_Protocol(FC_Base_Comunication):
         self.__byte_temp1.reset(height, "s32", int)
         self.__send_imu_command_frame(0x10, 0x01, 0x02, self.__byte_temp1.bytes)
 
-    def reset_base_position(self) -> None:
-        """
-        重置基地参考点, 用于按坐标移动时的坐标系计算
-        """
-        self.__base_pos_x = self.state.pos_x.value
-        self.__base_pos_y = self.state.pos_y.value
-        self.__base_yaw = self.state.yaw.value
-        logger.info(
-            f"FC: reset base position to {self.__base_pos_x}, {self.__base_pos_y} @ {self.__base_yaw}"
-        )
-
-    def go_to_position_by_base(self, x: int, y: int) -> None:
-        """
-        以基地坐标为参考的移动:
-        x,y:+-100000 cm
-
-        匿名机身参考系(即调用本函数时的参考系):         机头为x+ 机身左侧y+ 机身上方z+
-        匿名世界参考系(回传数据中位置偏移采用的参考系):  地磁北(实际上是融合后yaw=0的方向)为x+ 地磁西为y+ 天空为z+
-        """
-        base_deg = -self.__base_yaw / 180 * np.pi
-        div = y / x if x != 0 else np.inf
-        target_deg = np.arctan(div)
-        deg = base_deg + target_deg
-        distance = np.sqrt(x**2 + y**2)
-        t_x = int(np.cos(deg) * distance + self.__base_pos_x)
-        t_y = int(np.sin(deg) * distance + self.__base_pos_y)
-        logger.info(f"FC: go to {t_x} {t_y}")
-        self.set_target_position(t_x, t_y)
-
-    def go_to_base(self) -> None:
-        """
-        回到基地
-        """
-        self.set_target_position(self.__base_pos_x, self.__base_pos_y)
+    # def reset_base_position(self) -> None:
+    #     """
+    #     重置基地参考点, 用于按坐标移动时的坐标系计算
+    #     """
+    #     self.__base_pos_x = self.state.pos_x.value
+    #     self.__base_pos_y = self.state.pos_y.value
+    #     self.__base_yaw = self.state.yaw.value
+    #     logger.info(
+    #         f"FC: reset base position to {self.__base_pos_x}, {self.__base_pos_y} @ {self.__base_yaw}"
+    #     )
+    #
+    #     def go_to_position_by_base(self, x: int, y: int) -> None:
+    #         """
+    #         以基地坐标为参考的移动:
+    #         x,y:+-100000 cm
+    #
+    #         匿名机身参考系(即调用本函数时的参考系):         机头为x+ 机身左侧y+ 机身上方z+
+    #         匿名世界参考系(回传数据中位置偏移采用的参考系):  地磁北(实际上是融合后yaw=0的方向)为x+ 地磁西为y+ 天空为z+
+    #         """
+    #         base_deg = -self.__base_yaw / 180 * np.pi
+    #         div = y / x if x != 0 else np.inf
+    #         target_deg = np.arctan(div)
+    #         deg = base_deg + target_deg
+    #         distance = np.sqrt(x**2 + y**2)
+    #         t_x = int(np.cos(deg) * distance + self.__base_pos_x)
+    #         t_y = int(np.sin(deg) * distance + self.__base_pos_y)
+    #         logger.info(f"FC: go to {t_x} {t_y}")
+    #         self.set_target_position(t_x, t_y)
+    #
+    #     def go_to_base(self) -> None:
+    #         """
+    #         回到基地
+    #         """
+    #         x_offset = self.state.pos_x.value - self.__base_pos_x
+    #         y_offset = self.state.pos_y.value - self.__base_pos_y
+    #         self.set_target_position(x_offset, y_offset)
 
     @property
     def last_command_done(self) -> bool:
@@ -627,9 +629,6 @@ if __name__ == "__main__":
                     fc.go_up(vertical_distance, vertical_speed)
                 elif k == "f":
                     fc.go_down(vertical_distance, vertical_speed)
-                elif k == "k":
-                    fc.reset_base_position()
-                    fc.go_to_position_by_base(50, 50)
                 elif k == "l":
                     fc.cordinate_move(50, 50, horizontal_speed)
                 elif k == "u":
