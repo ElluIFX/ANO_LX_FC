@@ -80,6 +80,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
   static u8 calc_check;
   static u8 len;
   static u8* p_data;
+  static s16* p_s16;
   static s32* p_s32;
   static u8 u8_temp;
   static u32 u32_temp;
@@ -106,7 +107,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
         user_heartbeat_cnt = 0;
         break;
       }
-    case 0x01:  // 控制32(预留)
+    case 0x01:  // 本地处理
       suboption = p_data[0];
       switch (suboption) {
         case 0x01:  // WS2812控制
@@ -119,6 +120,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           u32_temp |= u8_temp;
           WS2812_SetAll(u32_temp);
           WS2812_SendBuf();
+          LxPrintf("DBG: user rgb: %X", u32_temp);
           break;
         case 0x02:  // 位置信息回传
           p_s32 = (s32*)(p_data + 1);
@@ -127,7 +129,22 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           user_pos.pos_y = *p_s32;
           p_s32++;
           user_pos.pos_z = *p_s32;
-          user_pos.pos_update_cnt++;
+          if (*(((u8*)p_s32) + 1) = 0x77) {  // 帧结尾，确保接收完整
+            user_pos.pos_update_cnt++;       // 触发发送
+          }
+          break;
+        case 0x03:  // 实时控制帧
+          p_s16 = (s16*)(p_data + 1);
+          rt_tar.st_data.vel_x = *p_s16;  // 头向速度，厘米每秒
+          p_s16++;
+          rt_tar.st_data.vel_y = *p_s16;  // 左向速度，厘米每秒
+          p_s16++;
+          rt_tar.st_data.vel_z = *p_s16;  // 天向速度，厘米每秒
+          p_s16++;
+          rt_tar.st_data.yaw_dps = *p_s16;  // 航向角速度，度每秒，逆时针为正
+          if (*(((u8*)p_s16) + 1) = 0x88) {  // 帧结尾，确保接收完整
+            dt.fun[0x41].WTS = 1;            // 触发发送
+          }
           break;
       }
       break;

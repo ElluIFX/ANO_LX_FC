@@ -279,15 +279,16 @@ class FC_Protocol(FC_Base_Comunication):
         self.__byte_temp1 = Byte_Var()
         self.__byte_temp2 = Byte_Var()
         self.__byte_temp3 = Byte_Var()
-        self.__base_pos_x = 0
-        self.__base_pos_y = 0
-        self.__base_yaw = 0
+        self.__byte_temp4 = Byte_Var()
+        # self.__base_pos_x = 0
+        # self.__base_pos_y = 0
+        # self.__base_yaw = 0
         self.last_command = (0, 0, 0)  # (CID,CMD_0,CMD_1)
 
     def __send_32_command(self, suboption: int, data: bytes = b"") -> None:
         self.__byte_temp1.reset(suboption, "u8", int)
         data_to_send = self.__byte_temp1.bytes + data
-        sended = self.send_32_from_data(data_to_send, 0x01)
+        sended = self.send_32_from_data(data_to_send, 0x01, need_ack=False)
         logger.debug(f"FC: Send: {bytes_to_str(sended)}")
 
     def set_rgb_led(self, r: int, g: int, b: int) -> None:
@@ -313,7 +314,10 @@ class FC_Protocol(FC_Base_Comunication):
         self.__byte_temp3.reset(z, "s32", int)
         self.__send_32_command(
             0x02,
-            self.__byte_temp1.bytes + self.__byte_temp2.bytes + self.__byte_temp3.bytes,
+            self.__byte_temp1.bytes
+            + self.__byte_temp2.bytes
+            + self.__byte_temp3.bytes
+            + b"\x77",  # 帧结尾
         )
 
     def reset_position_prediction(self):
@@ -321,6 +325,27 @@ class FC_Protocol(FC_Base_Comunication):
         复位位置融合预测(伪造通用位置传感器)
         """
         self.send_general_position(0, 0, 0)
+
+    def realtime_control(
+        self, vel_x: int = 0, vel_y: int = 0, vel_z: int = 0, yaw: int = 0
+    ) -> None:
+        """
+        发送实时控制帧, 仅在定点模式下有效(MODE=2), 切换模式前需要确保遥控器摇杆全部归中
+        vel_x,vel_y,vel_z: cm/s 匿名坐标系
+        yaw: deg/s 顺时针为正
+        """
+        self.__byte_temp1.reset(vel_x, "s16", int)
+        self.__byte_temp2.reset(vel_y, "s16", int)
+        self.__byte_temp3.reset(vel_z, "s16", int)
+        self.__byte_temp4.reset(-yaw, "s16", int)  # 实际控制帧是逆时针正向,此处取反以适应标准
+        self.__send_32_command(
+            0x03,
+            self.__byte_temp1.bytes
+            + self.__byte_temp2.bytes
+            + self.__byte_temp3.bytes
+            + self.__byte_temp4.bytes
+            + b"\x88",  # 帧结尾
+        )
 
     def __send_imu_command_frame(self, CID: int, CMD0: int, CMD1: int, CMD_data=b""):
         self.__byte_temp1.reset(CID, "u8", int)
@@ -638,6 +663,24 @@ if __name__ == "__main__":
                         random.randint(0, 255),
                     )
                     fc.set_rgb_led(r, g, b)
+                    logger.info(f"FC: set RGB LED to hex {r:02X}{g:02X}{b:02X}")
+                elif k == "n":
+                    x, y, z = (
+                        random.randint(-100, 100),
+                        random.randint(-100, 100),
+                        random.randint(-100, 100),
+                    )
+                    fc.send_general_position(x, y, z)
+                    logger.info(f"FC: send general position {x} {y} {z}")
+                elif k == "m":
+                    x, y, z, yaw = (
+                        random.randint(-20, 20),
+                        random.randint(-20, 20),
+                        0,
+                        random.randint(-20, 20),
+                    )
+                    fc.realtime_control(x, y, z, yaw)
+                    logger.info(f"FC: realtime control {x} {y} {z} {yaw}")
 
         except KeyboardInterrupt:
             logger.info("FC: Keyboard interrupt")
