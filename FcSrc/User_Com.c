@@ -130,8 +130,8 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           user_pos.pos_y = *p_s32;
           p_s32++;
           user_pos.pos_z = *p_s32;
-          if (*(((u8*)p_s32) + 1) = 0x77) {  // 帧结尾，确保接收完整
-            user_pos.pos_update_cnt++;       // 触发发送
+          if (p_data[13] == 0x77) {     // 帧结尾，确保接收完整
+            user_pos.pos_update_cnt++;  // 触发发送
           }
           break;
         case 0x03:  // 实时控制帧
@@ -143,13 +143,13 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           rt_tar.st_data.vel_z = *p_s16;  // 天向速度，厘米每秒
           p_s16++;
           rt_tar.st_data.yaw_dps = *p_s16;  // 航向角速度，度每秒，逆时针为正
-          if (*(((u8*)p_s16) + 1) = 0x88) {  // 帧结尾，确保接收完整
-            dt.fun[0x41].WTS = 1;            // 触发发送
+          if (p_data[9] == 0x88) {  // 帧结尾，确保接收完整
+            dt.fun[0x41].WTS = 1;   // 触发发
+            //此处启用实时控制安全检查, 实时控制命令发送应持续发送且间隔小于1秒
+            //超时会自动停止运动
+            realtime_control_enable = 1;
+            realtime_control_cnt = 0;
           }
-          //此处启用实时控制安全检查, 实时控制命令发送应持续发送且间隔小于1秒
-          //超时会自动停止运动
-          realtime_control_enable = 1;
-          realtime_control_cnt = 0;
           break;
       }
       break;
@@ -158,7 +158,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
         dt.cmd_send.CID = p_data[0];
         user_ack.ack_data = (0x02 + p_data[0]) % 0xFF;
         if (len > 11) {
-          len = 11; // 防止越界
+          len = 11;  // 防止越界
         }
         for (u8 i = 0; i < len - 1; i++) {
           dt.cmd_send.CMD[i] = p_data[i + 1];
@@ -226,6 +226,7 @@ void UserCom_Task(float dT_s) {
         rt_tar.st_data.vel_z = 0;
         rt_tar.st_data.yaw_dps = 0;
         dt.fun[0x41].WTS = 1;  // 触发发送
+        LxPrintf("DBG: realtime control timeout");
       }
     }
   }
