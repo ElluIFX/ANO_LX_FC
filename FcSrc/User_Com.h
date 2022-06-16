@@ -15,6 +15,7 @@
 
 #define USER_DATA_EXCHANGE_TIMEOUT_S (0.05f - 0.001f)
 #define USER_HEARTBEAT_TIMEOUT_S (1.0f - 0.001f)
+#define REALTIME_CONTROL_TIMEOUT_S (1.0f - 0.001f)
 
 //回传数据结构
 typedef struct {

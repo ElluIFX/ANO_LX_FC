@@ -22,12 +22,13 @@ void UserCom_DataExchange(void);
 void UserCom_SendData(u8* dataToSend, u8 Length);
 void UserCom_SendAck(u8 ack_data);
 
-static u8 user_connected = 0;       //用户下位机是否连接
-static u16 user_heartbeat_cnt = 0;  //用户下位机心跳计数
-_user_pos_st user_pos;              //用户下位机位置数据
-
-_to_user_un to_user_data;
-_user_ack_st user_ack;
+static u8 user_connected = 0;           //用户下位机是否连接
+static u16 user_heartbeat_cnt = 0;      //用户下位机心跳计数
+static u8 realtime_control_enable = 0;  //实时控制是否开启
+static u16 realtime_control_cnt = 0;    //实时控制超时计数
+_user_pos_st user_pos;                  //用户下位机位置数据
+_to_user_un to_user_data;               //回传状态数据
+_user_ack_st user_ack;                  // ACK数据
 
 /**
  * @brief 用户协议数据获取,在串口中断中调用,解析完成后调用UserCom_DataAnl
@@ -145,6 +146,10 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           if (*(((u8*)p_s16) + 1) = 0x88) {  // 帧结尾，确保接收完整
             dt.fun[0x41].WTS = 1;            // 触发发送
           }
+          //此处启用实时控制安全检查, 实时控制命令发送应持续发送且间隔小于1秒
+          //超时会自动停止运动
+          realtime_control_enable = 1;
+          realtime_control_cnt = 0;
           break;
       }
       break;
@@ -199,6 +204,26 @@ void UserCom_Task(float dT_s) {
     if (data_exchange_cnt * dT_s >= USER_DATA_EXCHANGE_TIMEOUT_S) {
       data_exchange_cnt = 0;
       UserCom_DataExchange();
+    }
+
+    //实时控制安全检查
+    if (fc_sta.fc_mode_sta == 3) {
+      // 程控模式, 实时控制失效
+      realtime_control_enable = 0;
+      realtime_control_cnt = 0;
+    }
+    if (realtime_control_enable) {
+      realtime_control_cnt++;
+      if (realtime_control_cnt * dT_s >= REALTIME_CONTROL_TIMEOUT_S) {
+        //超时, 停止运动
+        realtime_control_cnt = 0;
+        realtime_control_enable = 0;
+        rt_tar.st_data.vel_x = 0;
+        rt_tar.st_data.vel_y = 0;
+        rt_tar.st_data.vel_z = 0;
+        rt_tar.st_data.yaw_dps = 0;
+        dt.fun[0x41].WTS = 1;  // 触发发送
+      }
     }
   }
 }
