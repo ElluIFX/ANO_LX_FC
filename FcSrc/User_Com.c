@@ -35,7 +35,7 @@ _user_ack_st user_ack;                  // ACK数据
  * @param  data             数据
  */
 void UserCom_GetOneByte(u8 data) {
-  static u8 _user_data_temp[50];
+  static u8 _user_data_temp[128];
   static u8 _user_data_cnt = 0;
   static u8 _data_len = 0;
   static u8 state = 0;
@@ -157,6 +157,9 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
       if (dt.wait_ck == 0) {
         dt.cmd_send.CID = p_data[0];
         user_ack.ack_data = (0x02 + p_data[0]) % 0xFF;
+        if (len > 11) {
+          len = 11; // 防止越界
+        }
         for (u8 i = 0; i < len - 1; i++) {
           dt.cmd_send.CMD[i] = p_data[i + 1];
           user_ack.ack_data += p_data[i + 1];
