@@ -231,6 +231,7 @@ class FC_Base_Comunication:
             if time.time() - last_heartbeat_time > 0.25:
                 self.send_32_from_data(b"\x01", 0x00)  # 心跳包
                 last_heartbeat_time = time.time()
+            time.sleep(0.001)  # 降低CPU占用
 
     def __update_state(self, recv_byte):
         try:
@@ -610,35 +611,74 @@ class FC_Controller(FC_Udp_Server, FC_Protocol):
 if __name__ == "__main__":
     import random
 
+    from pynput.keyboard import Key, Listener
+
     fc = FC_Controller("COM23", 500000)
     try:
         fc.start_listen_serial()
-        try:
-            horizontal_distance = 50
-            horizontal_speed = 50
-            vertical_distance = 20
-            vertical_speed = 20
-            yaw_deg = 30
-            yaw_speed = 30
-            while True:
-                k = input()
-                if len(k) > 1:
-                    k = k[0]
-                if k == "t":
-                    break
-                elif k.isdigit():
-                    fc.set_flight_mode(int(k))
-                elif k == "o":
-                    fc.unlock()
-                elif k == "p":
-                    fc.lock()
-                elif k == "z":
-                    fc.stablize()
-                elif k == "x":
-                    fc.take_off()
-                elif k == "c":
-                    fc.land()
-                elif k == "w":
+        horizontal_distance = 50
+        horizontal_speed = 50
+        vertical_distance = 20
+        vertical_speed = 20
+        yaw_deg = 30
+        yaw_speed = 30
+        listener = None
+        realtime_mode = False
+        speed_xyzYaw = [0, 0, 0, 0]
+
+        def on_press(key: Key) -> None:
+            global listener
+            global realtime_mode
+            global speed_xyzYaw
+            try:
+                k = key.char
+            except:
+                k = key.name
+            if key == Key.esc:
+                listener.stop()
+            elif k.isdigit():
+                fc.set_flight_mode(int(k))
+            elif k == "o":
+                fc.unlock()
+            elif k == "p":
+                fc.lock()
+            elif k == "z":
+                fc.stablize()
+            elif k == "x":
+                fc.take_off()
+            elif k == "c":
+                fc.land()
+            elif k == "u":
+                r, g, b = (
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                )
+                fc.set_rgb_led(r, g, b)
+                logger.info(f"FC: set RGB LED to hex {r:02X}{g:02X}{b:02X}")
+            elif k == "n":
+                x, y, z = (
+                    random.randint(-100, 100),
+                    random.randint(-100, 100),
+                    random.randint(-100, 100),
+                )
+                fc.send_general_position(x, y, z)
+                logger.info(f"FC: send general position {x} {y} {z}")
+            elif k == "m":
+                x, y, z, yaw = (
+                    random.randint(-20, 20),
+                    random.randint(-20, 20),
+                    0,
+                    random.randint(-20, 20),
+                )
+                fc.realtime_control(x, y, z, yaw)
+                logger.info(f"FC: realtime control {x} {y} {z} {yaw}")
+            elif k == "l":
+                fc.cordinate_move(50, 50, horizontal_speed)
+
+            if fc.state.mode.value == 3:  # 程控模式
+                realtime_mode = False
+                if k == "w":
                     fc.horizontal_move(horizontal_distance, horizontal_speed, 0)
                 elif k == "s":
                     fc.horizontal_move(horizontal_distance, horizontal_speed, 180)
@@ -654,36 +694,50 @@ if __name__ == "__main__":
                     fc.go_up(vertical_distance, vertical_speed)
                 elif k == "f":
                     fc.go_down(vertical_distance, vertical_speed)
-                elif k == "l":
-                    fc.cordinate_move(50, 50, horizontal_speed)
-                elif k == "u":
-                    r, g, b = (
-                        random.randint(0, 255),
-                        random.randint(0, 255),
-                        random.randint(0, 255),
-                    )
-                    fc.set_rgb_led(r, g, b)
-                    logger.info(f"FC: set RGB LED to hex {r:02X}{g:02X}{b:02X}")
-                elif k == "n":
-                    x, y, z = (
-                        random.randint(-100, 100),
-                        random.randint(-100, 100),
-                        random.randint(-100, 100),
-                    )
-                    fc.send_general_position(x, y, z)
-                    logger.info(f"FC: send general position {x} {y} {z}")
-                elif k == "m":
-                    x, y, z, yaw = (
-                        random.randint(-20, 20),
-                        random.randint(-20, 20),
-                        0,
-                        random.randint(-20, 20),
-                    )
-                    fc.realtime_control(x, y, z, yaw)
-                    logger.info(f"FC: realtime control {x} {y} {z} {yaw}")
+            else:  # 非程控模式
+                realtime_mode = True
+                if k == "w":
+                    speed_xyzYaw[0] = horizontal_speed
+                elif k == "s":
+                    speed_xyzYaw[0] = -horizontal_speed
+                elif k == "a":
+                    speed_xyzYaw[1] = horizontal_speed
+                elif k == "d":
+                    speed_xyzYaw[1] = -horizontal_speed
+                elif k == "q":
+                    speed_xyzYaw[2] = -yaw_speed
+                elif k == "e":
+                    speed_xyzYaw[2] = yaw_speed
+                elif k == "r":
+                    speed_xyzYaw[3] = vertical_speed
+                elif k == "f":
+                    speed_xyzYaw[3] = -vertical_speed
 
-        except KeyboardInterrupt:
-            logger.info("FC: Keyboard interrupt")
+        def on_release(key: Key) -> None:
+            global realtime_mode
+            global speed_xyzYaw
+            try:
+                k = key.char
+            except:
+                k = key.name
+            if realtime_mode:
+                realtime_mode = False
+                if k == "w" or k == "s":
+                    speed_xyzYaw[0] = 0
+                elif k == "a" or k == "d":
+                    speed_xyzYaw[1] = 0
+                elif k == "q" or k == "e":
+                    speed_xyzYaw[2] = 0
+                elif k == "r" or k == "f":
+                    speed_xyzYaw[3] = 0
+
+        listener = Listener(on_press=on_press, on_release=on_release)
+        listener.start()
+        while listener.running:
+            time.sleep(0.1)
+            if realtime_mode:
+                fc.realtime_control(*speed_xyzYaw)
+        listener.join()
     except Exception as e:
         logger.error(f"FC: Main loop exception: {traceback.format_exc()}")
     finally:

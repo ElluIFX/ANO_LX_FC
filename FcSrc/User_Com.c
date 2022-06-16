@@ -149,6 +149,10 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
             //超时会自动停止运动
             realtime_control_enable = 1;
             realtime_control_cnt = 0;
+            if (rt_tar.st_data.vel_x == 0 && rt_tar.st_data.vel_y == 0 &&
+                rt_tar.st_data.vel_z == 0 && rt_tar.st_data.yaw_dps == 0) {
+              realtime_control_enable = 0;
+            }
           }
           break;
       }
@@ -192,6 +196,7 @@ void UserCom_Task(float dT_s) {
       if (fc_sta.unlock_sta == 1) {  //如果是解锁状态，则采取安全措施
         // OneKey_Land(); //降落
         OneKey_Stable();  //恢复悬停
+        realtime_control_enable = 0;
       }
     }
 
