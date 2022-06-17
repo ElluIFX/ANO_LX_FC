@@ -95,7 +95,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
     calc_check += data_buf[i];
   }
   if (calc_check != recv_check) {
-    LxPrintf("DBG: usercom checksum error");
+    LxStringSend(LOG_COLOR_RED, "ERR: usercom checksum error");
     return;
   }
   switch (option) {
@@ -103,7 +103,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
       if (p_data[0] == 0x01) {
         if (!user_connected) {
           user_connected = 1;
-          LxPrintf("DBG: user connected");
+          LxStringSend(LOG_COLOR_GREEN, "INFO: user connected");
         }
         user_heartbeat_cnt = 0;
         break;
@@ -173,7 +173,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
         LxPrintf("DBG: to imu: 0x%02X 0x%02X 0x%02X", dt.cmd_send.CID,
                  dt.cmd_send.CMD[0], dt.cmd_send.CMD[1]);
       } else {
-        LxPrintf("DBG: cmd to imu dropped for wait_ck");
+        LxStringSend(LOG_COLOR_RED, "ERR: cmd to imu dropped for wait_ck");
       }
       break;
     default:
@@ -192,7 +192,7 @@ void UserCom_Task(float dT_s) {
     user_heartbeat_cnt++;
     if (user_heartbeat_cnt * dT_s >= USER_HEARTBEAT_TIMEOUT_S) {
       user_connected = 0;
-      LxPrintf("DBG: user disconnected");
+      LxStringSend(LOG_COLOR_RED, "WARN: user disconnected");
       if (fc_sta.unlock_sta == 1) {  //如果是解锁状态，则采取安全措施
         // OneKey_Land(); //降落
         OneKey_Stable();  //恢复悬停
@@ -231,7 +231,7 @@ void UserCom_Task(float dT_s) {
         rt_tar.st_data.vel_z = 0;
         rt_tar.st_data.yaw_dps = 0;
         dt.fun[0x41].WTS = 1;  // 触发发送
-        LxPrintf("DBG: realtime control timeout");
+        LxStringSend(LOG_COLOR_RED, "WARN: realtime control timeout");
       }
     }
   }
