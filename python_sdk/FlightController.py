@@ -705,13 +705,13 @@ if __name__ == "__main__":
                 elif k == "d":
                     speed_xyzYaw[1] = -horizontal_speed
                 elif k == "q":
-                    speed_xyzYaw[2] = -yaw_speed
+                    speed_xyzYaw[3] = -yaw_speed
                 elif k == "e":
-                    speed_xyzYaw[2] = yaw_speed
+                    speed_xyzYaw[3] = yaw_speed
                 elif k == "r":
-                    speed_xyzYaw[3] = vertical_speed
+                    speed_xyzYaw[2] = vertical_speed
                 elif k == "f":
-                    speed_xyzYaw[3] = -vertical_speed
+                    speed_xyzYaw[2] = -vertical_speed
 
         def on_release(key: Key) -> None:
             global realtime_mode
@@ -721,15 +721,14 @@ if __name__ == "__main__":
             except:
                 k = key.name
             if realtime_mode:
-                realtime_mode = False
                 if k == "w" or k == "s":
                     speed_xyzYaw[0] = 0
                 elif k == "a" or k == "d":
                     speed_xyzYaw[1] = 0
                 elif k == "q" or k == "e":
-                    speed_xyzYaw[2] = 0
-                elif k == "r" or k == "f":
                     speed_xyzYaw[3] = 0
+                elif k == "r" or k == "f":
+                    speed_xyzYaw[2] = 0
 
         listener = Listener(on_press=on_press, on_release=on_release)
         listener.start()
@@ -737,6 +736,8 @@ if __name__ == "__main__":
             time.sleep(0.1)
             if realtime_mode:
                 fc.realtime_control(*speed_xyzYaw)
+            else:
+                speed_xyzYaw = [0, 0, 0, 0]
         listener.join()
     except Exception as e:
         logger.error(f"FC: Main loop exception: {traceback.format_exc()}")
