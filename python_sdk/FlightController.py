@@ -140,6 +140,13 @@ class FC_State_Struct:
         return (self.cid.value, self.cmd_0.value, self.cmd_1.value)
 
 
+class FC_Settings_Struct:
+    wait_ack_timeout = 0.1
+    wait_sending_timeout = 0.2
+    ack_max_retry = 3
+    action_log_output = True
+
+
 class FC_Base_Comunication:
     def __init__(self, serial_port, bit_rate) -> None:
         self.running = False
@@ -156,6 +163,7 @@ class FC_Base_Comunication:
         self.__set_option(0)
         self.__ser_32.read_config(startBit=[0xAA, 0x55])
         self.state = FC_State_Struct()
+        self.settings = FC_Settings_Struct()
 
     def start_listen_serial(self, print_state=True, callback=None):
         self.running = True
@@ -178,16 +186,17 @@ class FC_Base_Comunication:
         )
 
     def send_32_from_data(
-        self, data: bytes, option: int, need_ack: bool = False, ack_max_retry: int = 3
+        self,
+        data: bytes,
+        option: int,
+        need_ack: bool = False,
+        __ack_retry_count: int = None,
     ):
         t0 = time.time()
-        while self.__sending_data:
-            time.sleep(0.001)  # wait for previous data to be sent
-            if time.time() - t0 > 0.2:
-                logger.error("[FC] Wait sending data timeout")
-                return None
         if need_ack:
-            if ack_max_retry < 0:
+            if __ack_retry_count is None:
+                __ack_retry_count = self.settings.ack_max_retry
+            if __ack_retry_count < 0:
                 # raise Exception("Wait ACK reached max retry")
                 logger.error("Wait ACK reached max retry")
                 return None
@@ -197,21 +206,28 @@ class FC_Base_Comunication:
             check_ack = option
             for add_bit in data:
                 check_ack = (check_ack + add_bit) & 0xFF
+        while self.__sending_data:
+            time.sleep(0.001)  # wait for previous data to be sent
+            if time.time() - t0 > self.settings.wait_sending_timeout:
+                logger.error("[FC] Wait sending data timeout")
+                return None
         self.__sending_data = True
         self.__set_option(option)
         sended = self.__ser_32.write(data)
         self.__sending_data = False
         if need_ack:
             while self.__waiting_ack:
-                if time.time() - send_time > 0.1:
+                if time.time() - send_time > self.settings.wait_ack_timeout:
                     logger.warning("[FC] ACK timeout, retrying")
                     return self.send_32_from_data(
-                        data, option, need_ack, ack_max_retry - 1
+                        data, option, need_ack, __ack_retry_count - 1
                     )
                 time.sleep(0.001)
             if self.__recivied_ack is None or self.__recivied_ack != check_ack:
                 logger.warning("[FC] ACK not received or invalid, retrying")
-                return self.send_32_from_data(data, option, need_ack, ack_max_retry - 1)
+                return self.send_32_from_data(
+                    data, option, need_ack, __ack_retry_count - 1
+                )
         return sended
 
     def __listen_serial_task(self):
@@ -284,8 +300,6 @@ class FC_Protocol(FC_Base_Comunication):
     HOLD_POS_MODE = 2
     PROGRAM_MODE = 3
 
-    action_log_output = True
-
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.__byte_temp1 = Byte_Var()
@@ -295,7 +309,7 @@ class FC_Protocol(FC_Base_Comunication):
         self.last_command = (0, 0, 0)  # (CID,CMD_0,CMD_1)
 
     def __action_log(self, action: str, data_info: str = None):
-        if self.action_log_output:
+        if self.settings.action_log_output:
             string = f"[FC] [ACTION] {action.upper()}"
             if data_info is not None:
                 string += f" -> {data_info}"
@@ -384,7 +398,7 @@ class FC_Protocol(FC_Base_Comunication):
             + self.__byte_temp3.bytes
             + bytes_data
         )
-        sended = self.send_32_from_data(data_to_send, 0x02, need_ack=False)
+        sended = self.send_32_from_data(data_to_send, 0x02, need_ack=True)
         self.last_command = (CID, CMD0, CMD1)
         # logger.debug(f"[FC] Send: {bytes_to_str(sended)}")
 
