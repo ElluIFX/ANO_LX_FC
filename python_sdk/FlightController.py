@@ -152,7 +152,7 @@ class FC_Base_Comunication:
         self.__sending_data = False
         self.__waiting_ack = False
         self.__recivied_ack = None
-        logger.info("FC: Serial port opened")
+        logger.info("[FC] Serial port opened")
         self.__set_option(0)
         self.__ser_32.read_config(startBit=[0xAA, 0x55])
         self.state = FC_State_Struct()
@@ -169,7 +169,7 @@ class FC_Base_Comunication:
         if self.__listen_thread:
             self.__listen_thread.join()
         self.__ser_32.close()
-        logger.info("FC: Threads closed, FC offline")
+        logger.info("[FC] Threads closed, FC offline")
 
     def __set_option(self, option: int) -> None:
         self.__ser_32.send_config(
@@ -184,7 +184,7 @@ class FC_Base_Comunication:
         while self.__sending_data:
             time.sleep(0.001)  # wait for previous data to be sent
             if time.time() - t0 > 0.2:
-                logger.error("FC: Wait sending data timeout")
+                logger.error("[FC] Wait sending data timeout")
                 return None
         if need_ack:
             if ack_max_retry < 0:
@@ -204,24 +204,24 @@ class FC_Base_Comunication:
         if need_ack:
             while self.__waiting_ack:
                 if time.time() - send_time > 0.1:
-                    logger.warning("FC: ACK timeout, retrying")
+                    logger.warning("[FC] ACK timeout, retrying")
                     return self.send_32_from_data(
                         data, option, need_ack, ack_max_retry - 1
                     )
                 time.sleep(0.001)
             if self.__recivied_ack is None or self.__recivied_ack != check_ack:
-                logger.warning("FC: ACK not received or invalid, retrying")
+                logger.warning("[FC] ACK not received or invalid, retrying")
                 return self.send_32_from_data(data, option, need_ack, ack_max_retry - 1)
         return sended
 
     def __listen_serial_task(self):
-        logger.info("FC: listen serial thread started")
+        logger.info("[FC] listen serial thread started")
         last_heartbeat_time = time.time()
         while self.running:
             try:
                 if self.__ser_32.read():
                     _data = self.__ser_32.rx_data
-                    # logger.debug(f"FC: Read: {bytes_to_str(_data)}")
+                    # logger.debug(f"[FC] Read: {bytes_to_str(_data)}")
                     cmd = _data[0]
                     data = _data[1:]
                     if cmd == 0x01:  # 状态回传
@@ -229,9 +229,9 @@ class FC_Base_Comunication:
                     elif cmd == 0x02:  # ACK返回
                         self.__recivied_ack = data[0]
                         self.__waiting_ack = False
-                        logger.debug(f"FC: ACK received: {self.__recivied_ack}")
+                        # logger.debug(f"[FC] ACK received: {self.__recivied_ack}")
             except Exception as e:
-                logger.error(f"FC: listen serial exception: {traceback.format_exc()}")
+                logger.error(f"[FC] listen serial exception: {traceback.format_exc()}")
             if time.time() - last_heartbeat_time > 0.25:
                 self.send_32_from_data(b"\x01", 0x00)  # 心跳包
                 last_heartbeat_time = time.time()
@@ -246,13 +246,13 @@ class FC_Base_Comunication:
                 index += length
             if not self.connected:
                 self.connected = True
-                logger.info("FC: Connected")
+                logger.info("[FC] Connected")
             if callable(self.__state_update_callback):
                 self.__state_update_callback(self.state)
             if self.__print_state_flag:
                 self.__print_state()
         except Exception as e:
-            logger.error(f"FC: Update state exception: {traceback.format_exc()}")
+            logger.error(f"[FC] Update state exception: {traceback.format_exc()}")
 
     def __print_state(self):
         RED = "\033[1;31m"
@@ -279,22 +279,35 @@ class FC_Base_Comunication:
 
 
 class FC_Protocol(FC_Base_Comunication):
+    # constants
+    HOLD_ALT_MODE = 1
+    HOLD_POS_MODE = 2
+    PROGRAM_MODE = 3
+
+    action_log_output = True
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.__byte_temp1 = Byte_Var()
         self.__byte_temp2 = Byte_Var()
         self.__byte_temp3 = Byte_Var()
         self.__byte_temp4 = Byte_Var()
-        # self.__base_pos_x = 0
-        # self.__base_pos_y = 0
-        # self.__base_yaw = 0
         self.last_command = (0, 0, 0)  # (CID,CMD_0,CMD_1)
+
+    def __action_log(self, action: str, data_info: str = None):
+        if self.action_log_output:
+            string = f"[FC] [ACTION] {action.upper()}"
+            if data_info is not None:
+                string += f" -> {data_info}"
+            logger.info(string)
+
+    ######### 飞控命令 #########
 
     def __send_32_command(self, suboption: int, data: bytes = b"") -> None:
         self.__byte_temp1.reset(suboption, "u8", int)
         data_to_send = self.__byte_temp1.bytes + data
         sended = self.send_32_from_data(data_to_send, 0x01, need_ack=False)
-        logger.debug(f"FC: Send: {bytes_to_str(sended)}")
+        # logger.debug(f"[FC] Send: {bytes_to_str(sended)}")
 
     def set_rgb_led(self, r: int, g: int, b: int) -> None:
         """
@@ -308,6 +321,7 @@ class FC_Protocol(FC_Base_Comunication):
             0x01,
             self.__byte_temp1.bytes + self.__byte_temp2.bytes + self.__byte_temp3.bytes,
         )
+        self.__action_log("set rgb led", f"#{r:02X}{g:02X}{b:02X}")
 
     def send_general_position(self, x: int, y: int, z: int) -> None:
         """
@@ -330,6 +344,7 @@ class FC_Protocol(FC_Base_Comunication):
         复位位置融合预测(伪造通用位置传感器)
         """
         self.send_general_position(0, 0, 0)
+        self.__action_log("reset position prediction")
 
     def realtime_control(
         self, vel_x: int = 0, vel_y: int = 0, vel_z: int = 0, yaw: int = 0
@@ -352,6 +367,8 @@ class FC_Protocol(FC_Base_Comunication):
             + b"\x88",  # 帧结尾
         )
 
+    ######### IMU 命令 #########
+
     def __send_imu_command_frame(self, CID: int, CMD0: int, CMD1: int, CMD_data=b""):
         self.__byte_temp1.reset(CID, "u8", int)
         self.__byte_temp2.reset(CMD0, "u8", int)
@@ -367,9 +384,9 @@ class FC_Protocol(FC_Base_Comunication):
             + self.__byte_temp3.bytes
             + bytes_data
         )
-        sended = self.send_32_from_data(data_to_send, 0x02, need_ack=True)
+        sended = self.send_32_from_data(data_to_send, 0x02, need_ack=False)
         self.last_command = (CID, CMD0, CMD1)
-        # logger.debug(f"FC: Send: {bytes_to_str(sended)}")
+        # logger.debug(f"[FC] Send: {bytes_to_str(sended)}")
 
     def set_flight_mode(self, mode: int) -> None:
         """
@@ -383,36 +400,42 @@ class FC_Protocol(FC_Base_Comunication):
             raise ValueError("mode must be 1,2,3")
         self.__byte_temp1.reset(mode, "u8", int)
         self.__send_imu_command_frame(0x01, 0x01, 0x01, self.__byte_temp1.bytes)
+        self.__action_log("set flight mode", f"{mode}")
 
     def unlock(self) -> None:
         """
         解锁电机
         """
         self.__send_imu_command_frame(0x10, 0x00, 0x01)
+        self.__action_log("unlocked")
 
     def lock(self) -> None:
         """
         锁定电机 / 紧急锁浆
         """
         self.__send_imu_command_frame(0x10, 0x00, 0x02)
+        self.__action_log("locked")
 
     def stablize(self) -> None:
         """
         恢复定点悬停, 将终止正在进行的所有控制
         """
         self.__send_imu_command_frame(0x10, 0x00, 0x04)
+        self.__action_log("stablize")
 
     def take_off(self) -> None:
         """
         一键起飞
         """
         self.__send_imu_command_frame(0x10, 0x00, 0x05)
+        self.__action_log("take off")
 
     def land(self) -> None:
         """
         一键降落
         """
         self.__send_imu_command_frame(0x10, 0x00, 0x06)
+        self.__action_log("land")
 
     def horizontal_move(self, distance: int, speed: int, direction: int) -> None:
         """
@@ -430,6 +453,9 @@ class FC_Protocol(FC_Base_Comunication):
             0x03,
             self.__byte_temp1.bytes + self.__byte_temp2.bytes + self.__byte_temp3.bytes,
         )
+        self.__action_log(
+            "horizontal move", f"{distance}cm, {speed}cm/s, {direction}deg"
+        )
 
     def cordinate_move(self, x: int, y: int, speed: int) -> None:
         """
@@ -443,6 +469,7 @@ class FC_Protocol(FC_Base_Comunication):
         distance = np.sqrt(x**2 + y**2)
         if target_deg < 0:
             target_deg += 360
+        self.__action_log("cordinate move", f"{x}, {y}, {speed}")
         self.horizontal_move(int(distance), speed, int(target_deg))
 
     def go_up(self, distance: int, speed: int) -> None:
@@ -456,6 +483,7 @@ class FC_Protocol(FC_Base_Comunication):
         self.__send_imu_command_frame(
             0x10, 0x02, 0x01, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
+        self.__action_log("go up", f"{distance}cm, {speed}cm/s")
 
     def go_down(self, distance: int, speed: int) -> None:
         """
@@ -468,6 +496,7 @@ class FC_Protocol(FC_Base_Comunication):
         self.__send_imu_command_frame(
             0x10, 0x02, 0x02, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
+        self.__action_log("go down", f"{distance}cm, {speed}cm/s")
 
     def turn_left(self, deg: int, speed: int) -> None:
         """
@@ -480,6 +509,7 @@ class FC_Protocol(FC_Base_Comunication):
         self.__send_imu_command_frame(
             0x10, 0x02, 0x07, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
+        self.__action_log("turn left", f"{deg}deg, {speed}deg/s")
 
     def turn_right(self, deg: int, speed: int) -> None:
         """
@@ -492,6 +522,7 @@ class FC_Protocol(FC_Base_Comunication):
         self.__send_imu_command_frame(
             0x10, 0x02, 0x08, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
+        self.__action_log("turn right", f"{deg}deg, {speed}deg/s")
 
     def set_height(self, source: int, height: int, speed: int) -> None:
         """
@@ -500,6 +531,10 @@ class FC_Protocol(FC_Base_Comunication):
         高度:0-10000 cm
         速度:10-300 cm/s
         """
+        self.__action_log(
+            "set height",
+            f"{'fusion' if source == 0 else 'lidar'}, {height}cm, {speed}cm/s",
+        )
         if source == 0:
             current_height = self.state.alt_fused.value
         elif source == 1:
@@ -515,6 +550,7 @@ class FC_Protocol(FC_Base_Comunication):
         偏航角:-180-180 度
         偏航速度:5-90 deg/s
         """
+        self.__action_log("set yaw", f"{yaw}deg, {speed}deg/s")
         current_yaw = self.state.yaw.value
         if yaw < current_yaw:
             left_turn_deg = abs(current_yaw - yaw)
@@ -538,6 +574,7 @@ class FC_Protocol(FC_Base_Comunication):
         self.__send_imu_command_frame(
             0x10, 0x01, 0x01, self.__byte_temp1.bytes + self.__byte_temp2.bytes
         )
+        self.__action_log("set target position", f"{x}, {y}")
 
     def set_target_height(self, height: int) -> None:
         """
@@ -548,43 +585,7 @@ class FC_Protocol(FC_Base_Comunication):
             height = 0
         self.__byte_temp1.reset(height, "s32", int)
         self.__send_imu_command_frame(0x10, 0x01, 0x02, self.__byte_temp1.bytes)
-
-    # def reset_base_position(self) -> None:
-    #     """
-    #     重置基地参考点, 用于按坐标移动时的坐标系计算
-    #     """
-    #     self.__base_pos_x = self.state.pos_x.value
-    #     self.__base_pos_y = self.state.pos_y.value
-    #     self.__base_yaw = self.state.yaw.value
-    #     logger.info(
-    #         f"FC: reset base position to {self.__base_pos_x}, {self.__base_pos_y} @ {self.__base_yaw}"
-    #     )
-    #
-    #     def go_to_position_by_base(self, x: int, y: int) -> None:
-    #         """
-    #         以基地坐标为参考的移动:
-    #         x,y:+-100000 cm
-    #
-    #         匿名机身参考系(即调用本函数时的参考系):         机头为x+ 机身左侧y+ 机身上方z+
-    #         匿名世界参考系(回传数据中位置偏移采用的参考系):  地磁北(实际上是融合后yaw=0的方向)为x+ 地磁西为y+ 天空为z+
-    #         """
-    #         base_deg = -self.__base_yaw / 180 * np.pi
-    #         div = y / x if x != 0 else np.inf
-    #         target_deg = np.arctan(div)
-    #         deg = base_deg + target_deg
-    #         distance = np.sqrt(x**2 + y**2)
-    #         t_x = int(np.cos(deg) * distance + self.__base_pos_x)
-    #         t_y = int(np.sin(deg) * distance + self.__base_pos_y)
-    #         logger.info(f"FC: go to {t_x} {t_y}")
-    #         self.set_target_position(t_x, t_y)
-    #
-    #     def go_to_base(self) -> None:
-    #         """
-    #         回到基地
-    #         """
-    #         x_offset = self.state.pos_x.value - self.__base_pos_x
-    #         y_offset = self.state.pos_y.value - self.__base_pos_y
-    #         self.set_target_position(x_offset, y_offset)
+        self.__action_log("set target height", f"{height}cm")
 
     @property
     def last_command_done(self) -> bool:
