@@ -179,10 +179,13 @@ class FC_Base_Comunication:
 
     def send_32_from_data(
         self, data: bytes, option: int, need_ack: bool = False, ack_max_retry: int = 3
-    ) -> None:
+    ):
+        t0 = time.time()
         while self.__sending_data:
-            time.sleep(0.01)  # wait for previous data to be sent
-        self.__sending_data = True
+            time.sleep(0.001)  # wait for previous data to be sent
+            if time.time() - t0 > 0.2:
+                logger.error("FC: Wait sending data timeout")
+                return None
         if need_ack:
             if ack_max_retry < 0:
                 # raise Exception("Wait ACK reached max retry")
@@ -194,6 +197,7 @@ class FC_Base_Comunication:
             check_ack = option
             for add_bit in data:
                 check_ack = (check_ack + add_bit) & 0xFF
+        self.__sending_data = True
         self.__set_option(option)
         sended = self.__ser_32.write(data)
         self.__sending_data = False
@@ -606,4 +610,3 @@ class FC_Udp_Server(FC_Base_Comunication):
 class FC_Controller(FC_Udp_Server, FC_Protocol):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-
