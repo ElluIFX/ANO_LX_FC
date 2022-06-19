@@ -156,7 +156,7 @@ class FC_Base_Comunication:
         self.__state_update_callback = None
         self.__print_state_flag = False
         self.__ser_32 = SerCom32(serial_port, bit_rate)
-        self.__sending_data = False
+        self.__send_lock = threading.Lock()
         self.__waiting_ack = False
         self.__recivied_ack = None
         logger.info("[FC] Serial port opened")
@@ -165,11 +165,12 @@ class FC_Base_Comunication:
         self.state = FC_State_Struct()
         self.settings = FC_Settings_Struct()
 
-    def start_listen_serial(self, print_state=True, callback=None):
+    def start_listen_serial(self, print_state=True, callback=None, daemon=True):
         self.running = True
         self.__state_update_callback = callback
         self.__print_state_flag = print_state
         self.__listen_thread = threading.Thread(target=self.__listen_serial_task)
+        self.__listen_thread.setDaemon(daemon)
         self.__listen_thread.start()
 
     def quit(self) -> None:
@@ -206,15 +207,14 @@ class FC_Base_Comunication:
             check_ack = option
             for add_bit in data:
                 check_ack = (check_ack + add_bit) & 0xFF
-        while self.__sending_data:
-            time.sleep(0.001)  # wait for previous data to be sent
-            if time.time() - t0 > self.settings.wait_sending_timeout:
-                logger.error("[FC] Wait sending data timeout")
-                return None
-        self.__sending_data = True
+        try:
+            self.__send_lock.acquire(timeout=self.settings.wait_sending_timeout)
+        except:
+            logger.error("[FC] Wait sending data timeout")
+            return None
         self.__set_option(option)
         sended = self.__ser_32.write(data)
-        self.__sending_data = False
+        self.__send_lock.release()
         if need_ack:
             while self.__waiting_ack:
                 if time.time() - send_time > self.settings.wait_ack_timeout:
@@ -618,7 +618,7 @@ class FC_Protocol(FC_Base_Comunication):
         stable_command = (0x10, 0x00, 0x04)
         return self.state.command_now == stable_command
 
-    def wait_for_last_command_done(self, timeout_s=10) -> None:
+    def wait_for_last_command_done(self, timeout_s=10) -> bool:
         """
         等待最后一次指令完成
         """
@@ -628,11 +628,11 @@ class FC_Protocol(FC_Base_Comunication):
             time.sleep(0.1)
             if time.time() - t0 > timeout_s:
                 logger.warning("[FC] wait for last command done timeout")
-                break
-        else:
-            self.__action_log("wait ok", "last cmd done")
+                return False
+        self.__action_log("wait ok", "last cmd done")
+        return True
 
-    def wait_for_stabilizing(self, timeout_s=10) -> None:
+    def wait_for_stabilizing(self, timeout_s=10) -> bool:
         """
         等待进入悬停状态
         """
@@ -642,11 +642,11 @@ class FC_Protocol(FC_Base_Comunication):
             time.sleep(0.1)
             if time.time() - t0 > timeout_s:
                 logger.warning("[FC] wait for stabilizing timeout")
-                break
-        else:
-            self.__action_log("wait ok", "stabilizing")
+                return False
+        self.__action_log("wait ok", "stabilizing")
+        return True
 
-    def wait_for_lock(self, timeout_s=10) -> None:
+    def wait_for_lock(self, timeout_s=10) -> bool:
         """
         等待锁定
         """
@@ -655,11 +655,11 @@ class FC_Protocol(FC_Base_Comunication):
             time.sleep(0.1)
             if time.time() - t0 > timeout_s:
                 logger.warning("[FC] wait for lock timeout")
-                break
-        else:
-            self.__action_log("wait ok", "locked")
+                return False
+        self.__action_log("wait ok", "locked")
+        return True
 
-    def wait_for_takeoff_done(self, z_speed_threshold=4, timeout_s=5) -> None:
+    def wait_for_takeoff_done(self, z_speed_threshold=4, timeout_s=5) -> bool:
         """
         等待起飞完成
         """
@@ -669,10 +669,40 @@ class FC_Protocol(FC_Base_Comunication):
             time.sleep(0.1)
             if time.time() - t0 > timeout_s:
                 logger.warning("[FC] wait for takeoff done timeout")
-                break
-        else:
-            time.sleep(1)  # 等待机身高度稳定
-            self.__action_log("wait ok", "takeoff done")
+                return False
+        if self.state.alt_add.value < 20:
+            logger.warning("[FC] takeoff failed, low altitude")
+            return False
+        time.sleep(1)  # 等待机身高度稳定
+        self.__action_log("wait ok", "takeoff done")
+        return True
+
+    def manual_takeoff(self, height: int, speed: int) -> None:
+        """
+        程控起飞模式,使用前先解锁 (危险,当回传频率过低时容易冲顶,应使用较小的安全速度)
+        """
+        self.__action_log("manual takeoff start", f"{height}cm")
+        last_mode = self.state.mode.value
+        hgt = self.state.height
+        timeout_value = height / speed  # 安全时间
+        self.set_flight_mode(self.HOLD_POS_MODE)
+        time.sleep(0.1)  # 等待模式设置完成
+        self.realtime_control(vel_z=speed)
+        takeoff_time = time.time()
+        while hgt.value < height - 20:
+            time.sleep(0.1)
+            if time.time() - takeoff_time > timeout_value:  # 超时, 终止
+                logger.warning("[FC] takeoff timeout, force stop")
+                self.stablize()
+                return
+            else:
+                self.realtime_control(vel_z=speed)  # 持续发送
+        self.realtime_control(vel_z=10)
+        while hgt.value < height - 2:
+            time.sleep(0.1)
+        self.stablize()
+        self.set_flight_mode(last_mode) # 还原模式
+        self.__action_log("manual takeoff ok")
 
 
 class FC_Udp_Server(FC_Base_Comunication):
