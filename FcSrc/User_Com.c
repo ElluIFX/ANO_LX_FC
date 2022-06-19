@@ -22,19 +22,20 @@ void UserCom_DataExchange(void);
 void UserCom_SendData(u8* dataToSend, u8 Length);
 void UserCom_SendAck(u8 ack_data);
 
-static u8 user_connected = 0;       //用户下位机是否连接
-static u16 user_heartbeat_cnt = 0;  //用户下位机心跳计数
-_user_pos_st user_pos;              //用户下位机位置数据
-
-_to_user_un to_user_data;
-_user_ack_st user_ack;
+static u8 user_connected = 0;           //用户下位机是否连接
+static u16 user_heartbeat_cnt = 0;      //用户下位机心跳计数
+static u8 realtime_control_enable = 0;  //实时控制是否开启
+static u16 realtime_control_cnt = 0;    //实时控制超时计数
+_user_pos_st user_pos;                  //用户下位机位置数据
+_to_user_un to_user_data;               //回传状态数据
+_user_ack_st user_ack;                  // ACK数据
 
 /**
  * @brief 用户协议数据获取,在串口中断中调用,解析完成后调用UserCom_DataAnl
  * @param  data             数据
  */
 void UserCom_GetOneByte(u8 data) {
-  static u8 _user_data_temp[50];
+  static u8 _user_data_temp[128];
   static u8 _user_data_cnt = 0;
   static u8 _data_len = 0;
   static u8 state = 0;
@@ -80,6 +81,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
   static u8 calc_check;
   static u8 len;
   static u8* p_data;
+  static s16* p_s16;
   static s32* p_s32;
   static u8 u8_temp;
   static u32 u32_temp;
@@ -93,7 +95,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
     calc_check += data_buf[i];
   }
   if (calc_check != recv_check) {
-    LxPrintf("DBG: usercom checksum error");
+    LxStringSend(LOG_COLOR_RED, "ERR: usercom checksum error");
     return;
   }
   switch (option) {
@@ -101,12 +103,12 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
       if (p_data[0] == 0x01) {
         if (!user_connected) {
           user_connected = 1;
-          LxPrintf("DBG: user connected");
+          LxStringSend(LOG_COLOR_GREEN, "INFO: user connected");
         }
         user_heartbeat_cnt = 0;
         break;
       }
-    case 0x01:  // 控制32(预留)
+    case 0x01:  // 本地处理
       suboption = p_data[0];
       switch (suboption) {
         case 0x01:  // WS2812控制
@@ -119,6 +121,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           u32_temp |= u8_temp;
           WS2812_SetAll(u32_temp);
           WS2812_SendBuf();
+          LxPrintf("DBG: user rgb: %X", u32_temp);
           break;
         case 0x02:  // 位置信息回传
           p_s32 = (s32*)(p_data + 1);
@@ -127,7 +130,30 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           user_pos.pos_y = *p_s32;
           p_s32++;
           user_pos.pos_z = *p_s32;
-          user_pos.pos_update_cnt++;
+          if (p_data[13] == 0x77) {     // 帧结尾，确保接收完整
+            user_pos.pos_update_cnt++;  // 触发发送
+          }
+          break;
+        case 0x03:  // 实时控制帧
+          p_s16 = (s16*)(p_data + 1);
+          rt_tar.st_data.vel_x = *p_s16;  // 头向速度，厘米每秒
+          p_s16++;
+          rt_tar.st_data.vel_y = *p_s16;  // 左向速度，厘米每秒
+          p_s16++;
+          rt_tar.st_data.vel_z = *p_s16;  // 天向速度，厘米每秒
+          p_s16++;
+          rt_tar.st_data.yaw_dps = *p_s16;  // 航向角速度，度每秒，逆时针为正
+          if (p_data[9] == 0x88) {  // 帧结尾，确保接收完整
+            dt.fun[0x41].WTS = 1;   // 触发发
+            //此处启用实时控制安全检查, 实时控制命令发送应持续发送且间隔小于1秒
+            //超时会自动停止运动
+            realtime_control_enable = 1;
+            realtime_control_cnt = 0;
+            if (rt_tar.st_data.vel_x == 0 && rt_tar.st_data.vel_y == 0 &&
+                rt_tar.st_data.vel_z == 0 && rt_tar.st_data.yaw_dps == 0) {
+              realtime_control_enable = 0;
+            }
+          }
           break;
       }
       break;
@@ -135,6 +161,9 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
       if (dt.wait_ck == 0) {
         dt.cmd_send.CID = p_data[0];
         user_ack.ack_data = (0x02 + p_data[0]) % 0xFF;
+        if (len > 11) {
+          len = 11;  // 防止越界
+        }
         for (u8 i = 0; i < len - 1; i++) {
           dt.cmd_send.CMD[i] = p_data[i + 1];
           user_ack.ack_data += p_data[i + 1];
@@ -144,7 +173,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
         LxPrintf("DBG: to imu: 0x%02X 0x%02X 0x%02X", dt.cmd_send.CID,
                  dt.cmd_send.CMD[0], dt.cmd_send.CMD[1]);
       } else {
-        LxPrintf("DBG: cmd to imu dropped for wait_ck");
+        LxStringSend(LOG_COLOR_RED, "ERR: cmd to imu dropped for wait_ck");
       }
       break;
     default:
@@ -163,10 +192,11 @@ void UserCom_Task(float dT_s) {
     user_heartbeat_cnt++;
     if (user_heartbeat_cnt * dT_s >= USER_HEARTBEAT_TIMEOUT_S) {
       user_connected = 0;
-      LxPrintf("DBG: user disconnected");
+      LxStringSend(LOG_COLOR_RED, "WARN: user disconnected");
       if (fc_sta.unlock_sta == 1) {  //如果是解锁状态，则采取安全措施
         // OneKey_Land(); //降落
         OneKey_Stable();  //恢复悬停
+        realtime_control_enable = 0;
       }
     }
 
@@ -182,6 +212,27 @@ void UserCom_Task(float dT_s) {
     if (data_exchange_cnt * dT_s >= USER_DATA_EXCHANGE_TIMEOUT_S) {
       data_exchange_cnt = 0;
       UserCom_DataExchange();
+    }
+
+    //实时控制安全检查
+    if (fc_sta.fc_mode_sta == 3) {
+      // 程控模式, 实时控制失效
+      realtime_control_enable = 0;
+      realtime_control_cnt = 0;
+    }
+    if (realtime_control_enable) {
+      realtime_control_cnt++;
+      if (realtime_control_cnt * dT_s >= REALTIME_CONTROL_TIMEOUT_S) {
+        //超时, 停止运动
+        realtime_control_cnt = 0;
+        realtime_control_enable = 0;
+        rt_tar.st_data.vel_x = 0;
+        rt_tar.st_data.vel_y = 0;
+        rt_tar.st_data.vel_z = 0;
+        rt_tar.st_data.yaw_dps = 0;
+        dt.fun[0x41].WTS = 1;  // 触发发送
+        LxStringSend(LOG_COLOR_RED, "WARN: realtime control timeout");
+      }
     }
   }
 }

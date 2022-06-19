@@ -152,26 +152,29 @@ static inline void RC_Data_Task(float dT_s) {
     fail_safe_return_home = 0;
   } else  //无遥控信号
   {
-    //解锁后，丢失信号失控需要触发返航（不可返航时会自动触发降落）
-    if (fc_sta.unlock_sta != 0) {
-      //对应的改变模式
-      if (fail_safe_change_mod == 0) {
-        //失控保护，切换到程控模式
-        fail_safe_change_mod = LX_Change_Mode(3);
-      } else if (fail_safe_return_home == 0) {
-        //切换到程控模式后，发送返航指令
-        fail_safe_return_home = OneKey_Return_Home();
-      }
-    }
+    // //解锁后，丢失信号失控需要触发返航（不可返航时会自动触发降落）
+    // if (fc_sta.unlock_sta != 0) {
+    //   //对应的改变模式
+    //   if (fail_safe_change_mod == 0) {
+    //     //失控保护，切换到程控模式
+    //     fail_safe_change_mod = LX_Change_Mode(3);
+    //   } else if (fail_safe_return_home == 0) {
+    //     //切换到程控模式后，发送返航指令
+    //     fail_safe_return_home = OneKey_Return_Home();
+    //   }
+    // }
 
     //失控保护时目标值
     rt_tar.st_data.rol = 0;
     rt_tar.st_data.pit = 0;
-    rt_tar.st_data.thr =
-        350;  //用于模式0，避免模式0时失控，油门过大飞跑，给一个稍低于中位的油门
-    //这里会把实时XYZ-YAW期望速度置零
-    rt_tar.st_data.yaw_dps = 0;
-    rt_tar.st_data.vel_x = rt_tar.st_data.vel_y = rt_tar.st_data.vel_z = 0;
+    rt_tar.st_data.thr = 500;  //油门归中
+    for (u8 i = 0; i < 4; i++) {
+      rc_in.rc_ch.st_data.ch_[i] = 1500;  //模拟通道值
+    }
+    // //这里会把实时XYZ-YAW期望速度置零
+    // rt_tar.st_data.yaw_dps = 0;
+    // rt_tar.st_data.vel_x = rt_tar.st_data.vel_y = rt_tar.st_data.vel_z = 0;
+    dt.fun[0x41].WTS = 1;  //将要发送rt_tar数据。
   }
 }
 
