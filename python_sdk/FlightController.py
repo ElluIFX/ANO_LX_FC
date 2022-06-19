@@ -421,14 +421,14 @@ class FC_Protocol(FC_Base_Comunication):
         解锁电机
         """
         self.__send_imu_command_frame(0x10, 0x00, 0x01)
-        self.__action_log("unlocked")
+        self.__action_log("unlock")
 
     def lock(self) -> None:
         """
         锁定电机 / 紧急锁浆
         """
         self.__send_imu_command_frame(0x10, 0x00, 0x02)
-        self.__action_log("locked")
+        self.__action_log("lock")
 
     def stablize(self) -> None:
         """
@@ -550,13 +550,15 @@ class FC_Protocol(FC_Base_Comunication):
             f"{'fusion' if source == 0 else 'lidar'}, {height}cm, {speed}cm/s",
         )
         if source == 0:
-            current_height = self.state.alt_fused.value
+            alt = self.state.alt_fused
         elif source == 1:
-            current_height = self.state.alt_add.value
-        if height < current_height:
-            self.go_down(current_height - height, speed)
-        elif height > current_height:
-            self.go_up(height - current_height, speed)
+            alt = self.state.alt_add
+        while time.time() - alt.last_update_time > 0.5:
+            time.sleep(0.1)  # 确保使用的是最新的高度
+        if height < alt.value:
+            self.go_down(alt.value - height, speed)
+        elif height > alt.value:
+            self.go_up(height - alt.value, speed)
 
     def set_yaw(self, yaw: int, speed: int) -> None:
         """
@@ -615,6 +617,62 @@ class FC_Protocol(FC_Base_Comunication):
         """
         stable_command = (0x10, 0x00, 0x04)
         return self.state.command_now == stable_command
+
+    def wait_for_last_command_done(self, timeout_s=10) -> None:
+        """
+        等待最后一次指令完成
+        """
+        t0 = time.time()
+        time.sleep(0.5)  # 等待数据回传
+        while not self.last_command_done:
+            time.sleep(0.1)
+            if time.time() - t0 > timeout_s:
+                logger.warning("[FC] wait for last command done timeout")
+                break
+        else:
+            self.__action_log("wait ok", "last cmd done")
+
+    def wait_for_stabilizing(self, timeout_s=10) -> None:
+        """
+        等待进入悬停状态
+        """
+        t0 = time.time()
+        time.sleep(0.5)  # 等待数据回传
+        while not self.is_stablizing:
+            time.sleep(0.1)
+            if time.time() - t0 > timeout_s:
+                logger.warning("[FC] wait for stabilizing timeout")
+                break
+        else:
+            self.__action_log("wait ok", "stabilizing")
+
+    def wait_for_lock(self, timeout_s=10) -> None:
+        """
+        等待锁定
+        """
+        t0 = time.time()
+        while self.state.unlock.value:
+            time.sleep(0.1)
+            if time.time() - t0 > timeout_s:
+                logger.warning("[FC] wait for lock timeout")
+                break
+        else:
+            self.__action_log("wait ok", "locked")
+
+    def wait_for_takeoff_done(self, z_speed_threshold=4, timeout_s=5) -> None:
+        """
+        等待起飞完成
+        """
+        t0 = time.time()
+        time.sleep(1)  # 等待加速完成
+        while self.state.vel_z.value < z_speed_threshold:
+            time.sleep(0.1)
+            if time.time() - t0 > timeout_s:
+                logger.warning("[FC] wait for takeoff done timeout")
+                break
+        else:
+            time.sleep(1)  # 等待机身高度稳定
+            self.__action_log("wait ok", "takeoff done")
 
 
 class FC_Udp_Server(FC_Base_Comunication):

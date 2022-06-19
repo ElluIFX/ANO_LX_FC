@@ -29,13 +29,13 @@ class log:
 
         fmtConsole = colorlog.ColoredFormatter(
             "\n\n%(log_color)s[%(levelname)s] %(asctime)s %(0_log_color)s%(message)s",
-            "%Y-%b-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M:%S",
             log_colors=log_colors_config,
             secondary_log_colors={0: text_colors_config},
         )
         fmtFile = logging.Formatter(
             "[%(levelname)s] %(asctime)s\n%(message)s",
-            "(%Y-%b-%d %H:%M:%S)",
+            "(%Y-%m-%d %H:%M:%S)",
         )
         self.logger.fileHdl = logging.FileHandler(logFile, encoding="utf-8")
         self.logger.consoleHdl = logging.StreamHandler()
