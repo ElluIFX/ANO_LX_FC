@@ -193,7 +193,6 @@ class FC_Base_Comunication:
         need_ack: bool = False,
         __ack_retry_count: int = None,
     ):
-        t0 = time.time()
         if need_ack:
             if __ack_retry_count is None:
                 __ack_retry_count = self.settings.ack_max_retry

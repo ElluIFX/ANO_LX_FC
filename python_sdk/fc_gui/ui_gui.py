@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'gui.ui'
+## Form generated from reading UI file 'guiwBRvKq.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.3.0
 ##
@@ -317,16 +317,24 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_4.addWidget(self.btn_land)
 
-        self.btn_emergency = QPushButton(self.centralwidget)
-        self.btn_emergency.setObjectName(u"btn_emergency")
-        self.btn_emergency.setMinimumSize(QSize(0, 50))
+        self.btn_unlock = QPushButton(self.centralwidget)
+        self.btn_unlock.setObjectName(u"btn_unlock")
+        self.btn_unlock.setMinimumSize(QSize(0, 50))
         font4 = QFont()
-        font4.setPointSize(10)
+        font4.setPointSize(13)
         font4.setBold(True)
+        font4.setItalic(True)
         font4.setStyleStrategy(QFont.PreferAntialias)
-        self.btn_emergency.setFont(font4)
+        self.btn_unlock.setFont(font4)
 
-        self.verticalLayout_4.addWidget(self.btn_emergency)
+        self.verticalLayout_4.addWidget(self.btn_unlock)
+
+        self.btn_lock = QPushButton(self.centralwidget)
+        self.btn_lock.setObjectName(u"btn_lock")
+        self.btn_lock.setMinimumSize(QSize(0, 50))
+        self.btn_lock.setFont(font4)
+
+        self.verticalLayout_4.addWidget(self.btn_lock)
 
 
         self.horizontalLayout_10.addLayout(self.verticalLayout_4)
@@ -478,7 +486,9 @@ class Ui_MainWindow(object):
         self.box_hori_param.setObjectName(u"box_hori_param")
         self.box_hori_param.setFont(font8)
         self.box_hori_param.setDecimals(1)
-        self.box_hori_param.setMaximum(30.000000000000000)
+        self.box_hori_param.setMaximum(100.000000000000000)
+        self.box_hori_param.setSingleStep(5.000000000000000)
+        self.box_hori_param.setValue(20.000000000000000)
 
         self.horizontalLayout_11.addWidget(self.box_hori_param)
 
@@ -499,7 +509,9 @@ class Ui_MainWindow(object):
         self.box_vert_param.setMinimumSize(QSize(100, 0))
         self.box_vert_param.setFont(font8)
         self.box_vert_param.setDecimals(1)
-        self.box_vert_param.setMaximum(30.000000000000000)
+        self.box_vert_param.setMaximum(100.000000000000000)
+        self.box_vert_param.setSingleStep(5.000000000000000)
+        self.box_vert_param.setValue(20.000000000000000)
 
         self.horizontalLayout_12.addWidget(self.box_vert_param)
 
@@ -519,7 +531,9 @@ class Ui_MainWindow(object):
         self.box_spin_param.setObjectName(u"box_spin_param")
         self.box_spin_param.setFont(font8)
         self.box_spin_param.setDecimals(1)
-        self.box_spin_param.setMaximum(30.000000000000000)
+        self.box_spin_param.setMaximum(100.000000000000000)
+        self.box_spin_param.setSingleStep(5.000000000000000)
+        self.box_spin_param.setValue(30.000000000000000)
 
         self.horizontalLayout_21.addWidget(self.box_spin_param)
 
@@ -543,6 +557,7 @@ class Ui_MainWindow(object):
         self.box_height.setMaximum(200.000000000000000)
         self.box_height.setSingleStep(10.000000000000000)
         self.box_height.setStepType(QAbstractSpinBox.DefaultStepType)
+        self.box_height.setValue(50.000000000000000)
 
         self.horizontalLayout_13.addWidget(self.box_height)
 
@@ -595,7 +610,8 @@ class Ui_MainWindow(object):
         self.text_log.setPlainText(QCoreApplication.translate("MainWindow", u"\u6d4b\u8bd5\u6587\u672c", None))
         self.btn_takeoff.setText(QCoreApplication.translate("MainWindow", u"\u8d77\u98de", None))
         self.btn_land.setText(QCoreApplication.translate("MainWindow", u"\u7740\u9646", None))
-        self.btn_emergency.setText(QCoreApplication.translate("MainWindow", u"\u7d27\u6025\u9501\u6d46", None))
+        self.btn_unlock.setText(QCoreApplication.translate("MainWindow", u"\u89e3\u9501", None))
+        self.btn_lock.setText(QCoreApplication.translate("MainWindow", u"\u9501\u5b9a", None))
         self.btn_l_turn.setText(QCoreApplication.translate("MainWindow", u"\u21ba", None))
         self.btn_forward.setText(QCoreApplication.translate("MainWindow", u"\u2191", None))
         self.btn_r_turn.setText(QCoreApplication.translate("MainWindow", u"\u21bb", None))
