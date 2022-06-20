@@ -23,6 +23,9 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.fc = None
         self.updating_serial = False
         self.speed_xyzYaw = [0, 0, 0, 0]
+        self.horizonal_distance = 50
+        self.vertical_distance = 50
+        self.yaw_degree = 30
 
     def init_misc(self) -> None:
         self.text_log.clear()
@@ -40,8 +43,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         pass
 
     def closeEvent(self, event: QCloseEvent) -> None:
-        if self.fc is not None:
-            self.fc.quit()
+        # if self.fc is not None:
+        #     self.fc.quit()
         return super().closeEvent(event)
 
     def showEvent(self, event: QShowEvent) -> None:
@@ -126,24 +129,28 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         if self.fc is None:
             return
         self.fc.take_off()
+        self.print_log("起飞")
 
     @Slot()
     def on_btn_land_clicked(self) -> None:
         if self.fc is None:
             return
         self.fc.land()
+        self.print_log("降落")
 
     @Slot()
     def on_btn_unlock_clicked(self) -> None:
         if self.fc is None:
             return
         self.fc.unlock()
+        self.print_log("解锁电机")
 
     @Slot()
     def on_btn_lock_clicked(self) -> None:
         if self.fc is None:
             return
         self.fc.lock()
+        self.print_log("锁定电机")
 
     @Slot()
     def on_buttonGroup_buttonClicked(self) -> None:
@@ -151,72 +158,146 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             return
         if self.radio_control_realtime.isChecked():
             self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
+            self.print_log("飞控切换到定点模式")
         else:
             self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
+            self.print_log("飞控切换到程控模式")
 
     @Slot()
     def on_btn_forward_pressed(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[0] = self.box_hori_param.value()
 
     @Slot()
     def on_btn_forward_released(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[0] = 0
+        if self.fc.state.mode.value == self.fc.PROGRAM_MODE:
+            distance = self.horizonal_distance
+            speed = self.box_hori_param.value()
+            self.fc.horizontal_move(distance, speed, 0)
+            self.print_log(f"向前移动 {distance} 厘米, 平均速度 {speed}")
 
     @Slot()
     def on_btn_backward_pressed(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[0] = -self.box_hori_param.value()
 
     @Slot()
     def on_btn_backward_released(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[0] = 0
+        if self.fc.state.mode.value == self.fc.PROGRAM_MODE:
+            distance = self.horizonal_distance
+            speed = self.box_hori_param.value()
+            self.fc.horizontal_move(distance, speed, 180)
+            self.print_log(f"向后移动 {distance} 厘米, 平均速度 {speed}")
 
     @Slot()
     def on_btn_left_pressed(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[1] = self.box_hori_param.value()
 
     @Slot()
     def on_btn_left_released(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[1] = 0
+        if self.fc.state.mode.value == self.fc.PROGRAM_MODE:
+            distance = self.horizonal_distance
+            speed = self.box_hori_param.value()
+            self.fc.horizontal_move(distance, speed, 270)
+            self.print_log(f"向左移动 {distance} 厘米, 平均速度 {speed}")
 
     @Slot()
     def on_btn_right_pressed(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[1] = -self.box_hori_param.value()
 
     @Slot()
     def on_btn_right_released(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[1] = 0
+        if self.fc.state.mode.value == self.fc.PROGRAM_MODE:
+            distance = self.horizonal_distance
+            speed = self.box_hori_param.value()
+            self.fc.horizontal_move(distance, speed, 90)
+            self.print_log(f"向右移动 {distance} 厘米, 平均速度 {speed}")
 
     @Slot()
     def on_btn_l_turn_pressed(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[3] = -self.box_spin_param.value()
 
     @Slot()
     def on_btn_l_turn_released(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[3] = 0
+        if self.fc.state.mode.value == self.fc.PROGRAM_MODE:
+            degree = self.yaw_degree
+            speed = self.box_spin_param.value()
+            self.fc.turn_left(degree, speed)
+            self.print_log(f"向左转 {degree} 度, 平均速度 {speed}")
 
     @Slot()
     def on_btn_r_turn_pressed(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[3] = self.box_spin_param.value()
 
     @Slot()
     def on_btn_r_turn_released(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[3] = 0
+        if self.fc.state.mode.value == self.fc.PROGRAM_MODE:
+            degree = self.yaw_degree
+            speed = self.box_spin_param.value()
+            self.fc.turn_right(degree, speed)
+            self.print_log(f"向右转 {degree} 度, 平均速度 {speed}")
 
     @Slot()
     def on_btn_up_pressed(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[2] = self.box_vert_param.value()
 
     @Slot()
     def on_btn_up_released(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[2] = 0
+        if self.fc.state.mode.value == self.fc.PROGRAM_MODE:
+            distance = self.vertical_distance
+            speed = self.box_vert_param.value()
+            self.fc.go_up(distance, speed)
+            self.print_log(f"向上移动 {distance} 厘米, 平均速度 {speed}")
 
     @Slot()
     def on_btn_down_pressed(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[2] = -self.box_vert_param.value()
 
     @Slot()
     def on_btn_down_released(self) -> None:
+        if self.fc is None:
+            return
         self.speed_xyzYaw[2] = 0
+        if self.fc.state.mode.value == self.fc.PROGRAM_MODE:
+            distance = self.vertical_distance
+            speed = self.box_vert_param.value()
+            self.fc.go_down(distance, speed)
+            self.print_log(f"向下移动 {distance} 厘米, 平均速度 {speed}")
 
     @Slot()
     def on_btn_stop_clicked(self) -> None:
@@ -224,12 +305,18 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             return
         self.speed_xyzYaw = [0, 0, 0, 0]
         self.fc.stablize()
+        self.print_log("停止运动")
 
     @Slot()
     def on_btn_set_h_clicked(self) -> None:
         if self.fc is None:
             return
-        self.fc.set_height(1, self.box_height.value(),self.box_vert_param.value())
+        last_mode = self.fc.state.mode.value
+        self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
+        self.fc.set_height(1, self.box_height.value(), self.box_vert_param.value())
+        self.print_log(f"设置高度为 {self.box_height.value()} 米")
+        self.fc.wait_for_stabilizing()
+        self.fc.set_flight_mode(last_mode)
 
 
 def main():
