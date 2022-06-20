@@ -2,7 +2,8 @@ import sys
 from time import sleep, time
 
 from fc_gui.ui_gui import Ui_MainWindow
-from FlightController import FC_Controller, FC_State_Struct
+from FlightController import FC_Controller
+from FlightController.Base import FC_State_Struct
 
 """ qtdesigner file """
 
@@ -76,9 +77,9 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         if text != "断开连接":
             try:
                 self.print_log("正在连接...")
-                self.fc = FC_Controller(text, 500000)
+                self.fc = FC_Controller()
                 self.fc.start_listen_serial(
-                    callback=self.update_fc_state, print_state=False
+                    text, 500000, callback=self.update_fc_state, print_state=False
                 )
                 self.print_log("连接成功")
             except Exception as e:

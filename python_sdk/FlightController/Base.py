@@ -2,8 +2,8 @@ import threading
 import time
 import traceback
 
-from .FlightController_Logger import logger
-from .FlightController_Serial import FC_Serial
+from .Logger import logger
+from .Serial import FC_Serial
 
 
 def bytes_to_str(data):
@@ -151,30 +151,38 @@ class FC_Base_Uart_Comunication:
     通讯层, 实现了与飞控的直接串口通讯
     """
 
-    def __init__(self, serial_port, bit_rate) -> None:
+    def __init__(self) -> None:
         self.running = False
         self.connected = False
         self.__start_bit = [0xAA, 0x22]
         self.__listen_thread = None
         self.__state_update_callback = None
         self.__print_state_flag = False
-        self.__ser_32 = FC_Serial(serial_port, bit_rate)
+        self.__ser_32 = None
         self.__send_lock = threading.Lock()
         self.__waiting_ack = False
         self.__recivied_ack = None
-        logger.info("[FC] Serial port opened")
-        self.__set_option(0)
-        self.__ser_32.read_config(startBit=[0xAA, 0x55])
         self.state = FC_State_Struct()
         self.settings = FC_Settings_Struct()
 
-    def start_listen_serial(self, print_state=True, callback=None, daemon=True):
-        self.running = True
+    def start_listen_serial(
+        self,
+        serial_port: str,
+        bit_rate: int = 500000,
+        print_state=True,
+        callback=None,
+        daemon=True,
+    ):
         self.__state_update_callback = callback
         self.__print_state_flag = print_state
+        self.__ser_32 = FC_Serial(serial_port, bit_rate)
+        self.__set_option(0)
+        self.__ser_32.read_config(startBit=[0xAA, 0x55])
+        logger.info("[FC] Serial port opened")
         self.__listen_thread = threading.Thread(target=self.__listen_serial_task)
         self.__listen_thread.setDaemon(daemon)
         self.__listen_thread.start()
+        self.running = True
 
     def quit(self) -> None:
         self.running = False

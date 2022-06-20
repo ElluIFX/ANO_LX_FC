@@ -1,4 +1,4 @@
-from .FlightController_Protocal import FC_Protocol
+from .Protocal import FC_Protocol
 
 
 class FC_Server(FC_Protocol):

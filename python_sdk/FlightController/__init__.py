@@ -1,5 +1,5 @@
-from .FlightController_Logger import logger
-from .FlightController_Protocal import FC_Protocol as __FC_Protocol
+from .Logger import logger
+from .Protocal import FC_Protocol as __FC_Protocol
 
 
 class FC_Controller(__FC_Protocol):

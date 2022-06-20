@@ -2,11 +2,10 @@ import time
 
 import cv2
 import numpy as np
-from simple_pid import PID
-
 from FlightController import FlightController
 from HoughTest import process as hough_process
 from logger import logger
+from simple_pid import PID
 
 cam = cv2.VideoCapture(0)
 cam.set(cv2.CAP_PROP_FRAME_WIDTH, 640)

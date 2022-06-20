@@ -2,8 +2,8 @@ import time
 
 import numpy as np
 
-from .FlightController_Base import Byte_Var, FC_Base_Uart_Comunication
-from .FlightController_Logger import logger
+from .Base import Byte_Var, FC_Base_Uart_Comunication
+from .Logger import logger
 
 
 class FC_Protocol(FC_Base_Uart_Comunication):
