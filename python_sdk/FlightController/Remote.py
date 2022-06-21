@@ -1,9 +1,22 @@
+import socket
 import time
 from multiprocessing.managers import BaseManager, EventProxy, ListProxy
 from threading import Event, Thread
 
 from .Logger import logger
 from .Protocal import FC_Protocol
+
+
+def get_ip():
+    try:
+        st = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        st.connect(("10.255.255.255", 1))
+        IP = st.getsockname()[0]
+    except Exception:
+        IP = "127.0.0.1"
+    finally:
+        st.close()
+    return IP
 
 
 class func_proxy(object):
@@ -83,6 +96,7 @@ class FC_Server(FC_Protocol):
             proxytype=EventProxy,
         )
         self.__manager = FC_Manager(address=("", port), authkey=authkey)
+        self.__port = port
         logger.info("[FC_Server] Manager initialized")
 
     def run(self):
@@ -93,7 +107,11 @@ class FC_Server(FC_Protocol):
         因此, manager的start方法是不可用的,只能使用阻塞本进程的serve_forever方法.
         (如果需要本飞控服务器启动后同时干别的事情,请在启动服务器前使用threading创建线程)
         """
-        logger.info("[FC_Server] Manager serving forever")
+        if self.__manager is None:
+            raise Exception("Manager must be initialized before run")
+        address = get_ip() + ":" + str(self.__port)
+        local_address = f"127.0.0.1:{self.__port}"
+        logger.info(f"[FC_Server] Manager serving on {address}, {local_address}")
         self.__manager.get_server().serve_forever()
 
 

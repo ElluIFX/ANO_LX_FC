@@ -22,6 +22,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.connect_signals()
         self.init_misc()
         self.fc = None
+        self.server_ip = "127.0.0.1"
         self.updating_serial = False
         self.speed_xyzYaw = [0, 0, 0, 0]
         self.horizonal_distance = 50
@@ -76,14 +77,20 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             if self.fc is not None:
                 self.print_log("正在断开连接...")
                 self.fc.quit()
+                sleep(0.1)
                 self.fc = None
                 self.print_log("断开连接成功")
                 self.line_info.setText("")
         if text == "远端服务":
             try:
+                self.server_ip, ok = QInputDialog.getText(
+                    self, "远端服务", "请输入IP地址:", QLineEdit.Normal, self.server_ip
+                )
+                if not ok:
+                    return
                 self.print_log("正在连接...")
                 self.fc = FC_Client()
-                self.fc.connect()
+                self.fc.connect(self.server_ip)
                 self.fc.start_sync_state(
                     callback=self.update_fc_state, print_state=False
                 )
