@@ -4,7 +4,7 @@ from sys import byteorder as sysByteorder
 import serial
 
 
-class SerCom32:
+class FC_Serial:
     def __init__(self, port, baudrate, timeout=0.5, byteOrder=sysByteorder):
         self.ser = serial.Serial(port, baudrate, timeout=timeout)
         self.read_buffer = bytes()
@@ -115,7 +115,7 @@ class SerCom32:
 
 
 if __name__ == "__main__":
-    ser = SerCom32("COM1", 500000)
+    ser = FC_Serial("COM1", 500000)
     ser.send_config(
         startBit=[0xAA, 0x22],
         optionBit=[0x01],

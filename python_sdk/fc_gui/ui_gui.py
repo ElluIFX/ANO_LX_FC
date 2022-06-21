@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'gui.ui'
+## Form generated from reading UI file 'guiTUSptP.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.3.0
 ##
@@ -317,16 +317,24 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_4.addWidget(self.btn_land)
 
-        self.btn_emergency = QPushButton(self.centralwidget)
-        self.btn_emergency.setObjectName(u"btn_emergency")
-        self.btn_emergency.setMinimumSize(QSize(0, 50))
+        self.btn_unlock = QPushButton(self.centralwidget)
+        self.btn_unlock.setObjectName(u"btn_unlock")
+        self.btn_unlock.setMinimumSize(QSize(0, 50))
         font4 = QFont()
-        font4.setPointSize(10)
+        font4.setPointSize(13)
         font4.setBold(True)
+        font4.setItalic(True)
         font4.setStyleStrategy(QFont.PreferAntialias)
-        self.btn_emergency.setFont(font4)
+        self.btn_unlock.setFont(font4)
 
-        self.verticalLayout_4.addWidget(self.btn_emergency)
+        self.verticalLayout_4.addWidget(self.btn_unlock)
+
+        self.btn_lock = QPushButton(self.centralwidget)
+        self.btn_lock.setObjectName(u"btn_lock")
+        self.btn_lock.setMinimumSize(QSize(0, 50))
+        self.btn_lock.setFont(font4)
+
+        self.verticalLayout_4.addWidget(self.btn_lock)
 
 
         self.horizontalLayout_10.addLayout(self.verticalLayout_4)
@@ -478,7 +486,9 @@ class Ui_MainWindow(object):
         self.box_hori_param.setObjectName(u"box_hori_param")
         self.box_hori_param.setFont(font8)
         self.box_hori_param.setDecimals(1)
-        self.box_hori_param.setMaximum(30.000000000000000)
+        self.box_hori_param.setMaximum(100.000000000000000)
+        self.box_hori_param.setSingleStep(5.000000000000000)
+        self.box_hori_param.setValue(20.000000000000000)
 
         self.horizontalLayout_11.addWidget(self.box_hori_param)
 
@@ -499,7 +509,9 @@ class Ui_MainWindow(object):
         self.box_vert_param.setMinimumSize(QSize(100, 0))
         self.box_vert_param.setFont(font8)
         self.box_vert_param.setDecimals(1)
-        self.box_vert_param.setMaximum(30.000000000000000)
+        self.box_vert_param.setMaximum(100.000000000000000)
+        self.box_vert_param.setSingleStep(5.000000000000000)
+        self.box_vert_param.setValue(20.000000000000000)
 
         self.horizontalLayout_12.addWidget(self.box_vert_param)
 
@@ -519,7 +531,9 @@ class Ui_MainWindow(object):
         self.box_spin_param.setObjectName(u"box_spin_param")
         self.box_spin_param.setFont(font8)
         self.box_spin_param.setDecimals(1)
-        self.box_spin_param.setMaximum(30.000000000000000)
+        self.box_spin_param.setMaximum(100.000000000000000)
+        self.box_spin_param.setSingleStep(5.000000000000000)
+        self.box_spin_param.setValue(30.000000000000000)
 
         self.horizontalLayout_21.addWidget(self.box_spin_param)
 
@@ -543,6 +557,7 @@ class Ui_MainWindow(object):
         self.box_height.setMaximum(200.000000000000000)
         self.box_height.setSingleStep(10.000000000000000)
         self.box_height.setStepType(QAbstractSpinBox.DefaultStepType)
+        self.box_height.setValue(50.000000000000000)
 
         self.horizontalLayout_13.addWidget(self.box_height)
 
@@ -582,34 +597,80 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"\u4e0a\u4f4d\u673a", None))
-        self.label.setText(QCoreApplication.translate("MainWindow", u"\u9ad8\u5ea6", None))
-        self.label_2.setText(QCoreApplication.translate("MainWindow", u"\u89d2\u5ea6", None))
-        self.label_3.setText(QCoreApplication.translate("MainWindow", u"\u7535\u538b", None))
-        self.label_6.setText(QCoreApplication.translate("MainWindow", u"X\u901f\u5ea6", None))
-        self.label_4.setText(QCoreApplication.translate("MainWindow", u"Y\u901f\u5ea6", None))
-        self.label_5.setText(QCoreApplication.translate("MainWindow", u"Z\u901f\u5ea6", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"\u6fc0\u5149\u9ad8\u5ea6", None))
+        self.label_2.setText(QCoreApplication.translate("MainWindow", u"\u822a\u5411\u89d2", None))
+        self.label_3.setText(QCoreApplication.translate("MainWindow", u"\u7535\u6c60\u7535\u538b", None))
+        self.label_6.setText(QCoreApplication.translate("MainWindow", u"X-\u901f\u5ea6", None))
+        self.label_4.setText(QCoreApplication.translate("MainWindow", u"Y-\u901f\u5ea6", None))
+        self.label_5.setText(QCoreApplication.translate("MainWindow", u"Z-\u901f\u5ea6", None))
         self.label_10.setText(QCoreApplication.translate("MainWindow", u"\u5176\u4ed6\u72b6\u6001:", None))
         self.line_info.setText(QCoreApplication.translate("MainWindow", u"\u6d4b\u8bd5\u6587\u672c", None))
         self.line_info.setPlaceholderText("")
         self.label_11.setText(QCoreApplication.translate("MainWindow", u"\u7cfb\u7edf\u65e5\u5fd7:", None))
         self.text_log.setPlainText(QCoreApplication.translate("MainWindow", u"\u6d4b\u8bd5\u6587\u672c", None))
         self.btn_takeoff.setText(QCoreApplication.translate("MainWindow", u"\u8d77\u98de", None))
+#if QT_CONFIG(shortcut)
+        self.btn_takeoff.setShortcut(QCoreApplication.translate("MainWindow", u"X", None))
+#endif // QT_CONFIG(shortcut)
         self.btn_land.setText(QCoreApplication.translate("MainWindow", u"\u7740\u9646", None))
-        self.btn_emergency.setText(QCoreApplication.translate("MainWindow", u"\u7d27\u6025\u9501\u6d46", None))
+#if QT_CONFIG(shortcut)
+        self.btn_land.setShortcut(QCoreApplication.translate("MainWindow", u"C", None))
+#endif // QT_CONFIG(shortcut)
+        self.btn_unlock.setText(QCoreApplication.translate("MainWindow", u"\u89e3\u9501", None))
+#if QT_CONFIG(shortcut)
+        self.btn_unlock.setShortcut(QCoreApplication.translate("MainWindow", u"O", None))
+#endif // QT_CONFIG(shortcut)
+        self.btn_lock.setText(QCoreApplication.translate("MainWindow", u"\u9501\u5b9a", None))
+#if QT_CONFIG(shortcut)
+        self.btn_lock.setShortcut(QCoreApplication.translate("MainWindow", u"P", None))
+#endif // QT_CONFIG(shortcut)
         self.btn_l_turn.setText(QCoreApplication.translate("MainWindow", u"\u21ba", None))
+#if QT_CONFIG(shortcut)
+        self.btn_l_turn.setShortcut(QCoreApplication.translate("MainWindow", u"Q", None))
+#endif // QT_CONFIG(shortcut)
         self.btn_forward.setText(QCoreApplication.translate("MainWindow", u"\u2191", None))
+#if QT_CONFIG(shortcut)
+        self.btn_forward.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
         self.btn_r_turn.setText(QCoreApplication.translate("MainWindow", u"\u21bb", None))
+#if QT_CONFIG(shortcut)
+        self.btn_r_turn.setShortcut(QCoreApplication.translate("MainWindow", u"E", None))
+#endif // QT_CONFIG(shortcut)
         self.btn_left.setText(QCoreApplication.translate("MainWindow", u"\u2190", None))
+#if QT_CONFIG(shortcut)
+        self.btn_left.setShortcut(QCoreApplication.translate("MainWindow", u"A", None))
+#endif // QT_CONFIG(shortcut)
         self.btn_backward.setText(QCoreApplication.translate("MainWindow", u"\u2193", None))
+#if QT_CONFIG(shortcut)
+        self.btn_backward.setShortcut(QCoreApplication.translate("MainWindow", u"S", None))
+#endif // QT_CONFIG(shortcut)
         self.btn_right.setText(QCoreApplication.translate("MainWindow", u"\u2192", None))
+#if QT_CONFIG(shortcut)
+        self.btn_right.setShortcut(QCoreApplication.translate("MainWindow", u"D", None))
+#endif // QT_CONFIG(shortcut)
         self.btn_up.setText(QCoreApplication.translate("MainWindow", u"\u21e1", None))
+#if QT_CONFIG(shortcut)
+        self.btn_up.setShortcut(QCoreApplication.translate("MainWindow", u"R", None))
+#endif // QT_CONFIG(shortcut)
         self.btn_stop.setText(QCoreApplication.translate("MainWindow", u"\u00d7", None))
+#if QT_CONFIG(shortcut)
+        self.btn_stop.setShortcut(QCoreApplication.translate("MainWindow", u"Z", None))
+#endif // QT_CONFIG(shortcut)
         self.btn_down.setText(QCoreApplication.translate("MainWindow", u"\u21e3", None))
+#if QT_CONFIG(shortcut)
+        self.btn_down.setShortcut(QCoreApplication.translate("MainWindow", u"F", None))
+#endif // QT_CONFIG(shortcut)
         self.combo_serial.setItemText(0, QCoreApplication.translate("MainWindow", u"\u65ad\u5f00\u8fde\u63a5", None))
 
         self.btn_serial_update.setText(QCoreApplication.translate("MainWindow", u"\u5237\u65b0", None))
         self.radio_control_realtime.setText(QCoreApplication.translate("MainWindow", u"\u5b9e\u65f6\u63a7\u5236", None))
+#if QT_CONFIG(shortcut)
+        self.radio_control_realtime.setShortcut(QCoreApplication.translate("MainWindow", u"2", None))
+#endif // QT_CONFIG(shortcut)
         self.radio_control_flow.setText(QCoreApplication.translate("MainWindow", u"\u6d41\u7a0b\u63a7\u5236", None))
+#if QT_CONFIG(shortcut)
+        self.radio_control_flow.setShortcut(QCoreApplication.translate("MainWindow", u"3", None))
+#endif // QT_CONFIG(shortcut)
         self.label_7.setText(QCoreApplication.translate("MainWindow", u"\u6c34\u5e73\u53c2\u6570", None))
         self.label_8.setText(QCoreApplication.translate("MainWindow", u"\u5782\u76f4\u53c2\u6570", None))
         self.label_12.setText(QCoreApplication.translate("MainWindow", u"\u65cb\u8f6c\u53c2\u6570", None))
