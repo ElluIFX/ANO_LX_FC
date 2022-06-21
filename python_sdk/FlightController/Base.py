@@ -188,7 +188,8 @@ class FC_Base_Uart_Comunication:
         self.running = False
         if self.__listen_thread:
             self.__listen_thread.join()
-        self.__ser_32.close()
+        if self.__ser_32:
+            self.__ser_32.close()
         logger.info("[FC] Threads closed, FC offline")
 
     def __set_option(self, option: int) -> None:

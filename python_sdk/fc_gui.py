@@ -2,7 +2,7 @@ import sys
 from time import sleep, time
 
 from fc_gui.ui_gui import Ui_MainWindow
-from FlightController import FC_Controller
+from FlightController import FC_Client, FC_Controller
 from FlightController.Base import FC_State_Struct
 
 """ qtdesigner file """
@@ -27,6 +27,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.horizonal_distance = 50
         self.vertical_distance = 50
         self.yaw_degree = 30
+        self.btn_serial_update.click()
 
     def init_misc(self) -> None:
         self.text_log.clear()
@@ -56,8 +57,12 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.updating_serial = True
         self.combo_serial.clear()
         self.combo_serial.addItem("断开连接")
+        self.combo_serial.addItem("远端服务")
         self.combo_serial.setCurrentIndex(0)
         ports = QtSerialPort.QSerialPortInfo.availablePorts()
+        for port in ports:
+            if int(port.portName().strip("COM")) > 64:
+                ports.remove(port)
         self.combo_serial.addItems([port.portName() for port in ports])
         self.print_log(f"找到{len(ports)}个串口")
         self.updating_serial = False
@@ -74,14 +79,26 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                 self.fc = None
                 self.print_log("断开连接成功")
                 self.line_info.setText("")
-        if text != "断开连接":
+        if text == "远端服务":
+            try:
+                self.print_log("正在连接...")
+                self.fc = FC_Client()
+                self.fc.connect()
+                self.fc.start_sync_state(
+                    callback=self.update_fc_state, print_state=False
+                )
+                self.print_log("连接成功")
+            except Exception as e:
+                self.print_log(f"连接失败, {e}")
+                self.fc = None
+        elif text != "断开连接":
             try:
                 self.print_log("正在连接...")
                 self.fc = FC_Controller()
                 self.fc.start_listen_serial(
                     text, 500000, callback=self.update_fc_state, print_state=False
                 )
-                self.print_log("连接成功")
+                self.print_log("串口连接成功")
             except Exception as e:
                 self.print_log(f"连接失败, {e}")
                 self.fc = None

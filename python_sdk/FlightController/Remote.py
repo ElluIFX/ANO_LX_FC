@@ -2,7 +2,6 @@ import time
 from multiprocessing.managers import BaseManager, EventProxy, ListProxy
 from threading import Event, Thread
 
-from .Base import Byte_Var, FC_State_Struct, bytes_to_str
 from .Logger import logger
 from .Protocal import FC_Protocol
 
@@ -62,7 +61,7 @@ class FC_Server(FC_Protocol):
             daemon,
         )
 
-    def manager_init(self, port=5654, authkey=b"fc"):
+    def init(self, port=5654, authkey=b"fc"):
         """
         初始化服务器
         """
@@ -86,23 +85,13 @@ class FC_Server(FC_Protocol):
         self.__manager = FC_Manager(address=("", port), authkey=authkey)
         logger.info("[FC_Server] Manager initialized")
 
-    def manager_start(self):
+    def run(self):
         """
-        启动服务器
-        """
-        self.__manager.start()
-        logger.info("[FC_Server] Manager started")
-
-    def manager_stop(self):
-        """
-        停止服务器
-        """
-        self.__manager.shutdown()
-        logger.info("[FC_Server] Manager stopped")
-
-    def manager_serve_forever(self):
-        """
-        启动服务器(永久)
+        启动服务器(永久阻塞)
+        由于python多进程间不能共享数据, 故服务器不可能脱离飞控的主类(this one)运行,
+        新创建的进程所有的通信都是虚假的,数据被发送到一个复制出的的"伪类"中(参见py多进程的实现)
+        因此, manager的start方法是不可用的,只能使用阻塞本进程的serve_forever方法.
+        (如果需要本飞控服务器启动后同时干别的事情,请在启动服务器前使用threading创建线程)
         """
         logger.info("[FC_Server] Manager serving forever")
         self.__manager.get_server().serve_forever()
@@ -150,6 +139,7 @@ class FC_Client(FC_Protocol):
             time.sleep(0.01)
             try:
                 self.__proxy_state_event.wait()
+                self.__proxy_state_event.clear()
                 for n, var in enumerate(self.state.RECV_ORDER):
                     var.value = self.__proxy_state_list[n]
                 if not self.connected:
@@ -162,7 +152,7 @@ class FC_Client(FC_Protocol):
             except Exception as e:
                 logger.error(f"[FC_Client] State sync error: {e}")
 
-    def manager_connect(self, host="127.0.0.1", port=5654, authkey=b"fc"):
+    def connect(self, host="127.0.0.1", port=5654, authkey=b"fc"):
         """
         连接服务器
         """
