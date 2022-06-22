@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'guiTUSptP.ui'
+## Form generated from reading UI file 'guisumzrU.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.3.0
 ##
@@ -291,6 +291,16 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_16.addWidget(self.text_log)
 
+        self.btn_rgb = QPushButton(self.centralwidget)
+        self.btn_rgb.setObjectName(u"btn_rgb")
+        self.btn_rgb.setMinimumSize(QSize(0, 70))
+        font3 = QFont()
+        font3.setPointSize(11)
+        font3.setBold(False)
+        self.btn_rgb.setFont(font3)
+
+        self.horizontalLayout_16.addWidget(self.btn_rgb)
+
 
         self.verticalLayout_8.addLayout(self.horizontalLayout_16)
 
@@ -303,36 +313,36 @@ class Ui_MainWindow(object):
         self.btn_takeoff = QPushButton(self.centralwidget)
         self.btn_takeoff.setObjectName(u"btn_takeoff")
         self.btn_takeoff.setMinimumSize(QSize(0, 50))
-        font3 = QFont()
-        font3.setPointSize(12)
-        font3.setBold(False)
-        self.btn_takeoff.setFont(font3)
+        font4 = QFont()
+        font4.setPointSize(12)
+        font4.setBold(False)
+        self.btn_takeoff.setFont(font4)
 
         self.verticalLayout_4.addWidget(self.btn_takeoff)
 
         self.btn_land = QPushButton(self.centralwidget)
         self.btn_land.setObjectName(u"btn_land")
         self.btn_land.setMinimumSize(QSize(0, 50))
-        self.btn_land.setFont(font3)
+        self.btn_land.setFont(font4)
 
         self.verticalLayout_4.addWidget(self.btn_land)
 
         self.btn_unlock = QPushButton(self.centralwidget)
         self.btn_unlock.setObjectName(u"btn_unlock")
         self.btn_unlock.setMinimumSize(QSize(0, 50))
-        font4 = QFont()
-        font4.setPointSize(13)
-        font4.setBold(True)
-        font4.setItalic(True)
-        font4.setStyleStrategy(QFont.PreferAntialias)
-        self.btn_unlock.setFont(font4)
+        font5 = QFont()
+        font5.setPointSize(13)
+        font5.setBold(True)
+        font5.setItalic(True)
+        font5.setStyleStrategy(QFont.PreferAntialias)
+        self.btn_unlock.setFont(font5)
 
         self.verticalLayout_4.addWidget(self.btn_unlock)
 
         self.btn_lock = QPushButton(self.centralwidget)
         self.btn_lock.setObjectName(u"btn_lock")
         self.btn_lock.setMinimumSize(QSize(0, 50))
-        self.btn_lock.setFont(font4)
+        self.btn_lock.setFont(font5)
 
         self.verticalLayout_4.addWidget(self.btn_lock)
 
@@ -346,24 +356,24 @@ class Ui_MainWindow(object):
         self.btn_l_turn = QPushButton(self.centralwidget)
         self.btn_l_turn.setObjectName(u"btn_l_turn")
         self.btn_l_turn.setMinimumSize(QSize(0, 70))
-        font5 = QFont()
-        font5.setPointSize(20)
-        font5.setBold(False)
-        self.btn_l_turn.setFont(font5)
+        font6 = QFont()
+        font6.setPointSize(20)
+        font6.setBold(False)
+        self.btn_l_turn.setFont(font6)
 
         self.horizontalLayout_8.addWidget(self.btn_l_turn)
 
         self.btn_forward = QPushButton(self.centralwidget)
         self.btn_forward.setObjectName(u"btn_forward")
         self.btn_forward.setMinimumSize(QSize(0, 70))
-        self.btn_forward.setFont(font5)
+        self.btn_forward.setFont(font6)
 
         self.horizontalLayout_8.addWidget(self.btn_forward)
 
         self.btn_r_turn = QPushButton(self.centralwidget)
         self.btn_r_turn.setObjectName(u"btn_r_turn")
         self.btn_r_turn.setMinimumSize(QSize(0, 70))
-        self.btn_r_turn.setFont(font5)
+        self.btn_r_turn.setFont(font6)
 
         self.horizontalLayout_8.addWidget(self.btn_r_turn)
 
@@ -375,21 +385,21 @@ class Ui_MainWindow(object):
         self.btn_left = QPushButton(self.centralwidget)
         self.btn_left.setObjectName(u"btn_left")
         self.btn_left.setMinimumSize(QSize(0, 70))
-        self.btn_left.setFont(font5)
+        self.btn_left.setFont(font6)
 
         self.horizontalLayout_9.addWidget(self.btn_left)
 
         self.btn_backward = QPushButton(self.centralwidget)
         self.btn_backward.setObjectName(u"btn_backward")
         self.btn_backward.setMinimumSize(QSize(0, 70))
-        self.btn_backward.setFont(font5)
+        self.btn_backward.setFont(font6)
 
         self.horizontalLayout_9.addWidget(self.btn_backward)
 
         self.btn_right = QPushButton(self.centralwidget)
         self.btn_right.setObjectName(u"btn_right")
         self.btn_right.setMinimumSize(QSize(0, 70))
-        self.btn_right.setFont(font5)
+        self.btn_right.setFont(font6)
 
         self.horizontalLayout_9.addWidget(self.btn_right)
 
@@ -404,21 +414,21 @@ class Ui_MainWindow(object):
         self.btn_up = QPushButton(self.centralwidget)
         self.btn_up.setObjectName(u"btn_up")
         self.btn_up.setMinimumSize(QSize(0, 50))
-        self.btn_up.setFont(font5)
+        self.btn_up.setFont(font6)
 
         self.verticalLayout_6.addWidget(self.btn_up)
 
         self.btn_stop = QPushButton(self.centralwidget)
         self.btn_stop.setObjectName(u"btn_stop")
         self.btn_stop.setMinimumSize(QSize(0, 50))
-        self.btn_stop.setFont(font5)
+        self.btn_stop.setFont(font6)
 
         self.verticalLayout_6.addWidget(self.btn_stop)
 
         self.btn_down = QPushButton(self.centralwidget)
         self.btn_down.setObjectName(u"btn_down")
         self.btn_down.setMinimumSize(QSize(0, 50))
-        self.btn_down.setFont(font5)
+        self.btn_down.setFont(font6)
 
         self.verticalLayout_6.addWidget(self.btn_down)
 
@@ -432,18 +442,18 @@ class Ui_MainWindow(object):
         self.combo_serial = QComboBox(self.centralwidget)
         self.combo_serial.addItem("")
         self.combo_serial.setObjectName(u"combo_serial")
-        font6 = QFont()
-        font6.setPointSize(9)
-        self.combo_serial.setFont(font6)
+        font7 = QFont()
+        font7.setPointSize(9)
+        self.combo_serial.setFont(font7)
 
         self.horizontalLayout_17.addWidget(self.combo_serial)
 
         self.btn_serial_update = QPushButton(self.centralwidget)
         self.btn_serial_update.setObjectName(u"btn_serial_update")
-        font7 = QFont()
-        font7.setPointSize(10)
-        font7.setKerning(True)
-        self.btn_serial_update.setFont(font7)
+        font8 = QFont()
+        font8.setPointSize(10)
+        font8.setKerning(True)
+        self.btn_serial_update.setFont(font8)
         self.btn_serial_update.setIconSize(QSize(0, 0))
 
         self.horizontalLayout_17.addWidget(self.btn_serial_update)
@@ -476,15 +486,15 @@ class Ui_MainWindow(object):
         self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
         self.label_7 = QLabel(self.centralwidget)
         self.label_7.setObjectName(u"label_7")
-        font8 = QFont()
-        font8.setPointSize(12)
-        self.label_7.setFont(font8)
+        font9 = QFont()
+        font9.setPointSize(12)
+        self.label_7.setFont(font9)
 
         self.horizontalLayout_11.addWidget(self.label_7)
 
         self.box_hori_param = QDoubleSpinBox(self.centralwidget)
         self.box_hori_param.setObjectName(u"box_hori_param")
-        self.box_hori_param.setFont(font8)
+        self.box_hori_param.setFont(font9)
         self.box_hori_param.setDecimals(1)
         self.box_hori_param.setMaximum(100.000000000000000)
         self.box_hori_param.setSingleStep(5.000000000000000)
@@ -500,14 +510,14 @@ class Ui_MainWindow(object):
         self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
         self.label_8 = QLabel(self.centralwidget)
         self.label_8.setObjectName(u"label_8")
-        self.label_8.setFont(font8)
+        self.label_8.setFont(font9)
 
         self.horizontalLayout_12.addWidget(self.label_8)
 
         self.box_vert_param = QDoubleSpinBox(self.centralwidget)
         self.box_vert_param.setObjectName(u"box_vert_param")
         self.box_vert_param.setMinimumSize(QSize(100, 0))
-        self.box_vert_param.setFont(font8)
+        self.box_vert_param.setFont(font9)
         self.box_vert_param.setDecimals(1)
         self.box_vert_param.setMaximum(100.000000000000000)
         self.box_vert_param.setSingleStep(5.000000000000000)
@@ -523,13 +533,13 @@ class Ui_MainWindow(object):
         self.horizontalLayout_21.setObjectName(u"horizontalLayout_21")
         self.label_12 = QLabel(self.centralwidget)
         self.label_12.setObjectName(u"label_12")
-        self.label_12.setFont(font8)
+        self.label_12.setFont(font9)
 
         self.horizontalLayout_21.addWidget(self.label_12)
 
         self.box_spin_param = QDoubleSpinBox(self.centralwidget)
         self.box_spin_param.setObjectName(u"box_spin_param")
-        self.box_spin_param.setFont(font8)
+        self.box_spin_param.setFont(font9)
         self.box_spin_param.setDecimals(1)
         self.box_spin_param.setMaximum(100.000000000000000)
         self.box_spin_param.setSingleStep(5.000000000000000)
@@ -545,14 +555,14 @@ class Ui_MainWindow(object):
         self.horizontalLayout_13.setObjectName(u"horizontalLayout_13")
         self.label_9 = QLabel(self.centralwidget)
         self.label_9.setObjectName(u"label_9")
-        self.label_9.setFont(font8)
+        self.label_9.setFont(font9)
 
         self.horizontalLayout_13.addWidget(self.label_9)
 
         self.box_height = QDoubleSpinBox(self.centralwidget)
         self.box_height.setObjectName(u"box_height")
         self.box_height.setMinimumSize(QSize(100, 0))
-        self.box_height.setFont(font8)
+        self.box_height.setFont(font9)
         self.box_height.setDecimals(0)
         self.box_height.setMaximum(200.000000000000000)
         self.box_height.setSingleStep(10.000000000000000)
@@ -567,9 +577,9 @@ class Ui_MainWindow(object):
 
         self.btn_set_h = QPushButton(self.centralwidget)
         self.btn_set_h.setObjectName(u"btn_set_h")
-        font9 = QFont()
-        font9.setPointSize(10)
-        self.btn_set_h.setFont(font9)
+        font10 = QFont()
+        font10.setPointSize(10)
+        self.btn_set_h.setFont(font10)
         self.btn_set_h.setIconSize(QSize(8, 16))
 
         self.verticalLayout_7.addWidget(self.btn_set_h)
@@ -608,6 +618,10 @@ class Ui_MainWindow(object):
         self.line_info.setPlaceholderText("")
         self.label_11.setText(QCoreApplication.translate("MainWindow", u"\u7cfb\u7edf\u65e5\u5fd7:", None))
         self.text_log.setPlainText(QCoreApplication.translate("MainWindow", u"\u6d4b\u8bd5\u6587\u672c", None))
+        self.btn_rgb.setText(QCoreApplication.translate("MainWindow", u"\u8bbe\u7f6eRGB", None))
+#if QT_CONFIG(shortcut)
+        self.btn_rgb.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
         self.btn_takeoff.setText(QCoreApplication.translate("MainWindow", u"\u8d77\u98de", None))
 #if QT_CONFIG(shortcut)
         self.btn_takeoff.setShortcut(QCoreApplication.translate("MainWindow", u"X", None))
@@ -648,14 +662,23 @@ class Ui_MainWindow(object):
 #if QT_CONFIG(shortcut)
         self.btn_right.setShortcut(QCoreApplication.translate("MainWindow", u"D", None))
 #endif // QT_CONFIG(shortcut)
+#if QT_CONFIG(tooltip)
+        self.btn_up.setToolTip(QCoreApplication.translate("MainWindow", u"\u4e0a\u5347", None))
+#endif // QT_CONFIG(tooltip)
         self.btn_up.setText(QCoreApplication.translate("MainWindow", u"\u21e1", None))
 #if QT_CONFIG(shortcut)
         self.btn_up.setShortcut(QCoreApplication.translate("MainWindow", u"R", None))
 #endif // QT_CONFIG(shortcut)
+#if QT_CONFIG(tooltip)
+        self.btn_stop.setToolTip(QCoreApplication.translate("MainWindow", u"\u505c\u6b62\u8fd0\u52a8", None))
+#endif // QT_CONFIG(tooltip)
         self.btn_stop.setText(QCoreApplication.translate("MainWindow", u"\u00d7", None))
 #if QT_CONFIG(shortcut)
         self.btn_stop.setShortcut(QCoreApplication.translate("MainWindow", u"Z", None))
 #endif // QT_CONFIG(shortcut)
+#if QT_CONFIG(tooltip)
+        self.btn_down.setToolTip(QCoreApplication.translate("MainWindow", u"\u4e0b\u964d", None))
+#endif // QT_CONFIG(tooltip)
         self.btn_down.setText(QCoreApplication.translate("MainWindow", u"\u21e3", None))
 #if QT_CONFIG(shortcut)
         self.btn_down.setShortcut(QCoreApplication.translate("MainWindow", u"F", None))
@@ -671,9 +694,9 @@ class Ui_MainWindow(object):
 #if QT_CONFIG(shortcut)
         self.radio_control_flow.setShortcut(QCoreApplication.translate("MainWindow", u"3", None))
 #endif // QT_CONFIG(shortcut)
-        self.label_7.setText(QCoreApplication.translate("MainWindow", u"\u6c34\u5e73\u53c2\u6570", None))
-        self.label_8.setText(QCoreApplication.translate("MainWindow", u"\u5782\u76f4\u53c2\u6570", None))
-        self.label_12.setText(QCoreApplication.translate("MainWindow", u"\u65cb\u8f6c\u53c2\u6570", None))
+        self.label_7.setText(QCoreApplication.translate("MainWindow", u"\u6c34\u5e73\u901f\u5ea6", None))
+        self.label_8.setText(QCoreApplication.translate("MainWindow", u"\u5782\u76f4\u901f\u5ea6", None))
+        self.label_12.setText(QCoreApplication.translate("MainWindow", u"\u65cb\u8f6c\u901f\u5ea6", None))
         self.label_9.setText(QCoreApplication.translate("MainWindow", u"\u5b9a\u9ad8\u9ad8\u5ea6", None))
         self.btn_set_h.setText(QCoreApplication.translate("MainWindow", u"\u5b9a\u9ad8\u4f5c\u52a8", None))
     # retranslateUi
