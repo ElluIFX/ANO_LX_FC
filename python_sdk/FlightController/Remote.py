@@ -47,12 +47,14 @@ class FC_Server(FC_Protocol):
         self.__proxy = func_proxy(self)
         self.__serial_callback = None
         self.__proxy_state_list = [0 for var in self.state.RECV_ORDER]
+        self.__proxy_state_list.extend([self.connected])
         self.__proxy_state_event = Event()
 
     def __update_proxy_state(self, state):
         self.__proxy_state_event.clear()
         for n, var in enumerate(self.state.RECV_ORDER):
             self.__proxy_state_list[n] = var.value
+        self.__proxy_state_list[-1] = self.connected
         self.__proxy_state_event.set()
         if callable(self.__serial_callback):
             self.__serial_callback(state)
@@ -135,6 +137,9 @@ class FC_Client(FC_Protocol):
         callback=None,
         daemon=True,
     ):
+        """
+        客户端无需监听串口, 调用start_sync_state替代
+        """
         logger.warning(
             "[FC_Client] do not need to start serial listening, auto calling start_sync_state instead"
         )
@@ -160,9 +165,7 @@ class FC_Client(FC_Protocol):
                 self.__proxy_state_event.clear()
                 for n, var in enumerate(self.state.RECV_ORDER):
                     var.value = self.__proxy_state_list[n]
-                if not self.connected:
-                    self.connected = True
-                    logger.info("[FC] Connected")
+                self.connected = self.__proxy_state_list[-1]
                 if callable(self.__state_update_callback):
                     self.__state_update_callback(self.state)
                 if self.__print_state_flag:

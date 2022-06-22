@@ -334,6 +334,19 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         stable_command = (0x10, 0x00, 0x04)
         return self.state.command_now == stable_command
 
+    def wait_for_connection(self, timeout_s=-1) -> bool:
+        """
+        等待飞控连接
+        """
+        t0 = time.time()
+        while not self.connected:
+            time.sleep(0.1)
+            if timeout_s != -1 and time.time() - t0 > timeout_s:
+                logger.warning("[FC] wait for fc connection timeout")
+                return False
+        self.__action_log("wait ok", "fc connection")
+        return True
+
     def wait_for_last_command_done(self, timeout_s=10) -> bool:
         """
         等待最后一次指令完成
