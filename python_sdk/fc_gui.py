@@ -136,7 +136,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             state_text += "电机已锁定  "
         mode_dict = {1: "定高", 2: "定点", 3: "程控"}
         state_text += f"模式: {mode_dict[state.mode.value]}  "
-        state_text += f"指令状态: {state.cid.value:02X} / {state.cmd_0.value:02X} / {state.cmd_1.value:02X} /"
+        state_text += f"指令状态: x{state.cid.value:02X} / x{state.cmd_0.value:02X} / x{state.cmd_1.value:02X} /"
         if self.fc.last_command_done:
             state_text += " 已完成  "
         else:
@@ -169,6 +169,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             return
         self.fc.unlock()
         self.print_log("解锁电机")
+        if self.fc.state.mode.value == self.fc.HOLD_ALT_MODE:
+            self.print_log("警告: 当前处于定高模式")
 
     @Slot()
     def on_btn_lock_clicked(self) -> None:
@@ -336,12 +338,29 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def on_btn_set_h_clicked(self) -> None:
         if self.fc is None:
             return
-        last_mode = self.fc.state.mode.value
+        if self.fc.state.mode.value != self.fc.PROGRAM_MODE:
+            self.print_log("请先进入程控模式")
+            return
         self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
         self.fc.set_height(1, self.box_height.value(), self.box_vert_param.value())
-        self.print_log(f"设置高度为 {self.box_height.value()} 米")
-        self.fc.wait_for_stabilizing()
-        self.fc.set_flight_mode(last_mode)
+        self.print_log(
+            f"设置目标高度为 {self.box_height.value()} 厘米, 平均速度 {self.box_vert_param.value()}"
+        )
+
+    @Slot()
+    def on_btn_rgb_clicked(self) -> None:
+        if self.fc is None:
+            return
+        s, ok = QInputDialog.getText(
+            self, "设置WS2812 RGB", "RGB(hex):", QLineEdit.Normal, "#000000"
+        )
+        if not ok:
+            return
+        try:
+            r, g, b = int(s[1:3], 16), int(s[3:5], 16), int(s[5:7], 16)
+            self.fc.set_rgb_led(r, g, b)
+        except:
+            self.print_log("输入错误")
 
 
 def main():
