@@ -1,4 +1,5 @@
 import socket
+import sys
 import time
 from multiprocessing.managers import BaseManager, EventProxy, ListProxy
 from threading import Event, Thread
@@ -155,7 +156,6 @@ class FC_Client(FC_Protocol):
         self.__listen_thread.setDaemon(daemon)
         self.__listen_thread.start()
         logger.info("[FC_Client] State sync started")
-        self.running = True
 
     def __sync_state_task(self):
         while self.running:
@@ -172,6 +172,25 @@ class FC_Client(FC_Protocol):
                     self._FC_Base_Uart_Comunication__print_state()
             except Exception as e:
                 logger.error(f"[FC_Client] State sync error: {e}")
+                if "WinError" in str(e):
+                    logger.warning("[FC_Client] Connection lost, trying to reconnect")
+                    self.running = False
+                    for i in range(3):
+                        logger.warning(f"[FC_Client] Trying to reconnect {i+1}/3")
+                        try:
+                            self.__manager = None  # 先析构
+                            self.connect(*self.__last_connection_args)
+                        except:
+                            logger.warning(f"[FC_Client] Reconnect failed {i+1}/3")
+                            time.sleep(1)
+                        else:
+                            logger.info("[FC_Client] Successfully reconnected")
+                            time.sleep(0.1)
+                            break
+                    else:
+                        logger.error("[FC_Client] All reconnect failed, closing")
+                        sys.exit(1)
+        logger.warning("[FC_Client] State sync thread stopped")
 
     def connect(self, host="127.0.0.1", port=5654, authkey=b"fc"):
         """
@@ -181,6 +200,7 @@ class FC_Client(FC_Protocol):
         class FC_Manager(BaseManager):
             pass
 
+        self.__last_connection_args = (host, port, authkey)
         FC_Manager.register("get_proxy")
         FC_Manager.register("get_proxy_state_list")
         FC_Manager.register("get_proxy_state_event")
