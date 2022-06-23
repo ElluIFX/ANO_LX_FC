@@ -144,6 +144,7 @@ class FC_Settings_Struct:
     wait_sending_timeout = 0.2
     ack_max_retry = 3
     action_log_output = True
+    auto_change_mode = True
 
 
 class FC_Base_Uart_Comunication:
