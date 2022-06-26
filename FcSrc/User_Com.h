@@ -17,6 +17,8 @@
 #define USER_HEARTBEAT_TIMEOUT_S (1.0f - 0.001f)
 #define REALTIME_CONTROL_TIMEOUT_S (1.0f - 0.001f)
 
+extern s16 user_pwm[4];
+
 //回传数据结构
 typedef struct {
   u8 head1;

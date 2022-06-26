@@ -21,11 +21,13 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len);
 void UserCom_DataExchange(void);
 void UserCom_SendData(u8* dataToSend, u8 Length);
 void UserCom_SendAck(u8 ack_data);
+void UserCom_CalcAck(u8 option, u8* data_p, u8 data_len);
 
 static u8 user_connected = 0;           //用户下位机是否连接
 static u16 user_heartbeat_cnt = 0;      //用户下位机心跳计数
 static u8 realtime_control_enable = 0;  //实时控制是否开启
 static u16 realtime_control_cnt = 0;    //实时控制超时计数
+s16 user_pwm[4] = {0};                  //范围0-1000
 _user_pos_st user_pos;                  //用户下位机位置数据
 _to_user_un to_user_data;               //回传状态数据
 _user_ack_st user_ack;                  // ACK数据
@@ -111,7 +113,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
     case 0x01:  // 本地处理
       suboption = p_data[0];
       switch (suboption) {
-        case 0x01:  // WS2812控制
+        case 0x01:  // WS2812控制(不需要返回ACK)
           u32_temp = 0xff000000;
           u8_temp = p_data[1];  // R
           u32_temp |= u8_temp << 16;
@@ -134,7 +136,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
             user_pos.pos_update_cnt++;  // 触发发送
           }
           break;
-        case 0x03:  // 实时控制帧
+        case 0x03:  // 实时控制帧(通讯量大, 不需要返回ACK)
           p_s16 = (s16*)(p_data + 1);
           rt_tar.st_data.vel_x = *p_s16;  // 头向速度，厘米每秒
           p_s16++;
@@ -144,7 +146,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           p_s16++;
           rt_tar.st_data.yaw_dps = *p_s16;  // 航向角速度，度每秒，逆时针为正
           if (p_data[9] == 0x88) {  // 帧结尾，确保接收完整
-            dt.fun[0x41].WTS = 1;   // 触发发
+            dt.fun[0x41].WTS = 1;   // 触发发送
             //此处启用实时控制安全检查, 实时控制命令发送应持续发送且间隔小于1秒
             //超时会自动停止运动
             realtime_control_enable = 1;
@@ -152,6 +154,17 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
             if (rt_tar.st_data.vel_x == 0 && rt_tar.st_data.vel_y == 0 &&
                 rt_tar.st_data.vel_z == 0 && rt_tar.st_data.yaw_dps == 0) {
               realtime_control_enable = 0;
+            }
+          }
+          break;
+        case 0x04:  // 用户PWM控制(需要返回ACK)
+          if (p_data[4] == 0x99) {
+            // 先校验帧结尾，确保接收完整
+            u8_temp = p_data[1];         // 设置通道
+            p_s16 = (s16*)(p_data + 2);  // 设置PWM值
+            if (u8_temp <= 3) {          // 有效通道0-3
+              user_pwm[u8_temp] = *p_s16;
+              UserCom_CalcAck(0x01, p_data, 5);  // 计算ACK
             }
           }
           break;
@@ -179,6 +192,14 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
     default:
       break;
   }
+}
+
+void UserCom_CalcAck(u8 option, u8* data_p, u8 data_len) {
+  user_ack.ack_data = option;
+  for (u8 i = 0; i < data_len; i++) {
+    user_ack.ack_data += data_p[i];
+  }
+  user_ack.WTS = 1;
 }
 
 /**
