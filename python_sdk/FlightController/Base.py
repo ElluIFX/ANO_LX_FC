@@ -140,11 +140,11 @@ class FC_State_Struct:
 
 
 class FC_Settings_Struct:
-    wait_ack_timeout = 0.1
-    wait_sending_timeout = 0.2
-    ack_max_retry = 3
-    action_log_output = True
-    auto_change_mode = True
+    wait_ack_timeout = 0.1  # 应答帧超时时间
+    wait_sending_timeout = 0.2  # 发送等待超时时间
+    ack_max_retry = 3  # 应答失败最大重发次数
+    action_log_output = True  # 是否输出动作日志
+    auto_change_mode = True  # 是否自动切换飞控模式以匹配目标动作
 
 
 class FC_Base_Uart_Comunication:

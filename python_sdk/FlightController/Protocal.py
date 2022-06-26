@@ -34,10 +34,12 @@ class FC_Protocol(FC_Base_Uart_Comunication):
 
     ######### 飞控命令 #########
 
-    def __send_32_command(self, suboption: int, data: bytes = b"") -> None:
+    def __send_32_command(
+        self, suboption: int, data: bytes = b"", need_ack=False
+    ) -> None:
         self.__byte_temp1.reset(suboption, "u8", int)
         data_to_send = self.__byte_temp1.bytes + data
-        sended = self.send_data_to_fc(data_to_send, 0x01, need_ack=False)
+        sended = self.send_data_to_fc(data_to_send, 0x01, need_ack=need_ack)
         # logger.debug(f"[FC] Send: {bytes_to_str(sended)}")
 
     def set_rgb_led(self, r: int, g: int, b: int) -> None:
@@ -107,6 +109,22 @@ class FC_Protocol(FC_Base_Uart_Comunication):
             + self.__byte_temp4.bytes
             + b"\x88",  # 帧结尾
         )
+
+    def set_PWM_output(self, channel: int, pwm: float) -> None:
+        """
+        设置PWM输出
+        channel: 0-3
+        pwm: 0.00-100.00
+        """
+        assert channel in [0, 1, 2, 3]
+        pwm_int = int(pwm * 100)
+        pwm_int = max(0, min(10000, pwm_int))
+        self.__byte_temp1.reset(channel, "u8", int)
+        self.__byte_temp2.reset(pwm_int, "s16", int)
+        self.__send_32_command(
+            0x04, self.__byte_temp1.bytes + self.__byte_temp2.bytes + b"\x99", True
+        )
+        self.__action_log("set pwm output", f"channel {channel} pwm {pwm:.2f}")
 
     ######### IMU 命令 #########
 

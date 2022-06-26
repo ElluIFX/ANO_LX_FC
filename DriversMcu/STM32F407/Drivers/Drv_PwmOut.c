@@ -238,10 +238,15 @@ void DrvMotorPWMSet(int16_t pwm[8]) {
   TIM1->CCR2 = PWM_RADIO * (pwm[2]) + INIT_DUTY;  // 3
   TIM1->CCR1 = PWM_RADIO * (pwm[3]) + INIT_DUTY;  // 4
 
-  TIM5->CCR4 = PWM_RADIO * (pwm[4]) + INIT_DUTY;  // 5
-  TIM5->CCR3 = PWM_RADIO * (pwm[5]) + INIT_DUTY;  // 6
-  TIM8->CCR4 = PWM_RADIO * (pwm[6]) + INIT_DUTY;  // 7
-  TIM8->CCR3 = PWM_RADIO * (pwm[7]) + INIT_DUTY;  // 8
+  // TIM5->CCR4 = PWM_RADIO * (pwm[4]) + INIT_DUTY;  // 5
+  // TIM5->CCR3 = PWM_RADIO * (pwm[5]) + INIT_DUTY;  // 6
+  // TIM8->CCR4 = PWM_RADIO * (pwm[6]) + INIT_DUTY;  // 7
+  // TIM8->CCR3 = PWM_RADIO * (pwm[7]) + INIT_DUTY;  // 8
+
+  TIM5->CCR4 = (pwm[4]);  // 5
+  TIM5->CCR3 = (pwm[5]);  // 6
+  TIM8->CCR4 = (pwm[6]);  // 7
+  TIM8->CCR3 = (pwm[7]);  // 8
 }
 
 /******************* (C) COPYRIGHT 2014 ANO TECH *****END OF FILE************/

@@ -223,16 +223,16 @@ static inline void ESC_Output(u8 unlocked) {
   } else {
     //解锁才输出，否则输出0油门
     if (unlocked) {
-      for (u8 i = 0; i < 8; i++) {
+      for (u8 i = 0; i < 4; i++) {
         pwm[i] = LIMIT(pwm[i], 0, 1000);
       }
     } else {  //仅重置电机pwm
       for (u8 i = 0; i < 4; i++) {
         pwm[i] = 0;
       }
-      for (u8 i = 4; i < 8; i++) {
-        pwm[i] = LIMIT(pwm[i], 0, 1000);
-      }
+    }
+    for (u8 i = 4; i < 8; i++) {
+      pwm[i] = LIMIT(pwm[i], 0, 10000);
     }
   }
   //给底层PWM驱动输出信号

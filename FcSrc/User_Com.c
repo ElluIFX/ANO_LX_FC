@@ -27,7 +27,7 @@ static u8 user_connected = 0;           //用户下位机是否连接
 static u16 user_heartbeat_cnt = 0;      //用户下位机心跳计数
 static u8 realtime_control_enable = 0;  //实时控制是否开启
 static u16 realtime_control_cnt = 0;    //实时控制超时计数
-s16 user_pwm[4] = {0};                  //范围0-1000
+s16 user_pwm[4] = {0};                  //范围0-10000
 _user_pos_st user_pos;                  //用户下位机位置数据
 _to_user_un to_user_data;               //回传状态数据
 _user_ack_st user_ack;                  // ACK数据
@@ -123,7 +123,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
           u32_temp |= u8_temp;
           WS2812_SetAll(u32_temp);
           WS2812_SendBuf();
-          LxPrintf("DBG: user rgb: %X", u32_temp);
+          // LxPrintf("DBG: user rgb: %X", u32_temp);
           break;
         case 0x02:  // 位置信息回传
           p_s32 = (s32*)(p_data + 1);
@@ -165,6 +165,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
             if (u8_temp <= 3) {          // 有效通道0-3
               user_pwm[u8_temp] = *p_s16;
               UserCom_CalcAck(0x01, p_data, 5);  // 计算ACK
+              LxPrintf("DBG: user pwm: %d, %d", u8_temp, user_pwm[u8_temp]);
             }
           }
           break;
