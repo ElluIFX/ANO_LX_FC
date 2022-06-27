@@ -161,14 +161,3 @@ void WS2812_BufFlip(void) {
     ws2812_buf[(WS2812_NUM - i - 1) * 3 + 2] = r_bit2;
   }
 }
-
-void _test_2812(void) {  // TEST
-  return;
-  static u32 rgb[] = {0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00,
-                      0x00FFFF, 0xFF00FF, 0xFFFFFF};
-  static u8 rgbsize = sizeof(rgb) / sizeof(u32);
-  static u8 rgb_i = 0;
-  if (++rgb_i == rgbsize) rgb_i = 0;
-  WS2812_SetAll(rgb[rgb_i] | 0xFF000000);
-  WS2812_SendBuf();
-}

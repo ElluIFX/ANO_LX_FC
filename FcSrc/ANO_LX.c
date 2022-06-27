@@ -7,6 +7,7 @@
 #include "Drv_RcIn.h"
 #include "Drv_Uart.h"
 #include "Drv_adc.h"
+#include "Drv_key.h"
 #include "Drv_led.h"
 #include "LX_FC_EXT_Sensor.h"
 #include "LX_FC_Fun.h"
@@ -279,4 +280,6 @@ void ANO_LX_Task() {
   ESC_Output(1);  // unlocked
   //灯光驱动
   LED_1ms_DRV();
+  //按键驱动
+  key_check_all_loop_1ms();
 }
