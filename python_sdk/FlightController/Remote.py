@@ -47,18 +47,39 @@ class FC_Server(FC_Protocol):
         self.__manager = None
         self.__proxy = func_proxy(self)
         self.__serial_callback = None
+        self.__proxy_state_action_id = 0
+        self.__proxy_state_action_target = 0
+        self.__proxy_state_action_op = 0
         self.__proxy_state_list = [0 for var in self.state.RECV_ORDER]
-        self.__proxy_state_list.extend([self.connected])
+        self.__proxy_state_list_start_len = len(self.__proxy_state_list)
+        self.__proxy_state_list.extend(
+            [
+                self.connected,
+                self.__proxy_state_action_id,
+                self.__proxy_state_action_target,
+                self.__proxy_state_action_op,
+            ]
+        )
         self.__proxy_state_event = Event()
+        self.__set_event_callback__(self.__update_event_state)
 
     def __update_proxy_state(self, state):
+        _len = self.__proxy_state_list_start_len
         self.__proxy_state_event.clear()
         for n, var in enumerate(self.state.RECV_ORDER):
             self.__proxy_state_list[n] = var.value
-        self.__proxy_state_list[-1] = self.connected
+        self.__proxy_state_list[_len] = self.connected
+        self.__proxy_state_list[_len + 1] = self.__proxy_state_action_id
+        self.__proxy_state_list[_len + 2] = self.__proxy_state_action_target
+        self.__proxy_state_list[_len + 3] = self.__proxy_state_action_op
         self.__proxy_state_event.set()
         if callable(self.__serial_callback):
             self.__serial_callback(state)
+
+    def __update_event_state(self, event_code, event_operator):
+        self.__proxy_state_action_id += 1
+        self.__proxy_state_action_target = event_code
+        self.__proxy_state_action_op = event_operator
 
     def start_listen_serial(
         self,
@@ -158,6 +179,8 @@ class FC_Client(FC_Protocol):
         logger.info("[FC_Client] State sync started")
 
     def __sync_state_task(self):
+        _len = len(self.state.RECV_ORDER)
+        last_id = 0
         while self.running:
             time.sleep(0.01)
             try:
@@ -165,7 +188,18 @@ class FC_Client(FC_Protocol):
                 self.__proxy_state_event.clear()
                 for n, var in enumerate(self.state.RECV_ORDER):
                     var.value = self.__proxy_state_list[n]
-                self.connected = self.__proxy_state_list[-1]
+                self.connected = self.__proxy_state_list[_len]
+                id = self.__proxy_state_list[_len + 1]
+                if id != last_id:
+                    last_id = id
+                    if id != 0:
+                        event_code = self.__proxy_state_list[_len + 2]
+                        event_operator = self.__proxy_state_list[_len + 3]
+                        if event_operator == 0x01:  # set
+                            self.event.EVENT_CODE[event_code].set()
+                        elif event_operator == 0x02:  # clear
+                            self.event.EVENT_CODE[event_code].clear()
+                        logger.info(f"[FC_Client] Event {event_code} {event_operator}")
                 if callable(self.__state_update_callback):
                     self.__state_update_callback(self.state)
                 if self.__print_state_flag:

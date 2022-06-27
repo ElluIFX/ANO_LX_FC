@@ -238,6 +238,7 @@ class FC_Base_Uart_Comunication:
         self.__send_lock = threading.Lock()
         self.__waiting_ack = False
         self.__recivied_ack = None
+        self.__event_update_callback = None  # 仅供FC_Remote使用
         self.state = FC_State_Struct()
         self.event = FC_Event_Struct()
         self.settings = FC_Settings_Struct()
@@ -372,6 +373,9 @@ class FC_Base_Uart_Comunication:
         except Exception as e:
             logger.error(f"[FC] Update state exception: {traceback.format_exc()}")
 
+    def __set_event_callback__(self, func):
+        self.__event_update_callback = func
+
     def __update_event(self, recv_byte):
         try:
             event_code = recv_byte[0]
@@ -380,6 +384,8 @@ class FC_Base_Uart_Comunication:
                 self.event.EVENT_CODE[event_code].set()
             elif event_operator == 0x02:  # clear
                 self.event.EVENT_CODE[event_code].clear()
+            if callable(self.__event_update_callback):
+                self.__event_update_callback(event_code, event_operator)
         except Exception as e:
             logger.error(f"[FC] Update event exception: {traceback.format_exc()}")
 

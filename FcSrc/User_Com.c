@@ -330,7 +330,7 @@ void UserCom_SendAck(u8 ack_data) {
 void UserCom_SendEvent(u8 event, u8 op) {
   data_to_send[0] = 0xAA;   // head1
   data_to_send[1] = 0x55;   // head2
-  data_to_send[2] = 0x02;   // length
+  data_to_send[2] = 0x03;   // length
   data_to_send[3] = 0x03;   // cmd
   data_to_send[4] = event;  // event code
   data_to_send[5] = op;     // op code
