@@ -1,4 +1,5 @@
 import socket
+import sys
 import time
 from multiprocessing.managers import BaseManager, EventProxy, ListProxy
 from threading import Event, Thread
@@ -47,12 +48,14 @@ class FC_Server(FC_Protocol):
         self.__proxy = func_proxy(self)
         self.__serial_callback = None
         self.__proxy_state_list = [0 for var in self.state.RECV_ORDER]
+        self.__proxy_state_list.extend([self.connected])
         self.__proxy_state_event = Event()
 
     def __update_proxy_state(self, state):
         self.__proxy_state_event.clear()
         for n, var in enumerate(self.state.RECV_ORDER):
             self.__proxy_state_list[n] = var.value
+        self.__proxy_state_list[-1] = self.connected
         self.__proxy_state_event.set()
         if callable(self.__serial_callback):
             self.__serial_callback(state)
@@ -135,6 +138,9 @@ class FC_Client(FC_Protocol):
         callback=None,
         daemon=True,
     ):
+        """
+        客户端无需监听串口, 调用start_sync_state替代
+        """
         logger.warning(
             "[FC_Client] do not need to start serial listening, auto calling start_sync_state instead"
         )
@@ -150,7 +156,6 @@ class FC_Client(FC_Protocol):
         self.__listen_thread.setDaemon(daemon)
         self.__listen_thread.start()
         logger.info("[FC_Client] State sync started")
-        self.running = True
 
     def __sync_state_task(self):
         while self.running:
@@ -160,15 +165,32 @@ class FC_Client(FC_Protocol):
                 self.__proxy_state_event.clear()
                 for n, var in enumerate(self.state.RECV_ORDER):
                     var.value = self.__proxy_state_list[n]
-                if not self.connected:
-                    self.connected = True
-                    logger.info("[FC] Connected")
+                self.connected = self.__proxy_state_list[-1]
                 if callable(self.__state_update_callback):
                     self.__state_update_callback(self.state)
                 if self.__print_state_flag:
                     self._FC_Base_Uart_Comunication__print_state()
             except Exception as e:
                 logger.error(f"[FC_Client] State sync error: {e}")
+                if "WinError" in str(e):
+                    logger.warning("[FC_Client] Connection lost, trying to reconnect")
+                    self.running = False
+                    for i in range(3):
+                        logger.warning(f"[FC_Client] Trying to reconnect {i+1}/3")
+                        try:
+                            self.__manager = None  # 先析构
+                            self.connect(*self.__last_connection_args)
+                        except:
+                            logger.warning(f"[FC_Client] Reconnect failed {i+1}/3")
+                            time.sleep(1)
+                        else:
+                            logger.info("[FC_Client] Successfully reconnected")
+                            time.sleep(0.1)
+                            break
+                    else:
+                        logger.error("[FC_Client] All reconnect failed, closing")
+                        sys.exit(1)
+        logger.warning("[FC_Client] State sync thread stopped")
 
     def connect(self, host="127.0.0.1", port=5654, authkey=b"fc"):
         """
@@ -178,6 +200,7 @@ class FC_Client(FC_Protocol):
         class FC_Manager(BaseManager):
             pass
 
+        self.__last_connection_args = (host, port, authkey)
         FC_Manager.register("get_proxy")
         FC_Manager.register("get_proxy_state_list")
         FC_Manager.register("get_proxy_state_event")

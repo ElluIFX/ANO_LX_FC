@@ -17,6 +17,16 @@
 #define USER_HEARTBEAT_TIMEOUT_S (1.0f - 0.001f)
 #define REALTIME_CONTROL_TIMEOUT_S (1.0f - 0.001f)
 
+//事件代码
+#define USER_EVENT_KEY_SHORT 0x01
+#define USER_EVENT_KEY_LONG 0x02
+#define USER_EVENT_KEY_DOUBLE 0x03
+//事件操作
+#define USER_EVENT_OP_SET 0x01
+#define USER_EVENT_OP_CLEAR 0x02
+
+extern s16 user_pwm[4];
+
 //回传数据结构
 typedef struct {
   u8 head1;
@@ -70,4 +80,7 @@ extern _user_pos_st user_pos;
 void UserCom_GetOneByte(u8 data);
 
 void UserCom_Task(float dT_s);
+
+void UserCom_SendEvent(u8 event, u8 op);
+
 #endif

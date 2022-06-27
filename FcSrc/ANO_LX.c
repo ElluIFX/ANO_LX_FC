@@ -7,6 +7,7 @@
 #include "Drv_RcIn.h"
 #include "Drv_Uart.h"
 #include "Drv_adc.h"
+#include "Drv_key.h"
 #include "Drv_led.h"
 #include "LX_FC_EXT_Sensor.h"
 #include "LX_FC_Fun.h"
@@ -187,10 +188,14 @@ static inline void ESC_Output(u8 unlocked) {
   pwm[1] = pwm_to_esc.pwm_m2 * 0.1f;
   pwm[2] = pwm_to_esc.pwm_m3 * 0.1f;
   pwm[3] = pwm_to_esc.pwm_m4 * 0.1f;
-  pwm[4] = pwm_to_esc.pwm_m5 * 0.1f;
-  pwm[5] = pwm_to_esc.pwm_m6 * 0.1f;
-  pwm[6] = pwm_to_esc.pwm_m7 * 0.1f;
-  pwm[7] = pwm_to_esc.pwm_m8 * 0.1f;
+  // pwm[4] = pwm_to_esc.pwm_m5 * 0.1f;
+  // pwm[5] = pwm_to_esc.pwm_m6 * 0.1f;
+  // pwm[6] = pwm_to_esc.pwm_m7 * 0.1f;
+  // pwm[7] = pwm_to_esc.pwm_m8 * 0.1f;
+  pwm[4] = user_pwm[0];  // user output
+  pwm[5] = user_pwm[1];  // user output
+  pwm[6] = user_pwm[2];  // user output
+  pwm[7] = user_pwm[3];  // user output
   //
 
   if (esc_calibrated == 0) {
@@ -219,13 +224,16 @@ static inline void ESC_Output(u8 unlocked) {
   } else {
     //解锁才输出，否则输出0油门
     if (unlocked) {
-      for (u8 i = 0; i < 8; i++) {
+      for (u8 i = 0; i < 4; i++) {
         pwm[i] = LIMIT(pwm[i], 0, 1000);
       }
-    } else {
-      for (u8 i = 0; i < 8; i++) {
+    } else {  //仅重置电机pwm
+      for (u8 i = 0; i < 4; i++) {
         pwm[i] = 0;
       }
+    }
+    for (u8 i = 4; i < 8; i++) {
+      pwm[i] = LIMIT(pwm[i], 0, 10000);
     }
   }
   //给底层PWM驱动输出信号
@@ -272,4 +280,6 @@ void ANO_LX_Task() {
   ESC_Output(1);  // unlocked
   //灯光驱动
   LED_1ms_DRV();
+  //按键驱动
+  key_check_all_loop_1ms();
 }

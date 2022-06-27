@@ -7,6 +7,7 @@
 #include "Drv_BSP.h"
 
 #include "ANO_DT_LX.h"
+#include "Drv_Misc.h"
 #include "Drv_PwmOut.h"
 #include "Drv_RcIn.h"
 #include "Drv_Timer.h"
@@ -14,7 +15,6 @@
 #include "Drv_WS2812.h"
 #include "Drv_adc.h"
 #include "Drv_led.h"
-
 
 u8 All_Init() {
   DrvSysInit();
@@ -24,6 +24,8 @@ u8 All_Init() {
   DvrLedInit();
   // WS2812初始化
   DrvWS2812Init();
+  // 外设初始化
+  DrvMiscInit();
   //初始化电调输出功能
   DrvPwmOutInit();
   MyDelayMs(100);

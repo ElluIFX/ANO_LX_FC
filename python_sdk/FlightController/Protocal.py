@@ -22,6 +22,7 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         self.__byte_temp2 = Byte_Var()
         self.__byte_temp3 = Byte_Var()
         self.__byte_temp4 = Byte_Var()
+        self.__last_realtime_call_time = 0
         self.last_command = (0, 0, 0)  # (CID,CMD_0,CMD_1)
 
     def __action_log(self, action: str, data_info: str = None):
@@ -33,10 +34,12 @@ class FC_Protocol(FC_Base_Uart_Comunication):
 
     ######### 飞控命令 #########
 
-    def __send_32_command(self, suboption: int, data: bytes = b"") -> None:
+    def __send_32_command(
+        self, suboption: int, data: bytes = b"", need_ack=False
+    ) -> None:
         self.__byte_temp1.reset(suboption, "u8", int)
         data_to_send = self.__byte_temp1.bytes + data
-        sended = self.send_data_to_fc(data_to_send, 0x01, need_ack=False)
+        sended = self.send_data_to_fc(data_to_send, 0x01, need_ack=need_ack)
         # logger.debug(f"[FC] Send: {bytes_to_str(sended)}")
 
     def set_rgb_led(self, r: int, g: int, b: int) -> None:
@@ -81,13 +84,23 @@ class FC_Protocol(FC_Base_Uart_Comunication):
     ) -> None:
         """
         发送实时控制帧, 仅在定点模式下有效(MODE=2), 切换模式前需要确保遥控器摇杆全部归中
+        在飞控内有实时控制帧的安全检查, 每个帧有效时间只有1s, 因此发送频率需要大于1Hz
+        注意记得切换模式!!!
         vel_x,vel_y,vel_z: cm/s 匿名坐标系
         yaw: deg/s 顺时针为正
         """
-        self.__byte_temp1.reset(vel_x, "s16", int)
-        self.__byte_temp2.reset(vel_y, "s16", int)
-        self.__byte_temp3.reset(vel_z, "s16", int)
-        self.__byte_temp4.reset(-yaw, "s16", int)  # 实际控制帧是逆时针正向,此处取反以适应标准
+        # 性能优化:因为实时控制帧需要频繁低延迟发送, 所以不做过多次变量初始化
+        if time.time() - self.__last_realtime_call_time > 1:  # need init
+            self.__byte_temp1.reset(vel_x, "s16", int)
+            self.__byte_temp2.reset(vel_y, "s16", int)
+            self.__byte_temp3.reset(vel_z, "s16", int)
+            self.__byte_temp4.reset(-yaw, "s16", int)  # 实际控制帧是逆时针正向,此处取反以适应标准
+        else:
+            self.__byte_temp1.value = vel_x
+            self.__byte_temp2.value = vel_y
+            self.__byte_temp3.value = vel_z
+            self.__byte_temp4.value = -yaw
+        self.__last_realtime_call_time = time.time()
         self.__send_32_command(
             0x03,
             self.__byte_temp1.bytes
@@ -96,6 +109,22 @@ class FC_Protocol(FC_Base_Uart_Comunication):
             + self.__byte_temp4.bytes
             + b"\x88",  # 帧结尾
         )
+
+    def set_PWM_output(self, channel: int, pwm: float) -> None:
+        """
+        设置PWM输出
+        channel: 0-3
+        pwm: 0.00-100.00
+        """
+        assert channel in [0, 1, 2, 3]
+        pwm_int = int(pwm * 100)
+        pwm_int = max(0, min(10000, pwm_int))
+        self.__byte_temp1.reset(channel, "u8", int)
+        self.__byte_temp2.reset(pwm_int, "s16", int)
+        self.__send_32_command(
+            0x04, self.__byte_temp1.bytes + self.__byte_temp2.bytes + b"\x99", True
+        )
+        self.__action_log("set pwm output", f"channel {channel} pwm {pwm:.2f}")
 
     ######### IMU 命令 #########
 
@@ -118,9 +147,28 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         self.last_command = (CID, CMD0, CMD1)
         # logger.debug(f"[FC] Send: {bytes_to_str(sended)}")
 
+    def __check_mode(self, target_mode) -> bool:
+        """
+        检查当前模式是否与需要的模式一致
+        """
+        mode_dict = {1: "HOLD ALT", 2: "HOLD POS", 3: "PROGRAM"}
+        if self.state.mode.value != target_mode:
+            if self.settings.auto_change_mode:
+                self.__action_log("auto mode set", mode_dict[target_mode])
+                self.set_flight_mode(target_mode)
+                time.sleep(0.1)  # 等待模式改变完成
+                return True
+            else:
+                logger.error(
+                    f"[FC] Mode error: action required mode is {mode_dict[target_mode]}"
+                    f", but current mode is {mode_dict[self.state.mode.value]}"
+                )
+                return False
+        return True
+
     def set_flight_mode(self, mode: int) -> None:
         """
-        设置飞行模式:
+        设置飞行模式: (随时有效)
         0: 姿态自稳 (危险,禁用)
         1: 定高
         2: 定点
@@ -134,46 +182,47 @@ class FC_Protocol(FC_Base_Uart_Comunication):
 
     def unlock(self) -> None:
         """
-        解锁电机
+        解锁电机 (随时有效)
         """
         self.__send_imu_command_frame(0x10, 0x00, 0x01)
         self.__action_log("unlock")
 
     def lock(self) -> None:
         """
-        锁定电机 / 紧急锁浆
+        锁定电机 / 紧急锁浆 (随时有效)
         """
         self.__send_imu_command_frame(0x10, 0x00, 0x02)
         self.__action_log("lock")
 
     def stablize(self) -> None:
         """
-        恢复定点悬停, 将终止正在进行的所有控制
+        恢复定点悬停, 将终止正在进行的所有控制 (随时有效)
         """
         self.__send_imu_command_frame(0x10, 0x00, 0x04)
         self.__action_log("stablize")
 
     def take_off(self) -> None:
         """
-        一键起飞
+        一键起飞 (除姿态模式外, 随时有效)
         """
         self.__send_imu_command_frame(0x10, 0x00, 0x05)
         self.__action_log("take off")
 
     def land(self) -> None:
         """
-        一键降落
+        一键降落 (除姿态模式外, 随时有效)
         """
         self.__send_imu_command_frame(0x10, 0x00, 0x06)
         self.__action_log("land")
 
     def horizontal_move(self, distance: int, speed: int, direction: int) -> None:
         """
-        水平移动:
+        水平移动: (程控模式下有效)
         移动距离:0-10000 cm
         移动速度:10-300 cm/s
         移动方向:0-359 度 (当前机头为0参考,顺时针)
         """
+        self.__check_mode(3)
         self.__byte_temp1.reset(distance, "u16", int)
         self.__byte_temp2.reset(speed, "u16", int)
         self.__byte_temp3.reset(direction, "u16", int)
@@ -189,7 +238,7 @@ class FC_Protocol(FC_Base_Uart_Comunication):
 
     def cordinate_move(self, x: int, y: int, speed: int) -> None:
         """
-        匿名坐标系下的水平移动:
+        匿名坐标系下的水平移动: (程控模式下有效)
         移动半径在0-10000 cm
         x,y: 匿名坐标系下的坐标
         speed: 移动速度:10-300 cm/s
@@ -204,10 +253,11 @@ class FC_Protocol(FC_Base_Uart_Comunication):
 
     def go_up(self, distance: int, speed: int) -> None:
         """
-        上升:
+        上升: (程控模式下有效)
         上升距离:0-10000 cm
         上升速度:10-300 cm/s
         """
+        self.__check_mode(3)
         self.__byte_temp1.reset(distance, "u16", int)
         self.__byte_temp2.reset(speed, "u16", int)
         self.__send_imu_command_frame(
@@ -217,10 +267,11 @@ class FC_Protocol(FC_Base_Uart_Comunication):
 
     def go_down(self, distance: int, speed: int) -> None:
         """
-        下降:
+        下降: (程控模式下有效)
         下降距离:0-10000 cm
         下降速度:10-300 cm/s
         """
+        self.__check_mode(3)
         self.__byte_temp1.reset(distance, "u16", int)
         self.__byte_temp2.reset(speed, "u16", int)
         self.__send_imu_command_frame(
@@ -230,10 +281,11 @@ class FC_Protocol(FC_Base_Uart_Comunication):
 
     def turn_left(self, deg: int, speed: int) -> None:
         """
-        左转:
+        左转: (程控模式下有效)
         左转角度:0-359 度
         左转速度:5-90 deg/s
         """
+        self.__check_mode(3)
         self.__byte_temp1.reset(deg, "u16", int)
         self.__byte_temp2.reset(speed, "u16", int)
         self.__send_imu_command_frame(
@@ -243,10 +295,11 @@ class FC_Protocol(FC_Base_Uart_Comunication):
 
     def turn_right(self, deg: int, speed: int) -> None:
         """
-        右转:
+        右转: (程控模式下有效)
         右转角度:0-359 度
         右转速度:5-90 deg/s
         """
+        self.__check_mode(3)
         self.__byte_temp1.reset(deg, "u16", int)
         self.__byte_temp2.reset(speed, "u16", int)
         self.__send_imu_command_frame(
@@ -256,7 +309,7 @@ class FC_Protocol(FC_Base_Uart_Comunication):
 
     def set_height(self, source: int, height: int, speed: int) -> None:
         """
-        设置高度:
+        设置高度: (程控模式下有效)
         高度源: 0:融合高度 1:激光高度
         高度:0-10000 cm
         速度:10-300 cm/s
@@ -278,7 +331,7 @@ class FC_Protocol(FC_Base_Uart_Comunication):
 
     def set_yaw(self, yaw: int, speed: int) -> None:
         """
-        设置偏航角:
+        设置偏航角: (程控模式下有效)
         偏航角:-180-180 度
         偏航速度:5-90 deg/s
         """
@@ -297,10 +350,11 @@ class FC_Protocol(FC_Base_Uart_Comunication):
 
     def set_target_position(self, x: int, y: int) -> None:
         """
-        设置目标位置:
+        设置目标位置: (程控模式下有效)
         x:+-100000 cm
         y:+-100000 cm
         """
+        self.__check_mode(3)
         self.__byte_temp1.reset(x, "s32", int)
         self.__byte_temp2.reset(y, "s32", int)
         self.__send_imu_command_frame(
@@ -310,11 +364,12 @@ class FC_Protocol(FC_Base_Uart_Comunication):
 
     def set_target_height(self, height: int) -> None:
         """
-        设置目标高度:
+        设置目标高度: (程控模式下有效)
         目标对地高度:+100000 cm
         """
         if height < 0:
             height = 0
+        self.__check_mode(3)
         self.__byte_temp1.reset(height, "s32", int)
         self.__send_imu_command_frame(0x10, 0x01, 0x02, self.__byte_temp1.bytes)
         self.__action_log("set target height", f"{height}cm")
@@ -333,6 +388,19 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         """
         stable_command = (0x10, 0x00, 0x04)
         return self.state.command_now == stable_command
+
+    def wait_for_connection(self, timeout_s=-1) -> bool:
+        """
+        等待飞控连接
+        """
+        t0 = time.time()
+        while not self.connected:
+            time.sleep(0.1)
+            if timeout_s != -1 and time.time() - t0 > timeout_s:
+                logger.warning("[FC] wait for fc connection timeout")
+                return False
+        self.__action_log("wait ok", "fc connection")
+        return True
 
     def wait_for_last_command_done(self, timeout_s=10) -> bool:
         """

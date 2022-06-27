@@ -56,6 +56,4 @@ void WS2812_BufLeftShift(void);
 void WS2812_BufFlip(void);
 void WS2812_SendBuf(void);
 
-void _test_2812(void);
-
 #endif
