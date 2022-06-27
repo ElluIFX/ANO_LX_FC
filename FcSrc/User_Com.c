@@ -298,8 +298,9 @@ void UserCom_DataExchange(void) {
   UserCom_SendData(to_user_data.byte_data, user_data_size);
 }
 
+static u8 data_to_send[12];
+
 void UserCom_SendAck(u8 ack_data) {
-  static u8 data_to_send[6];
   data_to_send[0] = 0xAA;      // head1
   data_to_send[1] = 0x55;      // head2
   data_to_send[2] = 0x02;      // length
@@ -310,6 +311,25 @@ void UserCom_SendAck(u8 ack_data) {
     data_to_send[5] += data_to_send[i];
   }
   UserCom_SendData(data_to_send, 6);
+}
+
+/**
+ * @brief 发送事件
+ * @param  event            事件代码
+ * @param  op               操作代码
+ */
+void UserCom_SendEvent(u8 event, u8 op) {
+  data_to_send[0] = 0xAA;   // head1
+  data_to_send[1] = 0x55;   // head2
+  data_to_send[2] = 0x02;   // length
+  data_to_send[3] = 0x03;   // cmd
+  data_to_send[4] = event;  // event code
+  data_to_send[5] = op;     // op code
+  data_to_send[6] = 0;      // check_sum
+  for (u8 i = 0; i < 6; i++) {
+    data_to_send[6] += data_to_send[i];
+  }
+  UserCom_SendData(data_to_send, 7);
 }
 
 /**
