@@ -139,6 +139,81 @@ class FC_State_Struct:
         return (self.cid.value, self.cmd_0.value, self.cmd_1.value)
 
 
+class FC_Event:
+    """飞控事件类"""
+
+    def __init__(self):
+        self.__status = False
+        self.__callback = None
+        self.__callback_trigger = True
+
+    def __bool__(self):
+        return self.__status
+
+    def set(self):
+        self.__status = True
+        self.__check_callback()
+
+    def clear(self):
+        self.__status = False
+        self.__check_callback()
+
+    def wait(self, timeout=None) -> bool:
+        """
+        等待事件置位
+        Returns:
+            bool: True if the event is set, False if the timeout occurred.
+        """
+        if timeout is None:
+            while self.__status == False:
+                time.sleep(0.1)
+        else:
+            start_time = time.time()
+            while self.__status == False:
+                time.sleep(0.1)
+                if time.time() - start_time > timeout:
+                    logger.warning("[FC] Wait for event timeout")
+                    break
+        self.__check_callback()
+        return self.__status
+
+    def waitAndClear(self, timeout=None):
+        ret = self.wait(timeout)
+        if ret:
+            self.clear()
+        return ret
+
+    def __check_callback(self):
+        if callable(self.__callback) and self.__status == self.__callback_trigger:
+            self.__callback()
+
+    def set_callback(self, callback, trigger=True):
+        """设置回调函数
+
+        Args:
+            callback (function): 目标函数
+            trigger (bool, optional): 回调触发方式 (True为事件置位时触发). Defaults to True.
+        """
+        self.__callback = callback
+        self.__callback_trigger = trigger
+        return self
+
+    def isSet(self):
+        return self.__status
+
+
+class FC_Event_Struct:
+    key_short = FC_Event()
+    key_long = FC_Event()
+    key_double = FC_Event()
+
+    EVENT_CODE = {
+        0x01: key_short,
+        0x02: key_long,
+        0x03: key_double,
+    }
+
+
 class FC_Settings_Struct:
     wait_ack_timeout = 0.1  # 应答帧超时时间
     wait_sending_timeout = 0.2  # 发送等待超时时间
@@ -164,6 +239,7 @@ class FC_Base_Uart_Comunication:
         self.__waiting_ack = False
         self.__recivied_ack = None
         self.state = FC_State_Struct()
+        self.event = FC_Event_Struct()
         self.settings = FC_Settings_Struct()
 
     def start_listen_serial(
@@ -270,6 +346,8 @@ class FC_Base_Uart_Comunication:
                         self.__recivied_ack = data[0]
                         self.__waiting_ack = False
                         # logger.debug(f"[FC] ACK received: {self.__recivied_ack}")
+                    elif cmd == 0x03:  # 事件通讯
+                        self.__update_event(data)
             except Exception as e:
                 logger.error(f"[FC] listen serial exception: {traceback.format_exc()}")
             if time.time() - last_heartbeat_time > 0.25:
@@ -293,6 +371,17 @@ class FC_Base_Uart_Comunication:
                 self.__print_state()
         except Exception as e:
             logger.error(f"[FC] Update state exception: {traceback.format_exc()}")
+
+    def __update_event(self, recv_byte):
+        try:
+            event_code = recv_byte[0]
+            event_operator = recv_byte[1]
+            if event_operator == 0x01:  # set
+                self.event.EVENT_CODE[event_code].set()
+            elif event_operator == 0x02:  # clear
+                self.event.EVENT_CODE[event_code].clear()
+        except Exception as e:
+            logger.error(f"[FC] Update event exception: {traceback.format_exc()}")
 
     def __print_state(self):
         RED = "\033[1;31m"

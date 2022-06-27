@@ -8,6 +8,8 @@
 
 #include "ANO_DT_LX.h"
 #include "Drv_WS2812.h"
+#include "Drv_key.h"
+#include "User_Com.h"
 #include "User_Task.h"
 
 //////////////////////////////////////////////////////////////////////
@@ -52,6 +54,22 @@ static void Loop_50Hz(void)  // 20ms执行一次
 static void Loop_20Hz(void)  // 50ms执行一次
 {
   //////////////////////////////////////////////////////////////////////
+  static unsigned short key = 0;
+  key = key_read_value();
+  switch (key) {
+    case KEY1_SHORT:
+      UserCom_SendEvent(USER_EVENT_KEY_SHORT, USER_EVENT_OP_SET);
+      LxStringSend(LOG_COLOR_GREEN, "KEY1_SHORT");
+      break;
+    case KEY1_LONG:
+      UserCom_SendEvent(USER_EVENT_KEY_LONG, USER_EVENT_OP_SET);
+      LxStringSend(LOG_COLOR_GREEN, "KEY1_LONG");
+      break;
+    case KEY1_DOUBLE:
+      UserCom_SendEvent(USER_EVENT_KEY_DOUBLE, USER_EVENT_OP_SET);
+      LxStringSend(LOG_COLOR_GREEN, "KEY1_DOUBLE");
+      break;
+  }
 
   //////////////////////////////////////////////////////////////////////
 }
