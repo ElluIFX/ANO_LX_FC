@@ -12,6 +12,7 @@
 
 #include "ANO_DT_LX.h"
 #include "ANO_LX.h"
+#include "Drv_Misc.h"
 #include "Drv_Uart.h"
 #include "Drv_WS2812.h"
 #include "LX_FC_Fun.h"
@@ -169,6 +170,14 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
             }
           }
           break;
+        case 0x05:  // 蜂鸣器控制
+          if (p_data[2] == 0xAA) {
+            if (p_data[1] == 0x01) {
+              Buzzer_Set(1);
+            } else {
+              Buzzer_Set(0);
+            }
+          }
       }
       break;
     case 0x02:  // 转发到IMU, 命令格式应遵循匿名通信协议, 此命令需要返回ACK

@@ -126,6 +126,15 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         )
         self.__action_log("set pwm output", f"channel {channel} pwm {pwm:.2f}")
 
+    def set_buzzer(self, on: bool) -> None:
+        """
+        设置蜂鸣器
+        on: 开关
+        """
+        self.__byte_temp1.reset(int(on), "u8", int)
+        self.__send_32_command(0x05, self.__byte_temp1.bytes + b"\xAA")
+        self.__action_log("set buzzer", f"{on}")
+
     ######### IMU 命令 #########
 
     def __send_imu_command_frame(self, CID: int, CMD0: int, CMD1: int, CMD_data=b""):

@@ -62,7 +62,7 @@ _fc_alt_un fc_alt;
 
 //遥控器数据处理
 static inline void RC_Data_Task(float dT_s) {
-  static u8 fail_safe_change_mod, fail_safe_return_home;
+  // static u8 fail_safe_change_mod, fail_safe_return_home;
   static u8 mod_f[3];
   static u16 mod_f_time_cnt;
 
@@ -149,8 +149,8 @@ static inline void RC_Data_Task(float dT_s) {
     //=====
     dt.fun[0x41].WTS = 1;  //将要发送rt_tar数据。
     //失控保护标记复位
-    fail_safe_change_mod = 0;
-    fail_safe_return_home = 0;
+    // fail_safe_change_mod = 0;
+    // fail_safe_return_home = 0;
   } else  //无遥控信号
   {
     // //解锁后，丢失信号失控需要触发返航（不可返航时会自动触发降落）
