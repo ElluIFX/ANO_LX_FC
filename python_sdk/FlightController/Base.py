@@ -66,16 +66,20 @@ class Byte_Var:
 
     @property
     def bytes(self):
-        return int(self.__value / self.__multiplier).to_bytes(
-            self.__byte_length, "little", signed=self.__signed
-        )
+        if self.__multiplier != 1:
+            return int(round(self.__value / self.__multiplier)).to_bytes(
+                self.__byte_length, "little", signed=self.__signed
+            )
+        else:
+            return int(self.__value).to_bytes(
+                self.__byte_length, "little", signed=self.__signed
+            )
 
     @bytes.setter
     def bytes(self, value):
-        self.__value = (
+        self.__value = self.__var_type(
             int.from_bytes(value, "little", signed=self.__signed) * self.__multiplier
         )
-        self.__value = self.__var_type(self.__value)
         self.__last_update_time = time.time()
 
     @property
@@ -84,7 +88,7 @@ class Byte_Var:
 
     @byte_length.setter
     def byte_length(self, value):
-        raise ValueError("byte_length is read-only")
+        raise Exception("byte_length is read-only")
 
     @property
     def last_update_time(self):
@@ -92,7 +96,7 @@ class Byte_Var:
 
     @last_update_time.setter
     def last_update_time(self, value):
-        raise ValueError("last_update_time is read-only")
+        raise Exception("last_update_time is read-only")
 
 
 class FC_State_Struct:

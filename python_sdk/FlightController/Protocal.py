@@ -38,8 +38,9 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         self, suboption: int, data: bytes = b"", need_ack=False
     ) -> None:
         self.__byte_temp1.reset(suboption, "u8", int)
-        data_to_send = self.__byte_temp1.bytes + data
-        sended = self.send_data_to_fc(data_to_send, 0x01, need_ack=need_ack)
+        sended = self.send_data_to_fc(
+            self.__byte_temp1.bytes + data, 0x01, need_ack=need_ack
+        )
         # logger.debug(f"[FC] Send: {bytes_to_str(sended)}")
 
     def set_rgb_led(self, r: int, g: int, b: int) -> None:
