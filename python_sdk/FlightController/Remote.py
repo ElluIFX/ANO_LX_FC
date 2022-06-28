@@ -199,7 +199,6 @@ class FC_Client(FC_Protocol):
                             self.event.EVENT_CODE[event_code].set()
                         elif event_operator == 0x02:  # clear
                             self.event.EVENT_CODE[event_code].clear()
-                        logger.info(f"[FC_Client] Event {event_code} {event_operator}")
                 if callable(self.__state_update_callback):
                     self.__state_update_callback(self.state)
                 if self.__print_state_flag:

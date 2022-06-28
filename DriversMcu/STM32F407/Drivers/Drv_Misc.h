@@ -22,14 +22,20 @@
 #define __BUTTON1_RCC RCC_AHB1Periph_GPIOD
 #define __BUTTON1_GPIO GPIOD
 #define __BUTTON1_PIN GPIO_Pin_14
+//
+#define __DOUT_RCC RCC_AHB1Periph_GPIOB
+#define __DOUT_GPIO GPIOB
+#define __DOUT_0_PIN GPIO_Pin_0
+#define __DOUT_1_PIN GPIO_Pin_1
+#define __DOUT_ALL_PIN (__DOUT_0_PIN | __DOUT_1_PIN)
 ////
 
 void DrvMiscInit(void);
 
-void DrvBuzzerInit(void);
 void Buzzer_Set(uint8_t on);
 
-void DrvButtonInit(void);
 uint8_t Button_Get(u8 button);
+
+void DOut_Set(u8 id, u8 on);
 
 #endif
