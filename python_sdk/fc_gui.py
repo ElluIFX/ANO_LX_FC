@@ -120,7 +120,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         if not self.fc.state.unlock.value:
             return
         if self.fc.state.mode.value != self.fc.PROGRAM_MODE:
-            self.fc.realtime_control(*self.speed_xyzYaw)
+            self.fc.send_realtime_control_data(*self.speed_xyzYaw)
 
     def update_fc_state(self, state: FC_State_Struct) -> None:
         self.lcd_h.display(f"{state.alt_add.value/100:9.02f}")
@@ -141,7 +141,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             state_text += " 已完成  "
         else:
             state_text += " 进行中  "
-        if self.fc.is_stablizing:
+        if self.fc.hovering:
             state_text += "机体已稳定"
         elif not state.unlock.value:
             state_text += "等待起飞"
