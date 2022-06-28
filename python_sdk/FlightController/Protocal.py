@@ -64,6 +64,7 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         通用数据传感器回传
         x,y,z: cm
         """
+        # FIXME: 当前不工作,上位机查看不到对应的数据,问题应该在32的代码部分,或者匿名压根没实现这个功能
         self.__byte_temp1.reset(x, "s32", int)
         self.__byte_temp2.reset(y, "s32", int)
         self.__byte_temp3.reset(z, "s32", int)
@@ -127,7 +128,7 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         self.__send_32_command(
             0x04,
             self.__byte_temp1.bytes + self.__byte_temp2.bytes + b"\x44",
-            True, # need ack
+            True,  # need ack
         )
         self.__action_log("set pwm output", f"channel {channel} pwm {pwm:.2f}")
 
