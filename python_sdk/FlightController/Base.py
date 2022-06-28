@@ -66,16 +66,20 @@ class Byte_Var:
 
     @property
     def bytes(self):
-        return int(self.__value / self.__multiplier).to_bytes(
-            self.__byte_length, "little", signed=self.__signed
-        )
+        if self.__multiplier != 1:
+            return int(round(self.__value / self.__multiplier)).to_bytes(
+                self.__byte_length, "little", signed=self.__signed
+            )
+        else:
+            return int(self.__value).to_bytes(
+                self.__byte_length, "little", signed=self.__signed
+            )
 
     @bytes.setter
     def bytes(self, value):
-        self.__value = (
+        self.__value = self.__var_type(
             int.from_bytes(value, "little", signed=self.__signed) * self.__multiplier
         )
-        self.__value = self.__var_type(self.__value)
         self.__last_update_time = time.time()
 
     @property
@@ -84,7 +88,7 @@ class Byte_Var:
 
     @byte_length.setter
     def byte_length(self, value):
-        raise ValueError("byte_length is read-only")
+        raise Exception("byte_length is read-only")
 
     @property
     def last_update_time(self):
@@ -92,7 +96,7 @@ class Byte_Var:
 
     @last_update_time.setter
     def last_update_time(self, value):
-        raise ValueError("last_update_time is read-only")
+        raise Exception("last_update_time is read-only")
 
 
 class FC_State_Struct:
@@ -238,6 +242,7 @@ class FC_Base_Uart_Comunication:
         self.__send_lock = threading.Lock()
         self.__waiting_ack = False
         self.__recivied_ack = None
+        self.__event_update_callback = None  # 仅供FC_Remote使用
         self.state = FC_State_Struct()
         self.event = FC_Event_Struct()
         self.settings = FC_Settings_Struct()
@@ -372,6 +377,9 @@ class FC_Base_Uart_Comunication:
         except Exception as e:
             logger.error(f"[FC] Update state exception: {traceback.format_exc()}")
 
+    def __set_event_callback__(self, func):
+        self.__event_update_callback = func
+
     def __update_event(self, recv_byte):
         try:
             event_code = recv_byte[0]
@@ -380,6 +388,8 @@ class FC_Base_Uart_Comunication:
                 self.event.EVENT_CODE[event_code].set()
             elif event_operator == 0x02:  # clear
                 self.event.EVENT_CODE[event_code].clear()
+            if callable(self.__event_update_callback):
+                self.__event_update_callback(event_code, event_operator)
         except Exception as e:
             logger.error(f"[FC] Update event exception: {traceback.format_exc()}")
 

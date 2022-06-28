@@ -12,6 +12,7 @@
 
 #include "ANO_DT_LX.h"
 #include "ANO_LX.h"
+#include "Drv_Misc.h"
 #include "Drv_Uart.h"
 #include "Drv_WS2812.h"
 #include "LX_FC_Fun.h"
@@ -113,40 +114,41 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
     case 0x01:  // 本地处理
       suboption = p_data[0];
       switch (suboption) {
-        case 0x01:  // WS2812控制(不需要返回ACK)
-          u32_temp = 0xff000000;
-          u8_temp = p_data[1];  // R
-          u32_temp |= u8_temp << 16;
-          u8_temp = p_data[2];  // G
-          u32_temp |= u8_temp << 8;
-          u8_temp = p_data[3];  // B
-          u32_temp |= u8_temp;
-          WS2812_SetAll(u32_temp);
-          WS2812_SendBuf();
-          // LxPrintf("DBG: user rgb: %X", u32_temp);
+        case 0x01:                  // WS2812控制
+          if (p_data[4] == 0x11) {  // 帧结尾，确保接收完整
+            u32_temp = 0xff000000;
+            u8_temp = p_data[1];  // R
+            u32_temp |= u8_temp << 16;
+            u8_temp = p_data[2];  // G
+            u32_temp |= u8_temp << 8;
+            u8_temp = p_data[3];  // B
+            u32_temp |= u8_temp;
+            WS2812_SetAll(u32_temp);
+            WS2812_SendBuf();
+          }
           break;
-        case 0x02:  // 位置信息回传
-          p_s32 = (s32*)(p_data + 1);
-          user_pos.pos_x = *p_s32;
-          p_s32++;
-          user_pos.pos_y = *p_s32;
-          p_s32++;
-          user_pos.pos_z = *p_s32;
-          if (p_data[13] == 0x77) {     // 帧结尾，确保接收完整
+        case 0x02:                   // 位置信息回传
+          if (p_data[13] == 0x22) {  // 帧结尾，确保接收完整
+            p_s32 = (s32*)(p_data + 1);
+            user_pos.pos_x = *p_s32;
+            p_s32++;
+            user_pos.pos_y = *p_s32;
+            p_s32++;
+            user_pos.pos_z = *p_s32;
             user_pos.pos_update_cnt++;  // 触发发送
           }
           break;
-        case 0x03:  // 实时控制帧(通讯量大, 不需要返回ACK)
-          p_s16 = (s16*)(p_data + 1);
-          rt_tar.st_data.vel_x = *p_s16;  // 头向速度，厘米每秒
-          p_s16++;
-          rt_tar.st_data.vel_y = *p_s16;  // 左向速度，厘米每秒
-          p_s16++;
-          rt_tar.st_data.vel_z = *p_s16;  // 天向速度，厘米每秒
-          p_s16++;
-          rt_tar.st_data.yaw_dps = *p_s16;  // 航向角速度，度每秒，逆时针为正
-          if (p_data[9] == 0x88) {  // 帧结尾，确保接收完整
-            dt.fun[0x41].WTS = 1;   // 触发发送
+        case 0x03:                  // 实时控制帧
+          if (p_data[9] == 0x33) {  // 帧结尾，确保接收完整
+            p_s16 = (s16*)(p_data + 1);
+            rt_tar.st_data.vel_x = *p_s16;  // 头向速度，厘米每秒
+            p_s16++;
+            rt_tar.st_data.vel_y = *p_s16;  // 左向速度，厘米每秒
+            p_s16++;
+            rt_tar.st_data.vel_z = *p_s16;  // 天向速度，厘米每秒
+            p_s16++;
+            rt_tar.st_data.yaw_dps = *p_s16;  // 航向角速度，度每秒，逆时针为正
+            dt.fun[0x41].WTS = 1;  // 触发发送
             //此处启用实时控制安全检查, 实时控制命令发送应持续发送且间隔小于1秒
             //超时会自动停止运动
             realtime_control_enable = 1;
@@ -157,16 +159,23 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
             }
           }
           break;
-        case 0x04:  // 用户PWM控制(需要返回ACK)
-          if (p_data[4] == 0x99) {
-            // 先校验帧结尾，确保接收完整
+        case 0x04:                       // 用户PWM控制
+          if (p_data[4] == 0x44) {       // 帧结尾，确保接收完整
             u8_temp = p_data[1];         // 设置通道
             p_s16 = (s16*)(p_data + 2);  // 设置PWM值
             if (u8_temp <= 3) {          // 有效通道0-3
               user_pwm[u8_temp] = *p_s16;
-              UserCom_CalcAck(0x01, p_data, 5);  // 计算ACK
-              LxPrintf("DBG: user pwm: %d, %d", u8_temp, user_pwm[u8_temp]);
+              UserCom_CalcAck(0x01, p_data, 5);  // 重要的无反馈操作,需要ACK
             }
+          }
+          break;
+        case 0x05:                  // 蜂鸣器控制
+          if (p_data[2] == 0x55) {  // 帧结尾，确保接收完整
+            Buzzer_Set(p_data[1]);
+          }
+        case 0x06:                  // IO控制
+          if (p_data[3] == 0x66) {  // 帧结尾，确保接收完整
+            DOut_Set(p_data[1], p_data[2]);
           }
           break;
       }
@@ -184,8 +193,8 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
         }
         CMD_Send(0xFF, &dt.cmd_send);
         user_ack.WTS = 1;  // 触发ACK
-        LxPrintf("DBG: to imu: 0x%02X 0x%02X 0x%02X", dt.cmd_send.CID,
-                 dt.cmd_send.CMD[0], dt.cmd_send.CMD[1]);
+        // LxPrintf("DBG: to imu: 0x%02X 0x%02X 0x%02X", dt.cmd_send.CID,
+        //          dt.cmd_send.CMD[0], dt.cmd_send.CMD[1]);
       } else {
         LxStringSend(LOG_COLOR_RED, "ERR: cmd to imu dropped for wait_ck");
       }
@@ -321,7 +330,7 @@ void UserCom_SendAck(u8 ack_data) {
 void UserCom_SendEvent(u8 event, u8 op) {
   data_to_send[0] = 0xAA;   // head1
   data_to_send[1] = 0x55;   // head2
-  data_to_send[2] = 0x02;   // length
+  data_to_send[2] = 0x03;   // length
   data_to_send[3] = 0x03;   // cmd
   data_to_send[4] = event;  // event code
   data_to_send[5] = op;     // op code

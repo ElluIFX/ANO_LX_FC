@@ -38,8 +38,9 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         self, suboption: int, data: bytes = b"", need_ack=False
     ) -> None:
         self.__byte_temp1.reset(suboption, "u8", int)
-        data_to_send = self.__byte_temp1.bytes + data
-        sended = self.send_data_to_fc(data_to_send, 0x01, need_ack=need_ack)
+        sended = self.send_data_to_fc(
+            self.__byte_temp1.bytes + data, 0x01, need_ack=need_ack
+        )
         # logger.debug(f"[FC] Send: {bytes_to_str(sended)}")
 
     def set_rgb_led(self, r: int, g: int, b: int) -> None:
@@ -52,7 +53,10 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         self.__byte_temp3.reset(b, "u8", int)
         self.__send_32_command(
             0x01,
-            self.__byte_temp1.bytes + self.__byte_temp2.bytes + self.__byte_temp3.bytes,
+            self.__byte_temp1.bytes
+            + self.__byte_temp2.bytes
+            + self.__byte_temp3.bytes
+            + b"\x11",  # 帧结尾
         )
         self.__action_log("set rgb led", f"#{r:02X}{g:02X}{b:02X}")
 
@@ -61,6 +65,7 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         通用数据传感器回传
         x,y,z: cm
         """
+        # FIXME: 当前不工作,上位机查看不到对应的数据,问题应该在32的代码部分,或者匿名压根没实现这个功能
         self.__byte_temp1.reset(x, "s32", int)
         self.__byte_temp2.reset(y, "s32", int)
         self.__byte_temp3.reset(z, "s32", int)
@@ -69,7 +74,7 @@ class FC_Protocol(FC_Base_Uart_Comunication):
             self.__byte_temp1.bytes
             + self.__byte_temp2.bytes
             + self.__byte_temp3.bytes
-            + b"\x77",  # 帧结尾
+            + b"\x22",  # 帧结尾
         )
 
     def reset_position_prediction(self):
@@ -107,7 +112,7 @@ class FC_Protocol(FC_Base_Uart_Comunication):
             + self.__byte_temp2.bytes
             + self.__byte_temp3.bytes
             + self.__byte_temp4.bytes
-            + b"\x88",  # 帧结尾
+            + b"\x33",  # 帧结尾
         )
 
     def set_PWM_output(self, channel: int, pwm: float) -> None:
@@ -122,9 +127,36 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         self.__byte_temp1.reset(channel, "u8", int)
         self.__byte_temp2.reset(pwm_int, "s16", int)
         self.__send_32_command(
-            0x04, self.__byte_temp1.bytes + self.__byte_temp2.bytes + b"\x99", True
+            0x04,
+            self.__byte_temp1.bytes + self.__byte_temp2.bytes + b"\x44",
+            True,  # need ack
         )
         self.__action_log("set pwm output", f"channel {channel} pwm {pwm:.2f}")
+
+    def set_buzzer(self, on: bool) -> None:
+        """
+        设置蜂鸣器
+        on: 开关
+        """
+        on = 1 if on else 0
+        self.__byte_temp1.reset(on, "u8", int)
+        self.__send_32_command(0x05, self.__byte_temp1.bytes + b"\x55")
+        self.__action_log("set buzzer", f"{on}")
+
+    def set_digital_output(self, channel: int, on: bool) -> None:
+        """
+        设置数字输出
+        channel: 0-1
+        on: 开关
+        """
+        assert channel in [0, 1]
+        on = 1 if on else 0
+        self.__byte_temp1.reset(channel, "u8", int)
+        self.__byte_temp2.reset(on, "u8", int)
+        self.__send_32_command(
+            0x06, self.__byte_temp1.bytes + self.__byte_temp2.bytes + b"\x66"
+        )
+        self.__action_log("set digital output", f"channel {channel} on {on}")
 
     ######### IMU 命令 #########
 
