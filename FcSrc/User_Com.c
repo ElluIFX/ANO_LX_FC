@@ -114,8 +114,8 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
     case 0x01:  // 本地处理
       suboption = p_data[0];
       switch (suboption) {
-        case 0x01:                   // WS2812控制
-          if (p_data[13] == 0x11) {  // 帧结尾，确保接收完整
+        case 0x01:                  // WS2812控制
+          if (p_data[4] == 0x11) {  // 帧结尾，确保接收完整
             u32_temp = 0xff000000;
             u8_temp = p_data[1];  // R
             u32_temp |= u8_temp << 16;
@@ -125,7 +125,6 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
             u32_temp |= u8_temp;
             WS2812_SetAll(u32_temp);
             WS2812_SendBuf();
-            // LxPrintf("DBG: user rgb: %X", u32_temp);
           }
           break;
         case 0x02:                   // 位置信息回传
