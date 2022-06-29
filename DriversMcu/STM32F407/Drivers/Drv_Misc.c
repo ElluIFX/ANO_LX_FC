@@ -11,18 +11,6 @@
 #include "Drv_Misc.h"
 
 /**
- * @brief Set Buzzer on or off
- * @param  on               1: on, 0: off
- */
-void Buzzer_Set(uint8_t on) {
-  if (on != 0) {
-    GPIO_SetBits(__BUZZER_GPIO, __BUZZER_PIN);
-  } else {
-    GPIO_ResetBits(__BUZZER_GPIO, __BUZZER_PIN);
-  }
-}
-
-/**
  * @brief Get button status
  * @param  button           button id
  * @return 1: pressed, 0: released
@@ -40,35 +28,15 @@ uint8_t Button_Get(u8 button) {
  * @param  on               1: on, 0: off
  */
 void DOut_Set(u8 id, u8 on) {
-  if (id == 0x00) {
+  const static uint16_t PINS_LIST[4] = {__DOUT_0_PIN, __DOUT_1_PIN,
+                                        __DOUT_2_PIN, __DOUT_3_PIN};
+  if (id < 4) {
     if (on != 0) {
-      GPIO_SetBits(__DOUT_GPIO, __DOUT_0_PIN);
+      GPIO_SetBits(__DOUT_GPIO, PINS_LIST[id]);
     } else {
-      GPIO_ResetBits(__DOUT_GPIO, __DOUT_0_PIN);
-    }
-  } else if (id == 0x01) {
-    if (on != 0) {
-      GPIO_SetBits(__DOUT_GPIO, __DOUT_1_PIN);
-    } else {
-      GPIO_ResetBits(__DOUT_GPIO, __DOUT_1_PIN);
+      GPIO_ResetBits(__DOUT_GPIO, PINS_LIST[id]);
     }
   }
-}
-
-void DrvBuzzerInit(void) {
-  GPIO_InitTypeDef GPIO_InitStructure;
-  GPIO_StructInit(&GPIO_InitStructure);
-
-  RCC_AHB1PeriphClockCmd(__BUZZER_RCC, ENABLE);
-
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_Pin = __BUZZER_PIN;
-  GPIO_Init(__BUZZER_GPIO, &GPIO_InitStructure);
-
-  GPIO_ResetBits(__BUZZER_GPIO, __BUZZER_PIN);
 }
 
 void DrvButtonInit(void) {
@@ -102,7 +70,6 @@ void DrvDOutInit(void) {
 }
 
 void DrvMiscInit(void) {
-  DrvBuzzerInit();
   DrvButtonInit();
   DrvDOutInit();
 }

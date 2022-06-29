@@ -124,28 +124,18 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         )
         self._action_log("set pwm output", f"channel {channel} pwm {pwm:.2f}")
 
-    def set_buzzer(self, on: bool) -> None:
-        """
-        设置蜂鸣器
-        on: 开关
-        """
-        on = 1 if on else 0
-        self._byte_temp1.reset(on, "u8", int)
-        self._send_32_command(0x05, self._byte_temp1.bytes + b"\x55")
-        self._action_log("set buzzer", f"{on}")
-
     def set_digital_output(self, channel: int, on: bool) -> None:
         """
         设置数字输出
-        channel: 0-1
+        channel: 0-3
         on: 开关
         """
-        assert channel in [0, 1]
+        assert channel in [0, 1, 2, 3]
         on = 1 if on else 0
         self._byte_temp1.reset(channel, "u8", int)
         self._byte_temp2.reset(on, "u8", int)
         self._send_32_command(
-            0x06, self._byte_temp1.bytes + self._byte_temp2.bytes + b"\x66"
+            0x05, self._byte_temp1.bytes + self._byte_temp2.bytes + b"\x55"
         )
         self._action_log("set digital output", f"channel {channel} on {on}")
 

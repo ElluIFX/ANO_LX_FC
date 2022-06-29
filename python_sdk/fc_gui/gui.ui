@@ -7,13 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>628</width>
-    <height>658</height>
+    <height>581</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>628</width>
-    <height>658</height>
+    <height>581</height>
    </size>
   </property>
   <property name="maximumSize">
@@ -48,13 +48,13 @@
        <attribute name="title">
         <string>状态</string>
        </attribute>
-       <widget class="QWidget" name="">
+       <widget class="QWidget" name="layoutWidget">
         <property name="geometry">
          <rect>
           <x>0</x>
           <y>0</y>
           <width>601</width>
-          <height>609</height>
+          <height>531</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -595,7 +595,7 @@
             <widget class="QPlainTextEdit" name="text_log">
              <property name="font">
               <font>
-               <pointsize>12</pointsize>
+               <pointsize>11</pointsize>
               </font>
              </property>
              <property name="verticalScrollBarPolicy">
@@ -943,7 +943,7 @@
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_17" stretch="0,1,0">
                <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_14" stretch=""/>
+                <layout class="QHBoxLayout" name="horizontalLayout_14"/>
                </item>
                <item>
                 <widget class="QComboBox" name="combo_serial">
@@ -1211,95 +1211,11 @@
           <x>10</x>
           <y>10</y>
           <width>581</width>
-          <height>601</height>
+          <height>521</height>
          </rect>
         </property>
         <layout class="QGridLayout" name="gridLayout">
-         <item row="3" column="1">
-          <widget class="QPushButton" name="btn_pwm_4">
-           <property name="minimumSize">
-            <size>
-             <width>120</width>
-             <height>70</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>120</width>
-             <height>70</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>PWM 3</string>
-           </property>
-           <property name="shortcut">
-            <string>W</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QPushButton" name="btn_pwm_1">
-           <property name="minimumSize">
-            <size>
-             <width>120</width>
-             <height>70</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>120</width>
-             <height>70</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>PWM 1</string>
-           </property>
-           <property name="shortcut">
-            <string>W</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QPushButton" name="btn_rgb_13">
-           <property name="minimumSize">
-            <size>
-             <width>120</width>
-             <height>70</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>120</width>
-             <height>70</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>N/A</string>
-           </property>
-           <property name="shortcut">
-            <string>W</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
+         <item row="3" column="2">
           <widget class="QPushButton" name="btn_pwm_3">
            <property name="minimumSize">
             <size>
@@ -1327,8 +1243,8 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="btn_buzzer">
+         <item row="0" column="2">
+          <widget class="QPushButton" name="btn_pwm_0">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -1348,7 +1264,119 @@
             </font>
            </property>
            <property name="text">
-            <string>蜂鸣器</string>
+            <string>PWM 0</string>
+           </property>
+           <property name="shortcut">
+            <string>W</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QPushButton" name="btn_pwm_1">
+           <property name="minimumSize">
+            <size>
+             <width>120</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>PWM 1</string>
+           </property>
+           <property name="shortcut">
+            <string>W</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="3">
+          <widget class="QPushButton" name="btn_io_3">
+           <property name="minimumSize">
+            <size>
+             <width>120</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>数字输出 3</string>
+           </property>
+           <property name="shortcut">
+            <string>W</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QPushButton" name="btn_pwm_2">
+           <property name="minimumSize">
+            <size>
+             <width>120</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>PWM 2</string>
+           </property>
+           <property name="shortcut">
+            <string>W</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="3">
+          <widget class="QPushButton" name="btn_io_2">
+           <property name="minimumSize">
+            <size>
+             <width>120</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>数字输出 2</string>
            </property>
            <property name="shortcut">
             <string>W</string>
@@ -1384,62 +1412,6 @@
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QPushButton" name="btn_pwm_2">
-           <property name="minimumSize">
-            <size>
-             <width>120</width>
-             <height>70</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>120</width>
-             <height>70</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>PWM 2</string>
-           </property>
-           <property name="shortcut">
-            <string>W</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="2">
-          <widget class="QPushButton" name="btn_io_2">
-           <property name="minimumSize">
-            <size>
-             <width>120</width>
-             <height>70</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>120</width>
-             <height>70</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>数字输出 2</string>
-           </property>
-           <property name="shortcut">
-            <string>W</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="2">
           <widget class="QPushButton" name="btn_rgb_16">
            <property name="minimumSize">
             <size>
@@ -1467,7 +1439,7 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="2">
+         <item row="1" column="3">
           <widget class="QPushButton" name="btn_io_1">
            <property name="minimumSize">
             <size>
@@ -1495,7 +1467,7 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="2">
+         <item row="3" column="1">
           <widget class="QPushButton" name="btn_rgb_12">
            <property name="minimumSize">
             <size>
@@ -1523,7 +1495,35 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
+         <item row="0" column="3">
+          <widget class="QPushButton" name="btn_io_0">
+           <property name="minimumSize">
+            <size>
+             <width>120</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>70</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>数字输出 0</string>
+           </property>
+           <property name="shortcut">
+            <string>W</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
           <widget class="QPushButton" name="btn_rgb">
            <property name="minimumSize">
             <size>

@@ -383,39 +383,35 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.fc.set_PWM_output(channel, get)
 
     @Slot()
-    def on_btn_buzzer_clicked(self) -> None:
-        if self.fc is None:
-            return
-        s, ok = QInputDialog.getItem(self, "设置蜂鸣器", "操作:", ["开", "关"], 0, False)
-        if not ok:
-            return
-        if s == "开":
-            self.fc.set_buzzer(True)
-        else:
-            self.fc.set_buzzer(False)
-
-    @Slot()
-    def on_btn_io_1_clicked(self) -> None:
+    def on_btn_io_0_clicked(self) -> None:
         self._set_io(0)
 
     @Slot()
-    def on_btn_io_2_clicked(self) -> None:
+    def on_btn_io_1_clicked(self) -> None:
         self._set_io(1)
 
     @Slot()
-    def on_btn_pwm_1_clicked(self) -> None:
+    def on_btn_io_2_clicked(self) -> None:
+        self._set_io(2)
+
+    @Slot()
+    def on_btn_io_3_clicked(self) -> None:
+        self._set_io(3)
+
+    @Slot()
+    def on_btn_pwm_0_clicked(self) -> None:
         self._set_pwm(0)
 
     @Slot()
-    def on_btn_pwm_2_clicked(self) -> None:
+    def on_btn_pwm_1_clicked(self) -> None:
         self._set_pwm(1)
 
     @Slot()
-    def on_btn_pwm_3_clicked(self) -> None:
+    def on_btn_pwm_2_clicked(self) -> None:
         self._set_pwm(2)
 
     @Slot()
-    def on_btn_pwm_4_clicked(self) -> None:
+    def on_btn_pwm_3_clicked(self) -> None:
         self._set_pwm(3)
 
 

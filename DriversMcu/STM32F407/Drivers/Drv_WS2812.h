@@ -13,9 +13,9 @@
 #include "SysConfig.h"
 
 // PIN defination
-#define __WS2812_RCC RCC_AHB1Periph_GPIOD
-#define __WS2812_GPIO GPIOD
-#define __WS2812_PIN GPIO_Pin_12
+#define __WS2812_RCC RCC_AHB1Periph_GPIOC
+#define __WS2812_GPIO GPIOC
+#define __WS2812_PIN GPIO_Pin_6
 ////
 
 #define WS2812_NUM 8
