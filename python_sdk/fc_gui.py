@@ -61,10 +61,11 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.combo_serial.addItem("远端服务")
         self.combo_serial.setCurrentIndex(0)
         ports = QtSerialPort.QSerialPortInfo.availablePorts()
+        add_ports = []
         for port in ports:
-            if int(port.portName().strip("COM")) > 64:
-                ports.remove(port)
-        self.combo_serial.addItems([port.portName() for port in ports])
+            if int(port.portName().strip("COM")) < 64:
+                add_ports.append(port.portName())
+        self.combo_serial.addItems(add_ports)
         self.print_log(f"找到{len(ports)}个串口")
         self.updating_serial = False
 
@@ -361,6 +362,61 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             self.fc.set_rgb_led(r, g, b)
         except:
             self.print_log("输入错误")
+
+    def _set_io(self, io):
+        if self.fc is None:
+            return
+        s, ok = QInputDialog.getItem(self, f"设置IO:{io}", "操作:", ["开", "关"], 0, False)
+        if not ok:
+            return
+        if s == "开":
+            self.fc.set_digital_output(io, True)
+        else:
+            self.fc.set_digital_output(io, False)
+
+    def _set_pwm(self, channel):
+        if self.fc is None:
+            return
+        get, ok = QInputDialog.getDouble(self, f"设置PWM:{channel}", "占空比:", 0, 0, 100, 1)
+        if not ok:
+            return
+        self.fc.set_PWM_output(channel, get)
+
+    @Slot()
+    def on_btn_buzzer_clicked(self) -> None:
+        if self.fc is None:
+            return
+        s, ok = QInputDialog.getItem(self, "设置蜂鸣器", "操作:", ["开", "关"], 0, False)
+        if not ok:
+            return
+        if s == "开":
+            self.fc.set_buzzer(True)
+        else:
+            self.fc.set_buzzer(False)
+
+    @Slot()
+    def on_btn_io_1_clicked(self) -> None:
+        self._set_io(0)
+
+    @Slot()
+    def on_btn_io_2_clicked(self) -> None:
+        self._set_io(1)
+
+    @Slot()
+    def on_btn_pwm_1_clicked(self) -> None:
+        self._set_pwm(0)
+
+    @Slot()
+    def on_btn_pwm_2_clicked(self) -> None:
+        self._set_pwm(1)
+
+    @Slot()
+    def on_btn_pwm_3_clicked(self) -> None:
+        self._set_pwm(2)
+
+    @Slot()
+    def on_btn_pwm_4_clicked(self) -> None:
+        self._set_pwm(3)
 
 
 def main():

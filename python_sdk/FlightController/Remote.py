@@ -87,7 +87,6 @@ class FC_Server(FC_Application):
         bit_rate: int = 500000,
         print_state=True,
         callback=None,
-        daemon=True,
     ):
         self._serial_callback = callback
         return super().start_listen_serial(
@@ -95,7 +94,6 @@ class FC_Server(FC_Application):
             bit_rate,
             print_state,
             self._update_proxy_state,
-            daemon,
         )
 
     def init(self, port=5654, authkey=b"fc"):
@@ -157,7 +155,6 @@ class FC_Client(FC_Application):
         bit_rate: int = 500000,
         print_state=True,
         callback=None,
-        daemon=True,
     ):
         """
         客户端无需监听串口, 调用start_sync_state替代
@@ -165,16 +162,16 @@ class FC_Client(FC_Application):
         logger.warning(
             "[FC_Client] do not need to start serial listening, auto calling start_sync_state instead"
         )
-        return self.start_sync_state(print_state, callback, daemon)
+        return self.start_sync_state(print_state, callback)
 
-    def start_sync_state(self, print_state=True, callback=None, daemon=True):
+    def start_sync_state(self, print_state=True, callback=None):
         """
         与服务器同步状态变量
         """
         self._state_update_callback = callback
         self._print_state_flag = print_state
         self._listen_thread = Thread(target=self._sync_state_task)
-        self._listen_thread.setDaemon(daemon)
+        self._listen_thread.daemon = True
         self._listen_thread.start()
         logger.info("[FC_Client] State sync started")
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'guisumzrU.ui'
+## Form generated from reading UI file 'guiWDPAVN.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.3.0
 ##
@@ -16,29 +16,41 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QButtonGroup, QComboBox,
-    QDoubleSpinBox, QFrame, QHBoxLayout, QLCDNumber,
-    QLabel, QLineEdit, QMainWindow, QPlainTextEdit,
-    QPushButton, QRadioButton, QSizePolicy, QVBoxLayout,
-    QWidget)
+    QDoubleSpinBox, QFrame, QGridLayout, QHBoxLayout,
+    QLCDNumber, QLabel, QLineEdit, QMainWindow,
+    QPlainTextEdit, QPushButton, QRadioButton, QSizePolicy,
+    QTabWidget, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(644, 503)
-        MainWindow.setMinimumSize(QSize(644, 503))
-        MainWindow.setMaximumSize(QSize(644, 503))
+        MainWindow.resize(628, 658)
+        MainWindow.setMinimumSize(QSize(628, 658))
+        MainWindow.setMaximumSize(QSize(628, 658))
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout_8 = QVBoxLayout(self.centralwidget)
         self.verticalLayout_8.setObjectName(u"verticalLayout_8")
+        self.tabWidget = QTabWidget(self.centralwidget)
+        self.tabWidget.setObjectName(u"tabWidget")
+        self.tabWidget.setMinimumSize(QSize(0, 0))
+        self.tabWidget.setMaximumSize(QSize(900, 900))
+        self.tab = QWidget()
+        self.tab.setObjectName(u"tab")
+        self.widget = QWidget(self.tab)
+        self.widget.setObjectName(u"widget")
+        self.widget.setGeometry(QRect(0, 0, 601, 609))
+        self.verticalLayout_9 = QVBoxLayout(self.widget)
+        self.verticalLayout_9.setObjectName(u"verticalLayout_9")
+        self.verticalLayout_9.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_7 = QHBoxLayout()
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
         self.verticalLayout = QVBoxLayout()
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.label = QLabel(self.centralwidget)
+        self.label = QLabel(self.widget)
         self.label.setObjectName(u"label")
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -47,7 +59,7 @@ class Ui_MainWindow(object):
         self.label.setSizePolicy(sizePolicy)
         self.label.setMinimumSize(QSize(80, 0))
         font = QFont()
-        font.setPointSize(14)
+        font.setPointSize(13)
         font.setBold(True)
         self.label.setFont(font)
         self.label.setFrameShape(QFrame.NoFrame)
@@ -56,7 +68,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.label)
 
-        self.lcd_h = QLCDNumber(self.centralwidget)
+        self.lcd_h = QLCDNumber(self.widget)
         self.lcd_h.setObjectName(u"lcd_h")
         self.lcd_h.setMinimumSize(QSize(0, 40))
         font1 = QFont()
@@ -78,7 +90,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.label_2 = QLabel(self.centralwidget)
+        self.label_2 = QLabel(self.widget)
         self.label_2.setObjectName(u"label_2")
         sizePolicy.setHeightForWidth(self.label_2.sizePolicy().hasHeightForWidth())
         self.label_2.setSizePolicy(sizePolicy)
@@ -90,7 +102,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2.addWidget(self.label_2)
 
-        self.lcd_d = QLCDNumber(self.centralwidget)
+        self.lcd_d = QLCDNumber(self.widget)
         self.lcd_d.setObjectName(u"lcd_d")
         self.lcd_d.setMinimumSize(QSize(0, 40))
         self.lcd_d.setFont(font1)
@@ -110,7 +122,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-        self.label_3 = QLabel(self.centralwidget)
+        self.label_3 = QLabel(self.widget)
         self.label_3.setObjectName(u"label_3")
         sizePolicy.setHeightForWidth(self.label_3.sizePolicy().hasHeightForWidth())
         self.label_3.setSizePolicy(sizePolicy)
@@ -122,7 +134,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_3.addWidget(self.label_3)
 
-        self.lcd_v = QLCDNumber(self.centralwidget)
+        self.lcd_v = QLCDNumber(self.widget)
         self.lcd_v.setObjectName(u"lcd_v")
         self.lcd_v.setMinimumSize(QSize(0, 40))
         self.lcd_v.setFont(font1)
@@ -147,7 +159,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.horizontalLayout_6 = QHBoxLayout()
         self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
-        self.label_6 = QLabel(self.centralwidget)
+        self.label_6 = QLabel(self.widget)
         self.label_6.setObjectName(u"label_6")
         sizePolicy.setHeightForWidth(self.label_6.sizePolicy().hasHeightForWidth())
         self.label_6.setSizePolicy(sizePolicy)
@@ -159,7 +171,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_6.addWidget(self.label_6)
 
-        self.lcd_x = QLCDNumber(self.centralwidget)
+        self.lcd_x = QLCDNumber(self.widget)
         self.lcd_x.setObjectName(u"lcd_x")
         self.lcd_x.setMinimumSize(QSize(0, 40))
         self.lcd_x.setFont(font1)
@@ -179,7 +191,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.label_4 = QLabel(self.centralwidget)
+        self.label_4 = QLabel(self.widget)
         self.label_4.setObjectName(u"label_4")
         sizePolicy.setHeightForWidth(self.label_4.sizePolicy().hasHeightForWidth())
         self.label_4.setSizePolicy(sizePolicy)
@@ -191,7 +203,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_4.addWidget(self.label_4)
 
-        self.lcd_y = QLCDNumber(self.centralwidget)
+        self.lcd_y = QLCDNumber(self.widget)
         self.lcd_y.setObjectName(u"lcd_y")
         self.lcd_y.setMinimumSize(QSize(0, 40))
         self.lcd_y.setFont(font1)
@@ -211,7 +223,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_5 = QHBoxLayout()
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
-        self.label_5 = QLabel(self.centralwidget)
+        self.label_5 = QLabel(self.widget)
         self.label_5.setObjectName(u"label_5")
         sizePolicy.setHeightForWidth(self.label_5.sizePolicy().hasHeightForWidth())
         self.label_5.setSizePolicy(sizePolicy)
@@ -223,7 +235,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_5.addWidget(self.label_5)
 
-        self.lcd_z = QLCDNumber(self.centralwidget)
+        self.lcd_z = QLCDNumber(self.widget)
         self.lcd_z.setObjectName(u"lcd_z")
         self.lcd_z.setMinimumSize(QSize(0, 40))
         self.lcd_z.setFont(font1)
@@ -245,23 +257,27 @@ class Ui_MainWindow(object):
         self.horizontalLayout_7.addLayout(self.verticalLayout_2)
 
 
-        self.verticalLayout_8.addLayout(self.horizontalLayout_7)
+        self.verticalLayout_9.addLayout(self.horizontalLayout_7)
 
         self.horizontalLayout_15 = QHBoxLayout()
         self.horizontalLayout_15.setObjectName(u"horizontalLayout_15")
-        self.label_10 = QLabel(self.centralwidget)
+        self.label_10 = QLabel(self.widget)
         self.label_10.setObjectName(u"label_10")
         self.label_10.setMinimumSize(QSize(82, 0))
         font2 = QFont()
-        font2.setPointSize(11)
+        font2.setPointSize(12)
+        font2.setBold(False)
         self.label_10.setFont(font2)
         self.label_10.setAlignment(Qt.AlignCenter)
 
         self.horizontalLayout_15.addWidget(self.label_10)
 
-        self.line_info = QLineEdit(self.centralwidget)
+        self.line_info = QLineEdit(self.widget)
         self.line_info.setObjectName(u"line_info")
-        self.line_info.setFont(font2)
+        self.line_info.setMinimumSize(QSize(0, 43))
+        font3 = QFont()
+        font3.setPointSize(11)
+        self.line_info.setFont(font3)
         self.line_info.setDragEnabled(True)
         self.line_info.setReadOnly(True)
 
@@ -269,11 +285,11 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_15.setStretch(1, 1)
 
-        self.verticalLayout_8.addLayout(self.horizontalLayout_15)
+        self.verticalLayout_9.addLayout(self.horizontalLayout_15)
 
         self.horizontalLayout_16 = QHBoxLayout()
         self.horizontalLayout_16.setObjectName(u"horizontalLayout_16")
-        self.label_11 = QLabel(self.centralwidget)
+        self.label_11 = QLabel(self.widget)
         self.label_11.setObjectName(u"label_11")
         self.label_11.setMinimumSize(QSize(82, 0))
         self.label_11.setFont(font2)
@@ -281,9 +297,11 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_16.addWidget(self.label_11)
 
-        self.text_log = QPlainTextEdit(self.centralwidget)
+        self.text_log = QPlainTextEdit(self.widget)
         self.text_log.setObjectName(u"text_log")
-        self.text_log.setFont(font2)
+        font4 = QFont()
+        font4.setPointSize(12)
+        self.text_log.setFont(font4)
         self.text_log.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.text_log.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.text_log.setUndoRedoEnabled(False)
@@ -291,43 +309,28 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_16.addWidget(self.text_log)
 
-        self.btn_rgb = QPushButton(self.centralwidget)
-        self.btn_rgb.setObjectName(u"btn_rgb")
-        self.btn_rgb.setMinimumSize(QSize(0, 70))
-        font3 = QFont()
-        font3.setPointSize(11)
-        font3.setBold(False)
-        self.btn_rgb.setFont(font3)
 
-        self.horizontalLayout_16.addWidget(self.btn_rgb)
+        self.verticalLayout_9.addLayout(self.horizontalLayout_16)
 
-
-        self.verticalLayout_8.addLayout(self.horizontalLayout_16)
-
-        self.horizontalLayout_14 = QHBoxLayout()
-        self.horizontalLayout_14.setObjectName(u"horizontalLayout_14")
         self.horizontalLayout_10 = QHBoxLayout()
         self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
         self.verticalLayout_4 = QVBoxLayout()
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-        self.btn_takeoff = QPushButton(self.centralwidget)
+        self.btn_takeoff = QPushButton(self.widget)
         self.btn_takeoff.setObjectName(u"btn_takeoff")
         self.btn_takeoff.setMinimumSize(QSize(0, 50))
-        font4 = QFont()
-        font4.setPointSize(12)
-        font4.setBold(False)
-        self.btn_takeoff.setFont(font4)
+        self.btn_takeoff.setFont(font2)
 
         self.verticalLayout_4.addWidget(self.btn_takeoff)
 
-        self.btn_land = QPushButton(self.centralwidget)
+        self.btn_land = QPushButton(self.widget)
         self.btn_land.setObjectName(u"btn_land")
         self.btn_land.setMinimumSize(QSize(0, 50))
-        self.btn_land.setFont(font4)
+        self.btn_land.setFont(font2)
 
         self.verticalLayout_4.addWidget(self.btn_land)
 
-        self.btn_unlock = QPushButton(self.centralwidget)
+        self.btn_unlock = QPushButton(self.widget)
         self.btn_unlock.setObjectName(u"btn_unlock")
         self.btn_unlock.setMinimumSize(QSize(0, 50))
         font5 = QFont()
@@ -339,7 +342,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_4.addWidget(self.btn_unlock)
 
-        self.btn_lock = QPushButton(self.centralwidget)
+        self.btn_lock = QPushButton(self.widget)
         self.btn_lock.setObjectName(u"btn_lock")
         self.btn_lock.setMinimumSize(QSize(0, 50))
         self.btn_lock.setFont(font5)
@@ -353,7 +356,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
         self.horizontalLayout_8 = QHBoxLayout()
         self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
-        self.btn_l_turn = QPushButton(self.centralwidget)
+        self.btn_l_turn = QPushButton(self.widget)
         self.btn_l_turn.setObjectName(u"btn_l_turn")
         self.btn_l_turn.setMinimumSize(QSize(0, 70))
         font6 = QFont()
@@ -363,14 +366,14 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_8.addWidget(self.btn_l_turn)
 
-        self.btn_forward = QPushButton(self.centralwidget)
+        self.btn_forward = QPushButton(self.widget)
         self.btn_forward.setObjectName(u"btn_forward")
         self.btn_forward.setMinimumSize(QSize(0, 70))
         self.btn_forward.setFont(font6)
 
         self.horizontalLayout_8.addWidget(self.btn_forward)
 
-        self.btn_r_turn = QPushButton(self.centralwidget)
+        self.btn_r_turn = QPushButton(self.widget)
         self.btn_r_turn.setObjectName(u"btn_r_turn")
         self.btn_r_turn.setMinimumSize(QSize(0, 70))
         self.btn_r_turn.setFont(font6)
@@ -382,21 +385,21 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_9 = QHBoxLayout()
         self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
-        self.btn_left = QPushButton(self.centralwidget)
+        self.btn_left = QPushButton(self.widget)
         self.btn_left.setObjectName(u"btn_left")
         self.btn_left.setMinimumSize(QSize(0, 70))
         self.btn_left.setFont(font6)
 
         self.horizontalLayout_9.addWidget(self.btn_left)
 
-        self.btn_backward = QPushButton(self.centralwidget)
+        self.btn_backward = QPushButton(self.widget)
         self.btn_backward.setObjectName(u"btn_backward")
         self.btn_backward.setMinimumSize(QSize(0, 70))
         self.btn_backward.setFont(font6)
 
         self.horizontalLayout_9.addWidget(self.btn_backward)
 
-        self.btn_right = QPushButton(self.centralwidget)
+        self.btn_right = QPushButton(self.widget)
         self.btn_right.setObjectName(u"btn_right")
         self.btn_right.setMinimumSize(QSize(0, 70))
         self.btn_right.setFont(font6)
@@ -411,21 +414,21 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_6 = QVBoxLayout()
         self.verticalLayout_6.setObjectName(u"verticalLayout_6")
-        self.btn_up = QPushButton(self.centralwidget)
+        self.btn_up = QPushButton(self.widget)
         self.btn_up.setObjectName(u"btn_up")
         self.btn_up.setMinimumSize(QSize(0, 50))
         self.btn_up.setFont(font6)
 
         self.verticalLayout_6.addWidget(self.btn_up)
 
-        self.btn_stop = QPushButton(self.centralwidget)
+        self.btn_stop = QPushButton(self.widget)
         self.btn_stop.setObjectName(u"btn_stop")
         self.btn_stop.setMinimumSize(QSize(0, 50))
         self.btn_stop.setFont(font6)
 
         self.verticalLayout_6.addWidget(self.btn_stop)
 
-        self.btn_down = QPushButton(self.centralwidget)
+        self.btn_down = QPushButton(self.widget)
         self.btn_down.setObjectName(u"btn_down")
         self.btn_down.setMinimumSize(QSize(0, 50))
         self.btn_down.setFont(font6)
@@ -439,7 +442,12 @@ class Ui_MainWindow(object):
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.horizontalLayout_17 = QHBoxLayout()
         self.horizontalLayout_17.setObjectName(u"horizontalLayout_17")
-        self.combo_serial = QComboBox(self.centralwidget)
+        self.horizontalLayout_14 = QHBoxLayout()
+        self.horizontalLayout_14.setObjectName(u"horizontalLayout_14")
+
+        self.horizontalLayout_17.addLayout(self.horizontalLayout_14)
+
+        self.combo_serial = QComboBox(self.widget)
         self.combo_serial.addItem("")
         self.combo_serial.setObjectName(u"combo_serial")
         font7 = QFont()
@@ -448,7 +456,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_17.addWidget(self.combo_serial)
 
-        self.btn_serial_update = QPushButton(self.centralwidget)
+        self.btn_serial_update = QPushButton(self.widget)
         self.btn_serial_update.setObjectName(u"btn_serial_update")
         font8 = QFont()
         font8.setPointSize(10)
@@ -458,13 +466,13 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_17.addWidget(self.btn_serial_update)
 
-        self.horizontalLayout_17.setStretch(0, 1)
+        self.horizontalLayout_17.setStretch(1, 1)
 
         self.verticalLayout_7.addLayout(self.horizontalLayout_17)
 
         self.horizontalLayout_20 = QHBoxLayout()
         self.horizontalLayout_20.setObjectName(u"horizontalLayout_20")
-        self.radio_control_realtime = QRadioButton(self.centralwidget)
+        self.radio_control_realtime = QRadioButton(self.widget)
         self.buttonGroup = QButtonGroup(MainWindow)
         self.buttonGroup.setObjectName(u"buttonGroup")
         self.buttonGroup.addButton(self.radio_control_realtime)
@@ -473,7 +481,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_20.addWidget(self.radio_control_realtime)
 
-        self.radio_control_flow = QRadioButton(self.centralwidget)
+        self.radio_control_flow = QRadioButton(self.widget)
         self.buttonGroup.addButton(self.radio_control_flow)
         self.radio_control_flow.setObjectName(u"radio_control_flow")
 
@@ -484,17 +492,15 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_11 = QHBoxLayout()
         self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
-        self.label_7 = QLabel(self.centralwidget)
+        self.label_7 = QLabel(self.widget)
         self.label_7.setObjectName(u"label_7")
-        font9 = QFont()
-        font9.setPointSize(12)
-        self.label_7.setFont(font9)
+        self.label_7.setFont(font4)
 
         self.horizontalLayout_11.addWidget(self.label_7)
 
-        self.box_hori_param = QDoubleSpinBox(self.centralwidget)
+        self.box_hori_param = QDoubleSpinBox(self.widget)
         self.box_hori_param.setObjectName(u"box_hori_param")
-        self.box_hori_param.setFont(font9)
+        self.box_hori_param.setFont(font4)
         self.box_hori_param.setDecimals(1)
         self.box_hori_param.setMaximum(100.000000000000000)
         self.box_hori_param.setSingleStep(5.000000000000000)
@@ -508,16 +514,16 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_12 = QHBoxLayout()
         self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
-        self.label_8 = QLabel(self.centralwidget)
+        self.label_8 = QLabel(self.widget)
         self.label_8.setObjectName(u"label_8")
-        self.label_8.setFont(font9)
+        self.label_8.setFont(font4)
 
         self.horizontalLayout_12.addWidget(self.label_8)
 
-        self.box_vert_param = QDoubleSpinBox(self.centralwidget)
+        self.box_vert_param = QDoubleSpinBox(self.widget)
         self.box_vert_param.setObjectName(u"box_vert_param")
         self.box_vert_param.setMinimumSize(QSize(100, 0))
-        self.box_vert_param.setFont(font9)
+        self.box_vert_param.setFont(font4)
         self.box_vert_param.setDecimals(1)
         self.box_vert_param.setMaximum(100.000000000000000)
         self.box_vert_param.setSingleStep(5.000000000000000)
@@ -531,15 +537,15 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_21 = QHBoxLayout()
         self.horizontalLayout_21.setObjectName(u"horizontalLayout_21")
-        self.label_12 = QLabel(self.centralwidget)
+        self.label_12 = QLabel(self.widget)
         self.label_12.setObjectName(u"label_12")
-        self.label_12.setFont(font9)
+        self.label_12.setFont(font4)
 
         self.horizontalLayout_21.addWidget(self.label_12)
 
-        self.box_spin_param = QDoubleSpinBox(self.centralwidget)
+        self.box_spin_param = QDoubleSpinBox(self.widget)
         self.box_spin_param.setObjectName(u"box_spin_param")
-        self.box_spin_param.setFont(font9)
+        self.box_spin_param.setFont(font4)
         self.box_spin_param.setDecimals(1)
         self.box_spin_param.setMaximum(100.000000000000000)
         self.box_spin_param.setSingleStep(5.000000000000000)
@@ -553,16 +559,16 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_13 = QHBoxLayout()
         self.horizontalLayout_13.setObjectName(u"horizontalLayout_13")
-        self.label_9 = QLabel(self.centralwidget)
+        self.label_9 = QLabel(self.widget)
         self.label_9.setObjectName(u"label_9")
-        self.label_9.setFont(font9)
+        self.label_9.setFont(font4)
 
         self.horizontalLayout_13.addWidget(self.label_9)
 
-        self.box_height = QDoubleSpinBox(self.centralwidget)
+        self.box_height = QDoubleSpinBox(self.widget)
         self.box_height.setObjectName(u"box_height")
         self.box_height.setMinimumSize(QSize(100, 0))
-        self.box_height.setFont(font9)
+        self.box_height.setFont(font4)
         self.box_height.setDecimals(0)
         self.box_height.setMaximum(200.000000000000000)
         self.box_height.setSingleStep(10.000000000000000)
@@ -575,11 +581,11 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_7.addLayout(self.horizontalLayout_13)
 
-        self.btn_set_h = QPushButton(self.centralwidget)
+        self.btn_set_h = QPushButton(self.widget)
         self.btn_set_h.setObjectName(u"btn_set_h")
-        font10 = QFont()
-        font10.setPointSize(10)
-        self.btn_set_h.setFont(font10)
+        font9 = QFont()
+        font9.setPointSize(10)
+        self.btn_set_h.setFont(font9)
         self.btn_set_h.setIconSize(QSize(8, 16))
 
         self.verticalLayout_7.addWidget(self.btn_set_h)
@@ -591,16 +597,126 @@ class Ui_MainWindow(object):
         self.horizontalLayout_10.setStretch(1, 3)
         self.horizontalLayout_10.setStretch(2, 1)
 
-        self.horizontalLayout_14.addLayout(self.horizontalLayout_10)
+        self.verticalLayout_9.addLayout(self.horizontalLayout_10)
 
-        self.horizontalLayout_14.setStretch(0, 1)
+        self.tabWidget.addTab(self.tab, "")
+        self.tab_2 = QWidget()
+        self.tab_2.setObjectName(u"tab_2")
+        self.gridLayoutWidget = QWidget(self.tab_2)
+        self.gridLayoutWidget.setObjectName(u"gridLayoutWidget")
+        self.gridLayoutWidget.setGeometry(QRect(10, 10, 581, 601))
+        self.gridLayout = QGridLayout(self.gridLayoutWidget)
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.gridLayout.setContentsMargins(0, 0, 0, 0)
+        self.btn_pwm_4 = QPushButton(self.gridLayoutWidget)
+        self.btn_pwm_4.setObjectName(u"btn_pwm_4")
+        self.btn_pwm_4.setMinimumSize(QSize(120, 70))
+        self.btn_pwm_4.setMaximumSize(QSize(120, 70))
+        font10 = QFont()
+        font10.setPointSize(10)
+        font10.setBold(False)
+        self.btn_pwm_4.setFont(font10)
 
-        self.verticalLayout_8.addLayout(self.horizontalLayout_14)
+        self.gridLayout.addWidget(self.btn_pwm_4, 3, 1, 1, 1)
 
-        self.verticalLayout_8.setStretch(2, 1)
+        self.btn_pwm_1 = QPushButton(self.gridLayoutWidget)
+        self.btn_pwm_1.setObjectName(u"btn_pwm_1")
+        self.btn_pwm_1.setMinimumSize(QSize(120, 70))
+        self.btn_pwm_1.setMaximumSize(QSize(120, 70))
+        self.btn_pwm_1.setFont(font10)
+
+        self.gridLayout.addWidget(self.btn_pwm_1, 2, 0, 1, 1)
+
+        self.btn_rgb_13 = QPushButton(self.gridLayoutWidget)
+        self.btn_rgb_13.setObjectName(u"btn_rgb_13")
+        self.btn_rgb_13.setMinimumSize(QSize(120, 70))
+        self.btn_rgb_13.setMaximumSize(QSize(120, 70))
+        self.btn_rgb_13.setFont(font10)
+
+        self.gridLayout.addWidget(self.btn_rgb_13, 1, 0, 1, 1)
+
+        self.btn_pwm_3 = QPushButton(self.gridLayoutWidget)
+        self.btn_pwm_3.setObjectName(u"btn_pwm_3")
+        self.btn_pwm_3.setMinimumSize(QSize(120, 70))
+        self.btn_pwm_3.setMaximumSize(QSize(120, 70))
+        self.btn_pwm_3.setFont(font10)
+
+        self.gridLayout.addWidget(self.btn_pwm_3, 3, 0, 1, 1)
+
+        self.btn_buzzer = QPushButton(self.gridLayoutWidget)
+        self.btn_buzzer.setObjectName(u"btn_buzzer")
+        self.btn_buzzer.setMinimumSize(QSize(120, 70))
+        self.btn_buzzer.setMaximumSize(QSize(120, 70))
+        self.btn_buzzer.setFont(font10)
+
+        self.gridLayout.addWidget(self.btn_buzzer, 0, 1, 1, 1)
+
+        self.btn_rgb_11 = QPushButton(self.gridLayoutWidget)
+        self.btn_rgb_11.setObjectName(u"btn_rgb_11")
+        self.btn_rgb_11.setMinimumSize(QSize(120, 70))
+        self.btn_rgb_11.setMaximumSize(QSize(120, 70))
+        self.btn_rgb_11.setFont(font10)
+
+        self.gridLayout.addWidget(self.btn_rgb_11, 1, 1, 1, 1)
+
+        self.btn_pwm_2 = QPushButton(self.gridLayoutWidget)
+        self.btn_pwm_2.setObjectName(u"btn_pwm_2")
+        self.btn_pwm_2.setMinimumSize(QSize(120, 70))
+        self.btn_pwm_2.setMaximumSize(QSize(120, 70))
+        self.btn_pwm_2.setFont(font10)
+
+        self.gridLayout.addWidget(self.btn_pwm_2, 2, 1, 1, 1)
+
+        self.btn_io_2 = QPushButton(self.gridLayoutWidget)
+        self.btn_io_2.setObjectName(u"btn_io_2")
+        self.btn_io_2.setMinimumSize(QSize(120, 70))
+        self.btn_io_2.setMaximumSize(QSize(120, 70))
+        self.btn_io_2.setFont(font10)
+
+        self.gridLayout.addWidget(self.btn_io_2, 3, 2, 1, 1)
+
+        self.btn_rgb_16 = QPushButton(self.gridLayoutWidget)
+        self.btn_rgb_16.setObjectName(u"btn_rgb_16")
+        self.btn_rgb_16.setMinimumSize(QSize(120, 70))
+        self.btn_rgb_16.setMaximumSize(QSize(120, 70))
+        self.btn_rgb_16.setFont(font10)
+
+        self.gridLayout.addWidget(self.btn_rgb_16, 1, 2, 1, 1)
+
+        self.btn_io_1 = QPushButton(self.gridLayoutWidget)
+        self.btn_io_1.setObjectName(u"btn_io_1")
+        self.btn_io_1.setMinimumSize(QSize(120, 70))
+        self.btn_io_1.setMaximumSize(QSize(120, 70))
+        self.btn_io_1.setFont(font10)
+
+        self.gridLayout.addWidget(self.btn_io_1, 2, 2, 1, 1)
+
+        self.btn_rgb_12 = QPushButton(self.gridLayoutWidget)
+        self.btn_rgb_12.setObjectName(u"btn_rgb_12")
+        self.btn_rgb_12.setMinimumSize(QSize(120, 70))
+        self.btn_rgb_12.setMaximumSize(QSize(120, 70))
+        self.btn_rgb_12.setFont(font10)
+
+        self.gridLayout.addWidget(self.btn_rgb_12, 0, 2, 1, 1)
+
+        self.btn_rgb = QPushButton(self.gridLayoutWidget)
+        self.btn_rgb.setObjectName(u"btn_rgb")
+        self.btn_rgb.setMinimumSize(QSize(120, 70))
+        self.btn_rgb.setMaximumSize(QSize(120, 70))
+        self.btn_rgb.setFont(font10)
+
+        self.gridLayout.addWidget(self.btn_rgb, 0, 0, 1, 1)
+
+        self.tabWidget.addTab(self.tab_2, "")
+
+        self.verticalLayout_8.addWidget(self.tabWidget)
+
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
+
+        self.tabWidget.setCurrentIndex(0)
+
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
@@ -618,10 +734,6 @@ class Ui_MainWindow(object):
         self.line_info.setPlaceholderText("")
         self.label_11.setText(QCoreApplication.translate("MainWindow", u"\u7cfb\u7edf\u65e5\u5fd7:", None))
         self.text_log.setPlainText(QCoreApplication.translate("MainWindow", u"\u6d4b\u8bd5\u6587\u672c", None))
-        self.btn_rgb.setText(QCoreApplication.translate("MainWindow", u"\u8bbe\u7f6eRGB", None))
-#if QT_CONFIG(shortcut)
-        self.btn_rgb.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
-#endif // QT_CONFIG(shortcut)
         self.btn_takeoff.setText(QCoreApplication.translate("MainWindow", u"\u8d77\u98de", None))
 #if QT_CONFIG(shortcut)
         self.btn_takeoff.setShortcut(QCoreApplication.translate("MainWindow", u"X", None))
@@ -699,5 +811,55 @@ class Ui_MainWindow(object):
         self.label_12.setText(QCoreApplication.translate("MainWindow", u"\u65cb\u8f6c\u901f\u5ea6", None))
         self.label_9.setText(QCoreApplication.translate("MainWindow", u"\u5b9a\u9ad8\u9ad8\u5ea6", None))
         self.btn_set_h.setText(QCoreApplication.translate("MainWindow", u"\u5b9a\u9ad8\u4f5c\u52a8", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"\u72b6\u6001", None))
+        self.btn_pwm_4.setText(QCoreApplication.translate("MainWindow", u"PWM 3", None))
+#if QT_CONFIG(shortcut)
+        self.btn_pwm_4.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
+        self.btn_pwm_1.setText(QCoreApplication.translate("MainWindow", u"PWM 1", None))
+#if QT_CONFIG(shortcut)
+        self.btn_pwm_1.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
+        self.btn_rgb_13.setText(QCoreApplication.translate("MainWindow", u"N/A", None))
+#if QT_CONFIG(shortcut)
+        self.btn_rgb_13.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
+        self.btn_pwm_3.setText(QCoreApplication.translate("MainWindow", u"PWM 3", None))
+#if QT_CONFIG(shortcut)
+        self.btn_pwm_3.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
+        self.btn_buzzer.setText(QCoreApplication.translate("MainWindow", u"\u8702\u9e23\u5668", None))
+#if QT_CONFIG(shortcut)
+        self.btn_buzzer.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
+        self.btn_rgb_11.setText(QCoreApplication.translate("MainWindow", u"N/A", None))
+#if QT_CONFIG(shortcut)
+        self.btn_rgb_11.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
+        self.btn_pwm_2.setText(QCoreApplication.translate("MainWindow", u"PWM 2", None))
+#if QT_CONFIG(shortcut)
+        self.btn_pwm_2.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
+        self.btn_io_2.setText(QCoreApplication.translate("MainWindow", u"\u6570\u5b57\u8f93\u51fa 2", None))
+#if QT_CONFIG(shortcut)
+        self.btn_io_2.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
+        self.btn_rgb_16.setText(QCoreApplication.translate("MainWindow", u"N/A", None))
+#if QT_CONFIG(shortcut)
+        self.btn_rgb_16.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
+        self.btn_io_1.setText(QCoreApplication.translate("MainWindow", u"\u6570\u5b57\u8f93\u51fa 1", None))
+#if QT_CONFIG(shortcut)
+        self.btn_io_1.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
+        self.btn_rgb_12.setText(QCoreApplication.translate("MainWindow", u"N/A", None))
+#if QT_CONFIG(shortcut)
+        self.btn_rgb_12.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
+        self.btn_rgb.setText(QCoreApplication.translate("MainWindow", u"WS2812", None))
+#if QT_CONFIG(shortcut)
+        self.btn_rgb.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+#endif // QT_CONFIG(shortcut)
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"\u5916\u8bbe", None))
     # retranslateUi
 
