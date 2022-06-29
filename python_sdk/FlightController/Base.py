@@ -227,16 +227,17 @@ class FC_Settings_Struct:
     auto_change_mode = True  # 是否自动切换飞控模式以匹配目标动作
 
 
-class FC_Base_Uart_Comunication:
+class FC_Base_Uart_Comunication(object):
     """
     通讯层, 实现了与飞控的直接串口通讯
     """
 
     def __init__(self) -> None:
+        super().__init__()
         self.running = False
         self.connected = False
         self._start_bit = [0xAA, 0x22]
-        self._listen_thread = None
+        self._thread_list = []
         self._state_update_callback = None
         self._print_state_flag = False
         self._ser_32 = None
@@ -254,7 +255,6 @@ class FC_Base_Uart_Comunication:
         bit_rate: int = 500000,
         print_state=True,
         callback=None,
-        daemon=True,
     ):
         self._state_update_callback = callback
         self._print_state_flag = print_state
@@ -262,15 +262,17 @@ class FC_Base_Uart_Comunication:
         self._set_option(0)
         self._ser_32.read_config(startBit=[0xAA, 0x55])
         logger.info("[FC] Serial port opened")
-        self._listen_thread = threading.Thread(target=self._listen_serial_task)
-        self._listen_thread.setDaemon(daemon)
-        self._listen_thread.start()
+        _listen_thread = threading.Thread(target=self._listen_serial_task)
+        _listen_thread.daemon = True
+        _listen_thread.start()
+        self._thread_list.append(_listen_thread)
         self.running = True
 
     def quit(self) -> None:
         self.running = False
-        if self._listen_thread:
-            self._listen_thread.join()
+        for thread in self._thread_list:
+            thread.join()
+            self._thread_list.remove(thread)
         if self._ser_32:
             self._ser_32.close()
         logger.info("[FC] Threads closed, FC offline")

@@ -112,25 +112,3 @@ class FC_Serial:
         self.ser.write(send_data)
         self.ser.flush()
         return send_data
-
-
-if __name__ == "__main__":
-    ser = FC_Serial("COM1", 500000)
-    ser.send_config(
-        startBit=[0xAA, 0x22],
-        optionBit=[0x01],
-    )
-    ser.read_config(startBit=[0xAA, 0x55])
-    bytes_to_str = lambda data: " ".join([f"{b:02X}" for b in data])
-    float_to_byte = lambda value: int(value * 100).to_bytes(2, byteorder="little")[::-1]
-    int16_to_byte = lambda value: int(value).to_bytes(2, byteorder="little")[::-1]
-    data = b""
-    data += b"\x10"
-    data += int16_to_byte(0x0001)
-    data += int16_to_byte(2345)
-    data += int16_to_byte(6789)
-    sended = ser.write(data)
-    print(bytes_to_str(sended))
-    while True:
-        if ser.read():
-            print(bytes_to_str(ser.rx_data))
