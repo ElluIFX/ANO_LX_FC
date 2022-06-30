@@ -1,3 +1,4 @@
+import struct
 import threading
 import time
 import traceback
@@ -65,6 +66,9 @@ class Byte_Var:
         self._value = self._var_type(value)
         self._last_update_time = time.time()
 
+    def update_value_with_mul(self, value):
+        self._value = self._var_type(value * self._multiplier)
+
     @property
     def bytes(self):
         if self._multiplier != 1:
@@ -98,6 +102,14 @@ class Byte_Var:
     @last_update_time.setter
     def last_update_time(self, value):
         raise Exception("last_update_time is read-only")
+
+    @property
+    def struct_fmt_type(self):
+        base_dict = {1: "b", 2: "h", 4: "i", 8: "q"}
+        if self._signed:
+            return base_dict[self._byte_length]
+        else:
+            return base_dict[self._byte_length].upper()
 
 
 class FC_State_Struct:
@@ -138,6 +150,19 @@ class FC_State_Struct:
         cmd_0,
         cmd_1,
     ]
+
+    def __init__(self):
+        self._fmt_string = "<" + "".join([i.struct_fmt_type for i in self.RECV_ORDER])
+        self._fmt_length = struct.calcsize(self._fmt_string)
+
+    def update_from_bytes(self, bytes):
+        if len(bytes) != self._fmt_length:
+            raise ValueError(
+                f"Invalid bytes length: {len(bytes)} != {self._fmt_length}"
+            )
+        vals = struct.unpack(self._fmt_string, bytes)
+        for i, val in enumerate(vals):
+            self.RECV_ORDER[i].update_value_with_mul(val)
 
     @property
     def command_now(self):
@@ -364,11 +389,12 @@ class FC_Base_Uart_Comunication(object):
 
     def _update_state(self, recv_byte):
         try:
-            index = 0
-            for var in self.state.RECV_ORDER:
-                length = var.byte_length
-                var.bytes = recv_byte[index : index + length]
-                index += length
+            # index = 0
+            # for var in self.state.RECV_ORDER:
+            #     length = var.byte_length
+            #     var.bytes = recv_byte[index : index + length]
+            #     index += length
+            self.state.update_from_bytes(recv_byte)
             if not self.connected:
                 self.connected = True
                 logger.info("[FC] Connected")
