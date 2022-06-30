@@ -182,7 +182,6 @@ class FC_Client(FC_Application):
             time.sleep(0.01)
             try:
                 self._proxy_state_event.wait()
-                self._proxy_state_event.clear()
                 for n, var in enumerate(self.state.RECV_ORDER):
                     var.value = self._proxy_state_list[n]
                 self.connected = self._proxy_state_list[_len]
@@ -196,6 +195,7 @@ class FC_Client(FC_Application):
                             self.event.EVENT_CODE[event_code].set()
                         elif event_operator == 0x02:  # clear
                             self.event.EVENT_CODE[event_code].clear()
+                self._proxy_state_event.clear()
                 if callable(self._state_update_callback):
                     self._state_update_callback(self.state)
                 if self._print_state_flag:
