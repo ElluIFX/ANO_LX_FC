@@ -1,3 +1,4 @@
+import struct
 import time
 
 from .Base import Byte_Var, FC_Base_Uart_Comunication
@@ -20,7 +21,6 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         self._byte_temp2 = Byte_Var()
         self._byte_temp3 = Byte_Var()
         self._byte_temp4 = Byte_Var()
-        self._last_realtime_call_time = 0
         self.last_sended_command = (0, 0, 0)  # (CID,CMD_0,CMD_1)
 
     def _action_log(self, action: str, data_info: str = None):
@@ -86,24 +86,10 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         yaw: deg/s 顺时针为正
         """
         # 性能优化:因为实时控制帧需要频繁低延迟发送, 所以不做过多次变量初始化
-        if time.time() - self._last_realtime_call_time > 1:  # need init
-            self._byte_temp1.reset(vel_x, "s16", int)
-            self._byte_temp2.reset(vel_y, "s16", int)
-            self._byte_temp3.reset(vel_z, "s16", int)
-            self._byte_temp4.reset(-yaw, "s16", int)  # 实际控制帧是逆时针正向,此处取反以适应标准
-        else:
-            self._byte_temp1.value = vel_x
-            self._byte_temp2.value = vel_y
-            self._byte_temp3.value = vel_z
-            self._byte_temp4.value = -yaw
-        self._last_realtime_call_time = time.time()
+        data = struct.pack("<hhhh", int(vel_x), int(vel_y), int(vel_z), int(-yaw))
         self._send_32_command(
             0x03,
-            self._byte_temp1.bytes
-            + self._byte_temp2.bytes
-            + self._byte_temp3.bytes
-            + self._byte_temp4.bytes
-            + b"\x33",  # 帧结尾
+            data + b"\x33",  # 帧结尾
         )
 
     def set_PWM_output(self, channel: int, pwm: float) -> None:
