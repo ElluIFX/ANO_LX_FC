@@ -46,6 +46,20 @@ class Point_2D(object):
             ]
         )
 
+    def from_xy(self, xy: np.ndarray):
+        """
+        从匿名坐标系下的坐标转换到点
+        """
+        self.degree = np.arctan2(-xy[1], xy[0]) * 180 / np.pi % 360
+        self.distance = np.sqrt(xy[0] ** 2 + xy[1] ** 2)
+
+    def from_cv_xy(self, xy: np.ndarray):
+        """
+        从OpenCV坐标系下的坐标转换到点
+        """
+        self.degree = np.arctan2(xy[0], -xy[1]) * 180 / np.pi % 360
+        self.distance = np.sqrt(xy[0] ** 2 + xy[1] ** 2)
+
     def __eq__(self, __o: object) -> bool:
         if not isinstance(__o, Point_2D):
             return False
@@ -55,8 +69,15 @@ class Point_2D(object):
             and self.confidence == __o.confidence
         )
 
-    def __call__(self):
-        return (self.degree, self.distance, self.confidence)
+    def __add__(self, other):
+        if not isinstance(other, Point_2D):
+            raise TypeError("Point_2D can only add with Point_2D")
+        return Point_2D().from_xy(self.to_xy() + other.to_xy())
+
+    def __sub__(self, other):
+        if not isinstance(other, Point_2D):
+            raise TypeError("Point_2D can only sub with Point_2D")
+        return Point_2D().from_xy(self.to_xy() - other.to_xy())
 
 
 class Radar_Package(object):
@@ -87,13 +108,7 @@ class Radar_Package(object):
         return self.__str__()
 
 
-_radar_unpack_fmt = (
-    "<H"  # little endian, u16 rotation speed
-    "H"  # u16 start degree
-    f"{'HB' * 12}"  # 12 points, u16 distance, u8 confidence
-    "H"  # u16 stop degree
-    "H"  # u16 time stamp
-)  # 雷达数据解析格式
+_radar_unpack_fmt = "<HH" + "HB" * 12 + "HH"  # 雷达数据解析格式
 
 
 def resolve_radar_data(data: bytes, to_package: Radar_Package = None) -> Radar_Package:
@@ -104,13 +119,13 @@ def resolve_radar_data(data: bytes, to_package: Radar_Package = None) -> Radar_P
     return: 解析后的RadarPackage对象
     """
     if len(data) != 47:  # fixed length of radar data
-        logger.error(f"[RADAR] Invalid data length: {len(data)}")
+        logger.warning(f"[RADAR] Invalid data length: {len(data)}")
         return None
     if calculate_crc8(data[:-1]) != data[-1]:
-        logger.error("[RADAR] Invalid CRC8")
+        logger.warning("[RADAR] Invalid CRC8")
         return None
     if data[:2] != b"\x54\x2C":
-        logger.error(f"[RADAR] Invalid header: {data[:2]:X}")
+        logger.warning(f"[RADAR] Invalid header: {data[:2]:X}")
         return None
     datas = struct.unpack(_radar_unpack_fmt, data[2:-1])
     if to_package is None:
@@ -141,14 +156,17 @@ class Map_360(object):
     """
 
     data = [-1] * 360  # -1 for no valid data
+    time_stamp = [0] * 360  # s
     ######### 映射方法 ########
-    MODE_MIN = 0  # 在正负0.5度范围内选择最近的点更新
-    MODE_MAX = 1  # 在正负0.5度范围内选择最远的点更新
+    MODE_MIN = 0  # 在范围内选择最近的点更新
+    MODE_MAX = 1  # 在范围内选择最远的点更新
     MODE_AVG = 2  # 计算平均值更新
+    update_mode = MODE_AVG
     ######### 设置 #########
-    update_mode = MODE_MIN
-    confidence_threshold = 100  # 置信度阈值
+    confidence_threshold = 180  # 置信度阈值
     distance_threshold = 10  # 距离阈值
+    timeout_clear = True  # 超时清除
+    timeout_time = 0.4  # 超时时间 s
     ######### 状态 #########
     rotation_spd = 0  # 转速 rpm
 
@@ -156,6 +174,9 @@ class Map_360(object):
         pass
 
     def update(self, data: Radar_Package):
+        """
+        映射解析后的点云数据
+        """
         deg_list = []
         deg_values_dict = {}
         for point in data.points:
@@ -164,12 +185,15 @@ class Map_360(object):
                 or point.confidence < self.confidence_threshold
             ):
                 continue
-            deg = int(point.degree + 0.5)
-            deg %= 360
-            if deg not in deg_values_dict:
-                deg_list.append(deg)
-                deg_values_dict[deg] = []
-            deg_values_dict[deg].append(point.distance)
+            base = int(point.degree + 0.5)
+            degs = [base - 1, base, base + 1]  # 扩大点映射范围, 加快更新速度, 降低精度
+            # degs = [base] # 只映射实际角度
+            for deg in degs:
+                deg %= 360
+                if deg not in deg_values_dict:
+                    deg_list.append(deg)
+                    deg_values_dict[deg] = []
+                deg_values_dict[deg].append(point.distance)
         for deg, values in deg_values_dict.items():
             if self.update_mode == self.MODE_MIN:
                 self.data[deg] = min(values)
@@ -177,9 +201,18 @@ class Map_360(object):
                 self.data[deg] = max(values)
             elif self.update_mode == self.MODE_AVG:
                 self.data[deg] = int(sum(values) / len(values))
-        self.rotation_spd += (data.rotation_spd / 360 - self.rotation_spd) * 0.5
+            if self.timeout_clear:
+                self.time_stamp[deg] = time.time()
+        if self.timeout_clear:
+            for deg in range(360):
+                if time.time() - self.time_stamp[deg] > self.timeout_time:
+                    self.data[deg] = -1
+        self.rotation_spd += (data.rotation_spd / 360 - self.rotation_spd) * 0.1
 
     def in_deg(self, from_: int, to_: int) -> list[Point_2D]:
+        """
+        截取选定角度范围的点
+        """
         return [
             Point_2D(deg, self.data[deg])
             for deg in range(from_, to_)
@@ -187,6 +220,9 @@ class Map_360(object):
         ]
 
     def in_distance(self, from_: int, to_: int) -> list[Point_2D]:
+        """
+        截取选定距离范围的点
+        """
         return [
             Point_2D(deg, self.data[deg])
             for deg in range(360)
@@ -198,6 +234,7 @@ class Map_360(object):
         清空数据
         """
         self.data = [-1] * 360
+        self.time_stamp = [0] * 360
 
     def rotation(self, angle: int):
         """
@@ -249,7 +286,11 @@ class Map_360(object):
         ex_points = []
         state = 0  # 0:falling 1:rising
         data = []
-        for deg in range(360):
+        if from_ > to_:
+            range_ = list(range(from_, 360)) + list(range(0, to_))
+        else:
+            range_ = range(from_, to_ + 1)
+        for deg in range_:
             if self.data[deg] == -1:
                 continue
             if state == 0:
@@ -300,6 +341,12 @@ class Map_360(object):
         )
         return img
 
+    def get_distance(self, angle: int) -> int:
+        return self.data[int(angle % 360)]
+
+    def get_point(self, angle: int) -> Point_2D:
+        return Point_2D(angle, self.data[int(angle % 360)])
+
     def __str__(self):
         string = "--- 360 Degree Map ---\n"
         invalid_count = 0
@@ -307,11 +354,14 @@ class Map_360(object):
             if self.data[deg] == -1:
                 invalid_count += 1
                 continue
-            string += f"{deg:03d} = {self.data[deg]:6d}\n"
+            string += f"{deg:03d}° = {self.data[deg]} mm\n"
         if invalid_count > 0:
             string += f"Hided {invalid_count:03d} invalid points\n"
         string += "--- End of Info ---"
         return string
+
+    def __repr__(self):
+        return self.__str__()
 
 
 if __name__ == "__main__":
@@ -322,16 +372,3 @@ if __name__ == "__main__":
     map_.update(pack)
     print(pack)
     print(map_)
-    img = np.zeros((600, 600, 3), dtype=np.uint8) + 10
-    cv2.line(img, (0, 0), (600, 600), (255, 0, 0), 1)
-    cv2.line(img, (600, 0), (0, 600), (255, 0, 0), 1)
-    cv2.line(img, (300, 0), (300, 600), (255, 0, 0), 1)
-    cv2.line(img, (0, 300), (600, 300), (255, 0, 0), 1)
-    cv2.circle(img, (300, 300), 100, (255, 0, 0), 1)
-    cv2.circle(img, (300, 300), 200, (255, 0, 0), 1)
-    cv2.circle(img, (300, 300), 300, (255, 0, 0), 1)
-    n_p = map_.find_nearest_with_ext_point_opt(0, 359, 2)
-    map_.draw_on_cv_image(img, add_points=n_p)
-    cv2.imshow("Map", img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()

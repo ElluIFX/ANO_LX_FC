@@ -287,11 +287,11 @@ class FC_Base_Uart_Comunication(object):
         self._set_option(0)
         self._ser_32.read_config(startBit=[0xAA, 0x55])
         logger.info("[FC] Serial port opened")
+        self.running = True
         _listen_thread = threading.Thread(target=self._listen_serial_task)
         _listen_thread.daemon = True
         _listen_thread.start()
         self._thread_list.append(_listen_thread)
-        self.running = True
 
     def quit(self) -> None:
         self.running = False
