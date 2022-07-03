@@ -169,12 +169,8 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
             }
           }
           break;
-        case 0x05:                  // 蜂鸣器控制
-          if (p_data[2] == 0x55) {  // 帧结尾，确保接收完整
-            Buzzer_Set(p_data[1]);
-          }
-        case 0x06:                  // IO控制
-          if (p_data[3] == 0x66) {  // 帧结尾，确保接收完整
+        case 0x05:                  // IO控制
+          if (p_data[3] == 0x55) {  // 帧结尾，确保接收完整
             DOut_Set(p_data[1], p_data[2]);
           }
           break;
