@@ -1,5 +1,6 @@
 import struct
 import time
+from typing import List
 
 import cv2
 import numpy as np
@@ -216,7 +217,7 @@ class Map_360(object):
         self.rotation_spd = data.rotation_spd / 360
         self.update_count += 1
 
-    def in_deg(self, from_: int, to_: int) -> list[Point_2D]:
+    def in_deg(self, from_: int, to_: int) -> List[Point_2D]:
         """
         截取选定角度范围的点
         """
@@ -226,7 +227,7 @@ class Map_360(object):
             if self.data[deg] != -1
         ]
 
-    def in_distance(self, from_: int, to_: int) -> list[Point_2D]:
+    def in_distance(self, from_: int, to_: int) -> List[Point_2D]:
         """
         截取选定距离范围的点
         """
@@ -252,7 +253,7 @@ class Map_360(object):
 
     def find_nearest(
         self, from_: int = 0, to_: int = 359, num=1, data=None
-    ) -> list[Point_2D]:
+    ) -> List[Point_2D]:
         """
         在给定范围内查找给定个数的最近点
         from_: int 起始角度
@@ -283,7 +284,7 @@ class Map_360(object):
 
     def find_nearest_with_ext_point_opt(
         self, from_: int = 0, to_: int = 359, num=1, range_limit: int = 1e9
-    ) -> list[Point_2D]:
+    ) -> List[Point_2D]:
         """
         在给定范围内查找给定个数的最近点, 只查找极值点
         from_: int 起始角度
@@ -328,7 +329,7 @@ class Map_360(object):
         scale: float = 1,
         color: tuple = (0, 0, 255),
         point_size: int = 1,
-        add_points: list[Point_2D] = [],
+        add_points: List[Point_2D] = [],
         add_points_color: tuple = (0, 255, 255),
         add_points_size: int = 1,
     ):

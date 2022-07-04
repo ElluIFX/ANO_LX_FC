@@ -1,6 +1,5 @@
 import threading
 import time
-import typing
 from copy import copy
 
 import cv2
