@@ -9,7 +9,7 @@ from ._Driver_Components import calculate_crc8
 
 
 class Point_2D(object):
-    degree = 0.0  # 0.0 ~ 360.0, 0 指向前方, 顺时针
+    degree = 0.0  # 0.0 ~ 359.9, 0 指向前方, 顺时针
     distance = 0  # 距离 mm
     confidence = 0  # 置信度 典型值=200
 
@@ -69,6 +69,14 @@ class Point_2D(object):
             and self.confidence == __o.confidence
         )
 
+    def to_180_degree(self):
+        """
+        转换到-180~180度
+        """
+        if self.degree > 180:
+            return self.degree - 360
+        return self.degree
+
     def __add__(self, other):
         if not isinstance(other, Point_2D):
             raise TypeError("Point_2D can only add with Point_2D")
@@ -91,8 +99,20 @@ class Radar_Package(object):
     stop_degree = 0.0  # 扫描结束角度
     time_stamp = 0  # 时间戳 ms 记满30000后重置
 
-    def __init__(self):
-        pass
+    def __init__(self, datas=None):
+        if datas is not None:
+            self.fill_data(datas)
+
+    def fill_data(self, datas: tuple[int]):
+        self.rotation_spd = datas[0]
+        self.start_degree = datas[1] * 0.01
+        self.stop_degree = datas[26] * 0.01
+        self.time_stamp = datas[27]
+        deg_step = (self.stop_degree - self.start_degree) % 360 / 11
+        for n, point in enumerate(self.points):
+            point.distance = datas[2 + n * 2]
+            point.confidence = datas[3 + n * 2]
+            point.degree = (self.start_degree + n * deg_step) % 360
 
     def __str__(self):
         string = (
@@ -129,25 +149,10 @@ def resolve_radar_data(data: bytes, to_package: Radar_Package = None) -> Radar_P
         return None
     datas = struct.unpack(_radar_unpack_fmt, data[2:-1])
     if to_package is None:
-        package = Radar_Package()
+        return Radar_Package(datas)
     else:
-        package = to_package
-    package.rotation_spd = datas[0]
-    package.start_degree = datas[1] * 0.01
-    package.time_stamp = datas[-1]
-    package.stop_degree = datas[-2] * 0.01
-    if package.stop_degree < package.start_degree:
-        total_deg = package.stop_degree - package.start_degree + 360.0
-    else:
-        total_deg = package.stop_degree - package.start_degree
-    deg_add = total_deg / 11
-    for n, point in enumerate(package.points):
-        point.distance = datas[2 + n * 2]
-        point.confidence = datas[3 + n * 2]
-        point.degree = package.start_degree + n * deg_add
-        if point.degree > 360.0:
-            point.degree -= 360.0
-    return package
+        to_package.fill_data(datas)
+        return to_package
 
 
 class Map_360(object):
@@ -163,12 +168,13 @@ class Map_360(object):
     MODE_AVG = 2  # 计算平均值更新
     update_mode = MODE_AVG
     ######### 设置 #########
-    confidence_threshold = 180  # 置信度阈值
+    confidence_threshold = 140  # 置信度阈值
     distance_threshold = 10  # 距离阈值
     timeout_clear = True  # 超时清除
     timeout_time = 0.4  # 超时时间 s
     ######### 状态 #########
     rotation_spd = 0  # 转速 rpm
+    update_count = 0  # 更新计数
 
     def __init__(self):
         pass
@@ -207,7 +213,8 @@ class Map_360(object):
             for deg in range(360):
                 if time.time() - self.time_stamp[deg] > self.timeout_time:
                     self.data[deg] = -1
-        self.rotation_spd += (data.rotation_spd / 360 - self.rotation_spd) * 0.1
+        self.rotation_spd = data.rotation_spd / 360
+        self.update_count += 1
 
     def in_deg(self, from_: int, to_: int) -> list[Point_2D]:
         """
@@ -241,6 +248,7 @@ class Map_360(object):
         旋转整个地图, 正角度代表坐标系顺时针旋转, 地图逆时针旋转
         """
         self.data = [self.data[(deg + angle) % 360] for deg in range(360)]
+        self.time_stamp = [self.time_stamp[(deg + angle) % 360] for deg in range(360)]
 
     def find_nearest(
         self, from_: int = 0, to_: int = 359, num=1, data=None
@@ -259,6 +267,7 @@ class Map_360(object):
             range_ = range(from_, to_ + 1)
         min_points = [Point_2D(-1, 1e8) for i in range(num)]
         for deg in range_:
+            deg %= 360
             if data[deg] == -1:
                 continue
             for n, point in enumerate(min_points):
@@ -273,13 +282,14 @@ class Map_360(object):
         return min_points
 
     def find_nearest_with_ext_point_opt(
-        self, from_: int = 0, to_: int = 359, num=1
+        self, from_: int = 0, to_: int = 359, num=1, range_limit: int = 1e9
     ) -> list[Point_2D]:
         """
         在给定范围内查找给定个数的最近点, 只查找极值点
         from_: int 起始角度
         to_: int 结束角度(包含)
         num: int 查找点的个数
+        range_limit: int 距离限制
         """
         last = 1e9
         last_deg = -1
@@ -291,6 +301,7 @@ class Map_360(object):
         else:
             range_ = range(from_, to_ + 1)
         for deg in range_:
+            deg %= 360
             if self.data[deg] == -1:
                 continue
             if state == 0:
@@ -305,7 +316,7 @@ class Map_360(object):
         if state == 0 and last_deg != -1:
             ex_points.append(last_deg)
         for deg in range(360):
-            if deg in ex_points:
+            if deg in ex_points and self.data[deg] < range_limit:
                 data.append(self.data[deg])
             else:
                 data.append(1e9)
@@ -333,10 +344,10 @@ class Map_360(object):
             )
         cv2.putText(
             img,
-            f"RPM={self.rotation_spd:.2f}",
+            f"RPM={self.rotation_spd:.2f} CNT={self.update_count}",
             (10, 20),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
+            0.4,
             (255, 255, 255),
         )
         return img

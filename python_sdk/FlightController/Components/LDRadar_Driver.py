@@ -100,7 +100,7 @@ class LD_Radar(object):
                 self.__radar_map_img_scale *= 1.1
             else:
                 self.__radar_map_img_scale *= 0.9
-            self.__radar_map_img_scale = max(0.001, self.__radar_map_img_scale)
+            self.__radar_map_img_scale = min(max(0.001, self.__radar_map_img_scale), 2)
         elif event == cv2.EVENT_LBUTTONDOWN or (
             event == cv2.EVENT_MOUSEMOVE and flags & cv2.EVENT_FLAG_LBUTTON
         ):
@@ -137,7 +137,7 @@ class LD_Radar(object):
                 0.4,
                 (255, 255, 0),
             )
-            add_p = []
+            add_p = self.map.find_nearest_with_ext_point_opt(0, 90, 3, 1000)
             if self.__radar_map_info_angle != -1:
                 cv2.putText(
                     img_,
@@ -156,9 +156,10 @@ class LD_Radar(object):
                     (255, 255, 0),
                 )
                 point = self.map.get_point(self.__radar_map_info_angle)
+                xy = point.to_xy()
                 cv2.putText(
                     img_,
-                    f"Position: {point.to_xy()}",
+                    f"Position: ( {xy[0]:.2f} , {xy[1]:.2f} )",
                     (10, 580),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.5,
@@ -173,7 +174,7 @@ class LD_Radar(object):
                 img_, scale=self.__radar_map_img_scale, add_points=add_p
             )
             cv2.imshow("Radar Map", img_)
-            if cv2.waitKey(1) == 27:
+            if cv2.waitKey(int(1000 / 50)) == 27:
                 break
 
 
