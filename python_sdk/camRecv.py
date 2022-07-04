@@ -6,7 +6,6 @@ import time
 
 import cv2
 import numpy
-
 from logger import Exception_Catcher, logger
 
 
