@@ -1,6 +1,6 @@
 import struct
 import time
-from typing import List
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -104,7 +104,7 @@ class Radar_Package(object):
         if datas is not None:
             self.fill_data(datas)
 
-    def fill_data(self, datas: tuple[int]):
+    def fill_data(self, datas: Tuple[int]):
         self.rotation_spd = datas[0]
         self.start_degree = datas[1] * 0.01
         self.stop_degree = datas[26] * 0.01
@@ -167,12 +167,12 @@ class Map_360(object):
     MODE_MIN = 0  # 在范围内选择最近的点更新
     MODE_MAX = 1  # 在范围内选择最远的点更新
     MODE_AVG = 2  # 计算平均值更新
-    update_mode = MODE_AVG
+    update_mode = MODE_MIN
     ######### 设置 #########
     confidence_threshold = 140  # 置信度阈值
     distance_threshold = 10  # 距离阈值
     timeout_clear = True  # 超时清除
-    timeout_time = 0.4  # 超时时间 s
+    timeout_time = 1  # 超时时间 s
     ######### 状态 #########
     rotation_spd = 0  # 转速 rpm
     update_count = 0  # 更新计数
@@ -223,7 +223,7 @@ class Map_360(object):
         """
         return [
             Point_2D(deg, self.data[deg])
-            for deg in range(from_, to_)
+            for deg in range(from_, to_ + 1)
             if self.data[deg] != -1
         ]
 
