@@ -252,7 +252,7 @@ class Map_360(object):
         self.time_stamp = [self.time_stamp[(deg + angle) % 360] for deg in range(360)]
 
     def find_nearest(
-        self, from_: int = 0, to_: int = 359, num=1, data=None
+        self, from_: int = 0, to_: int = 359, num=1, data=None, range_limit: int = 1e9
     ) -> List[Point_2D]:
         """
         在给定范围内查找给定个数的最近点
@@ -269,7 +269,7 @@ class Map_360(object):
         min_points = [Point_2D(-1, 1e8) for i in range(num)]
         for deg in range_:
             deg %= 360
-            if data[deg] == -1:
+            if data[deg] == -1 or self.data[deg] > range_limit:
                 continue
             for n, point in enumerate(min_points):
                 if data[deg] < point.distance:
@@ -321,7 +321,7 @@ class Map_360(object):
                 data.append(self.data[deg])
             else:
                 data.append(1e9)
-        return self.find_nearest(from_, to_, num, data)
+        return self.find_nearest(from_, to_, num, data, range_limit)
 
     def draw_on_cv_image(
         self,
