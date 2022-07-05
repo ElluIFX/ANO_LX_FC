@@ -76,7 +76,7 @@ class RT_Camera_Client:
         self.resolution = Resolution
         self.fps = Fps
         self.quality = Quality
-        self.timeout = 5
+        self.timeout = 20
         self.paste_fps = Paste_FPS
         self.terminate = Terminate_server
 
@@ -324,8 +324,8 @@ class KCF_Tracker:  # OPENCV KCF Tracker
 
 if __name__ == "__main__":
     camera = RT_Camera_Client(
-        # IP="192.168.137.27",
-        IP="raspberrypi",
+        IP="192.168.137.27",
+        # IP="raspberrypi",
         Port=6756,
         Resolution=(800, 600),
         Fps=60,
