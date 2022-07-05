@@ -119,8 +119,8 @@ class FC_Application(FC_Protocol):
         """
         self._action_log("manual takeoff start", f"{height}cm")
         last_mode = self.state.mode.value
-        hgt = self.state.height
-        timeout_value = height / speed  # 安全时间
+        hgt = self.state.alt_add
+        timeout_value = height / speed * 2  # 安全时间
         self.set_flight_mode(self.HOLD_POS_MODE)
         time.sleep(0.1)  # 等待模式设置完成
         self.send_realtime_control_data(vel_z=speed)

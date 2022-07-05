@@ -376,7 +376,7 @@ def FLANN_match(train_img, frame):
         return 0, (0, 0)
 
 
-def contours_match(train_img, frame, threshold=0.2):
+def contours_match(train_img, frame):
     """
     轮廓匹配
     train_img: 查询图片
