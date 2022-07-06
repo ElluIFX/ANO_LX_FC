@@ -317,9 +317,6 @@ class Ui_MainWindow(object):
         font3.setBold(False)
         self.btn_rgb.setFont(font3)
 
-        self.horizontalLayout_16.addWidget(self.btn_rgb)
-
-
         self.verticalLayout_9.addLayout(self.horizontalLayout_16)
 
         self.horizontalLayout_10 = QHBoxLayout()
@@ -847,10 +844,6 @@ class Ui_MainWindow(object):
         self.line_info.setPlaceholderText("")
         self.label_11.setText(QCoreApplication.translate("MainWindow", u"\u7cfb\u7edf\u65e5\u5fd7:", None))
         self.text_log.setPlainText(QCoreApplication.translate("MainWindow", u"\u6d4b\u8bd5\u6587\u672c", None))
-        self.btn_rgb.setText(QCoreApplication.translate("MainWindow", u"\u8bbe\u7f6eRGB", None))
-#if QT_CONFIG(shortcut)
-        self.btn_rgb.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
-#endif // QT_CONFIG(shortcut)
         self.btn_takeoff.setText(QCoreApplication.translate("MainWindow", u"\u8d77\u98de", None))
         self.btn_land.setText(QCoreApplication.translate("MainWindow", u"\u7740\u9646", None))
         self.btn_unlock.setText(QCoreApplication.translate("MainWindow", u"\u89e3\u9501", None))

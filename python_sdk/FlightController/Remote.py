@@ -81,11 +81,6 @@ class FC_Server(FC_Application):
         self._proxy_state_action_target = event_code
         self._proxy_state_action_op = event_operator
 
-    def __update_event_state(self, event_code, event_operator):
-        self.__proxy_state_action_id += 1
-        self.__proxy_state_action_target = event_code
-        self.__proxy_state_action_op = event_operator
-
     def start_listen_serial(
         self,
         serial_port: str,

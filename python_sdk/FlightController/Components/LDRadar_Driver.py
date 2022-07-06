@@ -1,7 +1,5 @@
 import threading
 import time
-import typing
-from copy import copy
 
 import cv2
 import numpy as np
@@ -18,9 +16,16 @@ class LD_Radar(object):
         self._package = Radar_Package()
         self._serial = None
         self._update_callback = None
+        self._fp_flag = False
+        self.fp_points = []
         self.map = Map_360()
 
-    def start(self, com_port, radar_type: str = "LD08", updae_callback=None):
+    def start(self, com_port, radar_type: str = "LD08", update_callback=None):
+        """
+        开始监听雷达数据
+        radar_type: LD08 or LD06
+        update_callback: 回调函数，每次更新雷达数据时调用
+        """
         if self.running:
             self.stop()
         if radar_type == "LD08":
@@ -30,7 +35,7 @@ class LD_Radar(object):
         else:
             raise ValueError("Unknown radar type")
         self._serial = serial.Serial(com_port, baudrate=baudrate)
-        self._update_callback = updae_callback
+        self._update_callback = update_callback
         self.running = True
         thread = threading.Thread(target=self._read_serial_task)
         thread.daemon = True
@@ -39,6 +44,9 @@ class LD_Radar(object):
         logger.info("[RADAR] Listenning thread started")
 
     def stop(self):
+        """
+        停止监听雷达数据
+        """
         self.running = False
         for thread in self._thread_list:
             thread.join()
@@ -54,21 +62,37 @@ class LD_Radar(object):
         wait_buffer = bytes()
         while self.running:
             try:
-                if not reading_flag:  # 等待包头
-                    wait_buffer += self._serial.read(1)
-                    if len(wait_buffer) >= 2:
-                        if wait_buffer[-2:] == start_bit:
-                            reading_flag = True
-                            read_count = 0
-                            wait_buffer = bytes()
-                            read_buffer = start_bit
-                else:  # 读取数据
-                    read_buffer += self._serial.read(package_length)
-                    reading_flag = False
-                    resolve_radar_data(read_buffer, self._package)
-                    self.map.update(self._package)
-                    if self._update_callback != None:
-                        self._update_callback()
+                if self._serial.in_waiting > 0:
+                    if not reading_flag:  # 等待包头
+                        wait_buffer += self._serial.read(1)
+                        if len(wait_buffer) >= 2:
+                            if wait_buffer[-2:] == start_bit:
+                                reading_flag = True
+                                read_count = 0
+                                wait_buffer = bytes()
+                                read_buffer = start_bit
+                    else:  # 读取数据
+                        read_buffer += self._serial.read(package_length)
+                        reading_flag = False
+                        resolve_radar_data(read_buffer, self._package)
+                        self.map.update(self._package)
+                        if self._fp_flag:
+                            if self._fp_type == 0:
+                                self._update_target_point(
+                                    self.map.find_nearest(*self._fp_arg)
+                                )
+                            elif self._fp_type == 1:
+                                self._update_target_point(
+                                    self.map.find_nearest_with_ext_point_opt(
+                                        *self._fp_arg
+                                    )
+                                )
+                        if self._update_callback != None:
+                            self._update_callback()
+                else:
+                    time.sleep(0.001)
+                if self._fp_flag:
+                    self._check_target_point()
             except Exception as e:
                 logger.error(f"[RADAR] Listenning thread error: {e}")
 
@@ -100,7 +124,7 @@ class LD_Radar(object):
                 self.__radar_map_img_scale *= 1.1
             else:
                 self.__radar_map_img_scale *= 0.9
-            self.__radar_map_img_scale = max(0.001, self.__radar_map_img_scale)
+            self.__radar_map_img_scale = min(max(0.001, self.__radar_map_img_scale), 2)
         elif event == cv2.EVENT_LBUTTONDOWN or (
             event == cv2.EVENT_MOUSEMOVE and flags & cv2.EVENT_FLAG_LBUTTON
         ):
@@ -110,6 +134,9 @@ class LD_Radar(object):
             self.__radar_map_info_angle = int(self.__radar_map_info_angle)
 
     def show_radar_map(self):
+        """
+        显示雷达地图(调试用, 高占用且阻塞)
+        """
         self._init_radar_map()
         while True:
             img_ = self._radar_map_img.copy()
@@ -137,7 +164,7 @@ class LD_Radar(object):
                 0.4,
                 (255, 255, 0),
             )
-            add_p = []
+            add_p = self.fp_points
             if self.__radar_map_info_angle != -1:
                 cv2.putText(
                     img_,
@@ -156,15 +183,16 @@ class LD_Radar(object):
                     (255, 255, 0),
                 )
                 point = self.map.get_point(self.__radar_map_info_angle)
+                xy = point.to_xy()
                 cv2.putText(
                     img_,
-                    f"Position: {point.to_xy()}",
+                    f"Position: ( {xy[0]:.2f} , {xy[1]:.2f} )",
                     (10, 580),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.5,
                     (255, 255, 0),
                 )
-                add_p.append(point)
+                add_p = [point] + add_p
                 pos = point.to_cv_xy() * self.__radar_map_img_scale + np.array(
                     [300, 300]
                 )
@@ -173,8 +201,63 @@ class LD_Radar(object):
                 img_, scale=self.__radar_map_img_scale, add_points=add_p
             )
             cv2.imshow("Radar Map", img_)
-            if cv2.waitKey(1) == 27:
+            key = cv2.waitKey(int(1000 / 50))
+            if key == 27:
                 break
+            elif key == ord("w"):
+                self.__radar_map_img_scale *= 1.1
+            elif key == ord("s"):
+                self.__radar_map_img_scale *= 0.9
+
+    def start_find_point(
+        self,
+        timeout: float,
+        type: int,
+        from_: int,
+        to_: int,
+        num: int,
+        range_limit: int,
+    ):
+        """
+        开始更新目标点
+        timeout: 超时时间, 超时后fp_timeout_flag被置位
+        type: 0:直接搜索 1:极值搜索
+        其余参数与find_nearest一致
+        """
+        self._fp_update_time = time.time()
+        self._fp_timeout = timeout
+        self.fp_timeout_flag = False
+        self.fp_points = []
+        self._fp_flag = True
+        self._fp_type = type
+        self._fp_arg = (from_, to_, num, range_limit)
+
+    def stop_find_point(self):
+        """
+        停止更新目标点
+        """
+        self._fp_flag = False
+
+    def _update_target_point(self, points: list[Point_2D]):
+        """
+        更新目标点位置
+        """
+        if self.fp_timeout_flag and len(points) > 0:
+            self.fp_timeout_flag = False
+        else:
+            self.fp_points = points
+            self._fp_update_time = time.time()
+
+    def _check_target_point(self):
+        """
+        目标点超时判断
+        """
+        if (
+            not self.fp_timeout_flag
+            and time.time() - self._fp_update_time > self._fp_timeout
+        ):
+            self.fp_timeout_flag = True
+            logger.warning("[Radar] lost point!")
 
 
 if __name__ == "__main__":

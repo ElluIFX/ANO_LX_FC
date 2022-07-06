@@ -125,49 +125,6 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         )
         self._action_log("set digital output", f"channel {channel} on {on}")
 
-    def set_PWM_output(self, channel: int, pwm: float) -> None:
-        """
-        设置PWM输出
-        channel: 0-3
-        pwm: 0.00-100.00
-        """
-        assert channel in [0, 1, 2, 3]
-        pwm_int = int(pwm * 100)
-        pwm_int = max(0, min(10000, pwm_int))
-        self.__byte_temp1.reset(channel, "u8", int)
-        self.__byte_temp2.reset(pwm_int, "s16", int)
-        self.__send_32_command(
-            0x04,
-            self.__byte_temp1.bytes + self.__byte_temp2.bytes + b"\x44",
-            True,  # need ack
-        )
-        self.__action_log("set pwm output", f"channel {channel} pwm {pwm:.2f}")
-
-    def set_buzzer(self, on: bool) -> None:
-        """
-        设置蜂鸣器
-        on: 开关
-        """
-        on = 1 if on else 0
-        self.__byte_temp1.reset(on, "u8", int)
-        self.__send_32_command(0x05, self.__byte_temp1.bytes + b"\x55")
-        self.__action_log("set buzzer", f"{on}")
-
-    def set_digital_output(self, channel: int, on: bool) -> None:
-        """
-        设置数字输出
-        channel: 0-1
-        on: 开关
-        """
-        assert channel in [0, 1]
-        on = 1 if on else 0
-        self.__byte_temp1.reset(channel, "u8", int)
-        self.__byte_temp2.reset(on, "u8", int)
-        self.__send_32_command(
-            0x06, self.__byte_temp1.bytes + self.__byte_temp2.bytes + b"\x66"
-        )
-        self.__action_log("set digital output", f"channel {channel} on {on}")
-
     ######### IMU 命令 #########
 
     def _send_imu_command_frame(self, CID: int, CMD0: int, CMD1: int, CMD_data=b""):
@@ -243,11 +200,13 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         self._send_imu_command_frame(0x10, 0x00, 0x04)
         self._action_log("stablize")
 
-    def take_off(self) -> None:
+    def take_off(self, target_height: int = 0) -> None:
         """
         一键起飞 (除姿态模式外, 随时有效)
+        目标高度: 0-500 cm, 0为默认高度
         """
-        self._send_imu_command_frame(0x10, 0x00, 0x05)
+        self._byte_temp1.reset(target_height, "u16", int)
+        self._send_imu_command_frame(0x10, 0x00, 0x05, self._byte_temp1.bytes)
         self._action_log("take off")
 
     def land(self) -> None:
