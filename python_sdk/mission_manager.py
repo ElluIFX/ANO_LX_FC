@@ -46,7 +46,7 @@ while target_mission is None:
     elif fc.event.key_long.is_set():
         fc.event.key_long.clear()
         target_mission = 3
-logger.info(f"[MISSION] target_mission: {target_mission}")
+logger.info(f"[MISSION] Target Mission: {target_mission}")
 set_button_led(False)
 sleep(1)
 fc.set_rgb_led(
@@ -62,30 +62,35 @@ for i in range(10):
 fc.set_rgb_led(0, 0, 0)
 
 ############################## 开始任务 ##############################
+fc.settings.action_log_output = True
+mission = None
 try:
     if target_mission == 1:
-        logger.info("[MISSION] Calling Mission 1")
         from mission1 import Mission
 
-        Mission(fc, radar).run()
+        mission = Mission(fc, radar)
     elif target_mission == 2:
-        logger.info("[MISSION] Calling Mission 2")
         from mission2 import Mission
 
-        Mission(fc, radar).run()
+        mission = Mission(fc, radar)
     elif target_mission == 3:
-        logger.info("[MISSION] Calling Mission 3")
         from mission3 import Mission
 
-        Mission(fc, radar).run()
+        mission = Mission(fc, radar)
+    logger.info("[MISSION] Calling Mission")
+
+    mission.run()
+
     logger.info("[MISSION] Mission Finished")
 except Exception as e:
     logger.error(f"[MISSION] Mission Failed: {e}")
 finally:
+    if mission is not None:
+        mission.stop()
     if fc.state.unlock.value:
         logger.warning("[MISSION] Auto Landing")
         fc.set_flight_mode(fc.PROGRAM_MODE)
-        fc.stablize(),logger
+        fc.stablize(), logger
         fc.land()
         ret = fc.wait_for_lock()
         if not ret:
