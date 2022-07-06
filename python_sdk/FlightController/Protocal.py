@@ -200,11 +200,13 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         self._send_imu_command_frame(0x10, 0x00, 0x04)
         self._action_log("stablize")
 
-    def take_off(self) -> None:
+    def take_off(self, target_height: int = 0) -> None:
         """
         一键起飞 (除姿态模式外, 随时有效)
+        目标高度: 0-500 cm, 0为默认高度
         """
-        self._send_imu_command_frame(0x10, 0x00, 0x05)
+        self._byte_temp1.reset(target_height, "u16", int)
+        self._send_imu_command_frame(0x10, 0x00, 0x05, self._byte_temp1.bytes)
         self._action_log("take off")
 
     def land(self) -> None:

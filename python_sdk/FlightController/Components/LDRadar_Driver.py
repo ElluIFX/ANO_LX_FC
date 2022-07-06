@@ -172,8 +172,13 @@ class LD_Radar(object):
                 img_, scale=self.__radar_map_img_scale, add_points=add_p
             )
             cv2.imshow("Radar Map", img_)
-            if cv2.waitKey(int(1000 / 50)) == 27:
+            key = cv2.waitKey(int(1000 / 50))
+            if key == 27:
                 break
+            elif key == ord("w"):
+                self.__radar_map_img_scale *= 1.1
+            elif key == ord("s"):
+                self.__radar_map_img_scale *= 0.9
 
 
 if __name__ == "__main__":

@@ -207,7 +207,7 @@ class FC_Event:
         self._check_callback()
         return self._status
 
-    def waitAndClear(self, timeout=None):
+    def wait_clear(self, timeout=None) -> bool:
         ret = self.wait(timeout)
         if ret:
             self.clear()
@@ -228,7 +228,7 @@ class FC_Event:
         self._callback_trigger = trigger
         return self
 
-    def isSet(self):
+    def is_set(self) -> bool:
         return self._status
 
 
