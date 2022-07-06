@@ -16,6 +16,8 @@ class LD_Radar(object):
         self._package = Radar_Package()
         self._serial = None
         self._update_callback = None
+        self._fp_flag = False
+        self.fp_points = []
         self.map = Map_360()
 
     def start(self, com_port, radar_type: str = "LD08", updae_callback=None):
@@ -65,6 +67,15 @@ class LD_Radar(object):
                     reading_flag = False
                     resolve_radar_data(read_buffer, self._package)
                     self.map.update(self._package)
+                    if self._fp_flag:
+                        if self._fp_type == 0:
+                            self._update_target_point(
+                                self.map.find_nearest(*self._fp_arg)
+                            )
+                        elif self._fp_type == 1:
+                            self._update_target_point(
+                                self.map.find_nearest_with_ext_point_opt(*self._fp_arg)
+                            )
                     if self._update_callback != None:
                         self._update_callback()
             except Exception as e:
@@ -109,7 +120,6 @@ class LD_Radar(object):
 
     def show_radar_map(self):
         self._init_radar_map()
-        self._init_find_point(3)
         while True:
             img_ = self._radar_map_img.copy()
             cv2.putText(
@@ -136,8 +146,7 @@ class LD_Radar(object):
                 0.4,
                 (255, 255, 0),
             )
-            add_p = self.map.find_nearest(0, 90, 3, 1000)
-            self._update_target_point(add_p)
+            add_p = self.fp_points.copy()
             if self.__radar_map_info_angle != -1:
                 cv2.putText(
                     img_,
@@ -165,7 +174,7 @@ class LD_Radar(object):
                     0.5,
                     (255, 255, 0),
                 )
-                add_p = [point].extend(self.target_points)
+                add_p = [point].extend(self.fp_points)
                 pos = point.to_cv_xy() * self.__radar_map_img_scale + np.array(
                     [300, 300]
                 )
@@ -182,35 +191,43 @@ class LD_Radar(object):
             elif key == ord("s"):
                 self.__radar_map_img_scale *= 0.9
 
-    def _init_find_point(self, num: int, timeout: float = 1.0):
-        self.target_points = [-1 for i in range(2)]
-        self.update_time = [time.time() for i in range(2)]
-        self.timeout = timeout
-        self.timeout_flag = False
-        
+    def start_find_point(
+        self,
+        num: int,
+        timeout: float,
+        type: int,
+        from_: int,
+        to_: int,
+        range_limit: int,
+    ):
+        self._fp_update_time = time.time()
+        self._fp_timeout = timeout
+        self.fp_timeout_flag = False
+        self.fp_points = []
+        self._fp_flag = True
+        self._fp_type = type
+        self._fp_arg = (from_, to_, num, range_limit)
+
+    def stop_find_point(self):
+        self._fp_flag = False
+
     def _update_target_point(self, points: list[Point_2D]):
         """
         更新目标点位置
         目标点超时判断
         """
-        if self.timeout_flag:
-            for n, point in enumerate(self.target_points):
-                if time.time() - self.update_time[n] > self.timeout:
-                    self.timeout_flag = True
-                    break
-                self.timeout_flag = False
-
-        elif len(points) != len(self.target_points):
-            for n, point in enumerate(self.target_points):
-                if time.time() - self.update_time[n] > self.timeout:
-                    self.timeout_flag = True
-                    logger.warning("[Radar] lost point!")
-                    break
-
-        for n, point in enumerate(points):
-            self.target_points[n] = point.distance
-            self.update_time[n] = time.time()
-        return True
+        if self.fp_timeout_flag and len(points) > 0:
+            self.fp_timeout_flag = False
+        elif len(points) == 0:
+            if (
+                not self.fp_timeout_flag
+                and time.time() - self._fp_update_time > self._fp_timeout
+            ):
+                self.fp_timeout_flag = True
+                logger.warning("[Radar] lost point!")
+            return
+        self.fp_points = points
+        self._fp_update_time = time.time()
 
 
 if __name__ == "__main__":
