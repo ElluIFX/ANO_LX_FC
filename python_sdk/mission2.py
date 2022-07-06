@@ -6,5 +6,10 @@ from FlightController.Solutions.Vision import *
 from FlightController.Solutions.Vision_Net import *
 
 
-def mission(fc: FC_Controller):
-    pass
+class Mission(object):
+    def __init__(self, fc: FC_Controller, radar: LD_Radar):
+        self.fc = fc
+        self.radar = radar
+
+    def run(self):
+        pass

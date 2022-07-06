@@ -1,10 +1,13 @@
 from time import sleep, time
 
 from FlightController import FC_Client, FC_Controller, logger
+from FlightController.Components import LD_Radar, Map_360, Point_2D
 
 fc = FC_Client()
 fc.connect()
 fc.start_sync_state()
+radar = LD_Radar()
+radar.start("/dev/ttyUSB0", "LD08")
 
 ############################## 参数 ##############################
 camera_down_pwm = 32.5
@@ -62,20 +65,19 @@ fc.set_rgb_led(0, 0, 0)
 try:
     if target_mission == 1:
         logger.info("[MISSION] Calling Mission 1")
-        from mission1 import mission
+        from mission1 import Mission
 
-        mission(fc)
+        Mission(fc, radar).run()
     elif target_mission == 2:
         logger.info("[MISSION] Calling Mission 2")
-        from mission2 import mission
+        from mission2 import Mission
 
-        mission(fc)
+        Mission(fc, radar).run()
     elif target_mission == 3:
         logger.info("[MISSION] Calling Mission 3")
-        from mission3 import mission
+        from mission3 import Mission
 
-        mission(fc)
-
+        Mission(fc, radar).run()
     logger.info("[MISSION] Mission Finished")
 except Exception as e:
     logger.error(f"[MISSION] Mission Failed: {e}")
@@ -83,7 +85,7 @@ finally:
     if fc.state.unlock.value:
         logger.warning("[MISSION] Auto Landing")
         fc.set_flight_mode(fc.PROGRAM_MODE)
-        fc.stablize()
+        fc.stablize(),logger
         fc.land()
         ret = fc.wait_for_lock()
         if not ret:
