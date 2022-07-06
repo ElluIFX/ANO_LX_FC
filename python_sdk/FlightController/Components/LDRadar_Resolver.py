@@ -184,7 +184,6 @@ class Map_360(object):
         """
         映射解析后的点云数据
         """
-        deg_list = []
         deg_values_dict = {}
         for point in data.points:
             if (
@@ -198,9 +197,8 @@ class Map_360(object):
             for deg in degs:
                 deg %= 360
                 if deg not in deg_values_dict:
-                    deg_list.append(deg)
-                    deg_values_dict[deg] = []
-                deg_values_dict[deg].append(point.distance)
+                    deg_values_dict[deg] = set()
+                deg_values_dict[deg].add(point.distance)
         for deg, values in deg_values_dict.items():
             if self.update_mode == self.MODE_MIN:
                 self.data[deg] = min(values)
