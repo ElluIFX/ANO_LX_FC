@@ -205,7 +205,7 @@ def pass_filter(img, kernel_size=3) -> np.ndarray:
 def find_QRcode_zbar(frame) -> Tuple[bool, float, float]:
     """
     使用pyzbar寻找条码
-    return: 是否找到条码, x偏移值(右正), y偏移值(下正)
+    return: 是否找到条码, x偏移值(右正), y偏移值(下正), 条码内容
     """
     image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # 转换成灰度图
     barcodes = pyzbar.decode(image)
@@ -213,15 +213,20 @@ def find_QRcode_zbar(frame) -> Tuple[bool, float, float]:
         size = image.shape
         for barcode in barcodes:
             (x, y, w, h) = barcode.rect
+            data = barcode.data.decode("utf-8")
             cx = int(x + w / 2)
             cy = int(y + h / 2)
             x_offset = cx - size[1] / 2
             y_offset = cy - size[0] / 2
+            # image = frame.copy()
             # cv2.circle(image, (cx, cy), 2, (0, 255, 0), 8)
             # cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            # cv2.putText(
+            #     image, data, (x, y - 20), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2
+            # )
             # cv2.imshow("Result", image)
-            return True, x_offset, y_offset
-    return False, 0, 0
+            return True, x_offset, y_offset, data
+    return False, 0, 0, ""
 
 
 def find_QRcode_contour(frame) -> Tuple[bool, float, float]:
@@ -240,7 +245,7 @@ def find_QRcode_contour(frame) -> Tuple[bool, float, float]:
     # 去噪并提取兴趣区域
     blurred = cv2.blur(gradient, (9, 9))
     (_, thresh) = cv2.threshold(blurred, 90, 255, cv2.THRESH_BINARY)
-    cv2.imshow("thresh", thresh)
+    # cv2.imshow("thresh", thresh)
 
     # construct a closing kernel and apply it to the thresholded image
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 7))
@@ -249,7 +254,7 @@ def find_QRcode_contour(frame) -> Tuple[bool, float, float]:
     # 进行开运算和闭运算
     closed = cv2.erode(closed, None, iterations=4)
     closed = cv2.dilate(closed, None, iterations=4)
-    cv2.imshow("closed", closed)
+    # cv2.imshow("closed", closed)
     # 处理轮廓，找出最大轮廓
     cnts, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -266,10 +271,10 @@ def find_QRcode_contour(frame) -> Tuple[bool, float, float]:
         x_offset = cx - size[1] / 2
         y_offset = cy - size[0] / 2
         # 做出轮廓和中心坐标点
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-        cv2.circle(image, (cx, cy), 2, (0, 255, 0), 8)  # 做出中心坐标
-        cv2.drawContours(image, [box], -1, (0, 255, 0), 3)
-        cv2.imshow("Result", image)
+        # image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        # cv2.circle(image, (cx, cy), 2, (0, 255, 0), 8)  # 做出中心坐标
+        # cv2.drawContours(image, [box], -1, (0, 255, 0), 3)
+        # cv2.imshow("Result", image)
         return True, x_offset, y_offset
     else:
         return False, 0, 0
