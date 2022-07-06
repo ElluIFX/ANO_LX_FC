@@ -54,30 +54,35 @@ class LD_Radar(object):
         wait_buffer = bytes()
         while self.running:
             try:
-                if not reading_flag:  # 等待包头
-                    wait_buffer += self._serial.read(1)
-                    if len(wait_buffer) >= 2:
-                        if wait_buffer[-2:] == start_bit:
-                            reading_flag = True
-                            read_count = 0
-                            wait_buffer = bytes()
-                            read_buffer = start_bit
-                else:  # 读取数据
-                    read_buffer += self._serial.read(package_length)
-                    reading_flag = False
-                    resolve_radar_data(read_buffer, self._package)
-                    self.map.update(self._package)
-                    if self._fp_flag:
-                        if self._fp_type == 0:
-                            self._update_target_point(
-                                self.map.find_nearest(*self._fp_arg)
-                            )
-                        elif self._fp_type == 1:
-                            self._update_target_point(
-                                self.map.find_nearest_with_ext_point_opt(*self._fp_arg)
-                            )
-                    if self._update_callback != None:
-                        self._update_callback()
+                if self._serial.in_waiting > 0:
+                    if not reading_flag:  # 等待包头
+                        wait_buffer += self._serial.read(1)
+                        if len(wait_buffer) >= 2:
+                            if wait_buffer[-2:] == start_bit:
+                                reading_flag = True
+                                read_count = 0
+                                wait_buffer = bytes()
+                                read_buffer = start_bit
+                    else:  # 读取数据
+                        read_buffer += self._serial.read(package_length)
+                        reading_flag = False
+                        resolve_radar_data(read_buffer, self._package)
+                        self.map.update(self._package)
+                        if self._fp_flag:
+                            if self._fp_type == 0:
+                                self._update_target_point(
+                                    self.map.find_nearest(*self._fp_arg)
+                                )
+                            elif self._fp_type == 1:
+                                self._update_target_point(
+                                    self.map.find_nearest_with_ext_point_opt(*self._fp_arg)
+                                )
+                        if self._update_callback != None:
+                            self._update_callback()
+                else:
+                    time.sleep(0.001)
+                if self._fp_flag:
+                    self._check_target_point()
             except Exception as e:
                 logger.error(f"[RADAR] Listenning thread error: {e}")
 
@@ -146,7 +151,7 @@ class LD_Radar(object):
                 0.4,
                 (255, 255, 0),
             )
-            add_p = self.fp_points.copy()
+            add_p = self.fp_points
             if self.__radar_map_info_angle != -1:
                 cv2.putText(
                     img_,
@@ -174,7 +179,7 @@ class LD_Radar(object):
                     0.5,
                     (255, 255, 0),
                 )
-                add_p = [point].extend(self.fp_points)
+                add_p = [point] + add_p
                 pos = point.to_cv_xy() * self.__radar_map_img_scale + np.array(
                     [300, 300]
                 )
@@ -214,20 +219,23 @@ class LD_Radar(object):
     def _update_target_point(self, points: list[Point_2D]):
         """
         更新目标点位置
-        目标点超时判断
         """
         if self.fp_timeout_flag and len(points) > 0:
             self.fp_timeout_flag = False
-        elif len(points) == 0:
-            if (
-                not self.fp_timeout_flag
-                and time.time() - self._fp_update_time > self._fp_timeout
-            ):
-                self.fp_timeout_flag = True
-                logger.warning("[Radar] lost point!")
-            return
-        self.fp_points = points
-        self._fp_update_time = time.time()
+        else:
+            self.fp_points = points
+            self._fp_update_time = time.time()
+
+    def _check_target_point(self):
+        """
+        目标点超时判断
+        """
+        if (
+            not self.fp_timeout_flag
+            and time.time() - self._fp_update_time > self._fp_timeout
+        ):
+            self.fp_timeout_flag = True
+            logger.warning("[Radar] lost point!")
 
 
 if __name__ == "__main__":
