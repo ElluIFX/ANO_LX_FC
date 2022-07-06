@@ -20,7 +20,12 @@ class LD_Radar(object):
         self.fp_points = []
         self.map = Map_360()
 
-    def start(self, com_port, radar_type: str = "LD08", updae_callback=None):
+    def start(self, com_port, radar_type: str = "LD08", update_callback=None):
+        """
+        开始监听雷达数据
+        radar_type: LD08 or LD06
+        update_callback: 回调函数，每次更新雷达数据时调用
+        """
         if self.running:
             self.stop()
         if radar_type == "LD08":
@@ -30,7 +35,7 @@ class LD_Radar(object):
         else:
             raise ValueError("Unknown radar type")
         self._serial = serial.Serial(com_port, baudrate=baudrate)
-        self._update_callback = updae_callback
+        self._update_callback = update_callback
         self.running = True
         thread = threading.Thread(target=self._read_serial_task)
         thread.daemon = True
@@ -39,6 +44,9 @@ class LD_Radar(object):
         logger.info("[RADAR] Listenning thread started")
 
     def stop(self):
+        """
+        停止监听雷达数据
+        """
         self.running = False
         for thread in self._thread_list:
             thread.join()
@@ -75,7 +83,9 @@ class LD_Radar(object):
                                 )
                             elif self._fp_type == 1:
                                 self._update_target_point(
-                                    self.map.find_nearest_with_ext_point_opt(*self._fp_arg)
+                                    self.map.find_nearest_with_ext_point_opt(
+                                        *self._fp_arg
+                                    )
                                 )
                         if self._update_callback != None:
                             self._update_callback()
@@ -124,6 +134,9 @@ class LD_Radar(object):
             self.__radar_map_info_angle = int(self.__radar_map_info_angle)
 
     def show_radar_map(self):
+        """
+        显示雷达地图(调试用, 高占用且阻塞)
+        """
         self._init_radar_map()
         while True:
             img_ = self._radar_map_img.copy()
@@ -198,13 +211,19 @@ class LD_Radar(object):
 
     def start_find_point(
         self,
-        num: int,
         timeout: float,
         type: int,
         from_: int,
         to_: int,
+        num: int,
         range_limit: int,
     ):
+        """
+        开始更新目标点
+        timeout: 超时时间, 超时后fp_timeout_flag被置位
+        type: 0:直接搜索 1:极值搜索
+        其余参数与find_nearest一致
+        """
         self._fp_update_time = time.time()
         self._fp_timeout = timeout
         self.fp_timeout_flag = False
@@ -214,6 +233,9 @@ class LD_Radar(object):
         self._fp_arg = (from_, to_, num, range_limit)
 
     def stop_find_point(self):
+        """
+        停止更新目标点
+        """
         self._fp_flag = False
 
     def _update_target_point(self, points: list[Point_2D]):
