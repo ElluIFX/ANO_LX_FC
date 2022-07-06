@@ -90,7 +90,7 @@ finally:
     if fc.state.unlock.value:
         logger.warning("[MISSION] Auto Landing")
         fc.set_flight_mode(fc.PROGRAM_MODE)
-        fc.stablize(), logger
+        fc.stablize()
         fc.land()
         ret = fc.wait_for_lock()
         if not ret:
