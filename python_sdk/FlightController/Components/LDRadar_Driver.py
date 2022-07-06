@@ -109,6 +109,7 @@ class LD_Radar(object):
 
     def show_radar_map(self):
         self._init_radar_map()
+        self._init_find_point(3)
         while True:
             img_ = self._radar_map_img.copy()
             cv2.putText(
@@ -136,6 +137,7 @@ class LD_Radar(object):
                 (255, 255, 0),
             )
             add_p = self.map.find_nearest(0, 90, 3, 1000)
+            self._update_target_point(add_p)
             if self.__radar_map_info_angle != -1:
                 cv2.putText(
                     img_,
@@ -163,7 +165,7 @@ class LD_Radar(object):
                     0.5,
                     (255, 255, 0),
                 )
-                add_p.append(point)
+                add_p = [point].extend(self.target_points)
                 pos = point.to_cv_xy() * self.__radar_map_img_scale + np.array(
                     [300, 300]
                 )
@@ -179,6 +181,36 @@ class LD_Radar(object):
                 self.__radar_map_img_scale *= 1.1
             elif key == ord("s"):
                 self.__radar_map_img_scale *= 0.9
+
+    def _init_find_point(self, num: int, timeout: float = 1.0):
+        self.target_points = [-1 for i in range(2)]
+        self.update_time = [time.time() for i in range(2)]
+        self.timeout = timeout
+        self.timeout_flag = False
+        
+    def _update_target_point(self, points: list[Point_2D]):
+        """
+        更新目标点位置
+        目标点超时判断
+        """
+        if self.timeout_flag:
+            for n, point in enumerate(self.target_points):
+                if time.time() - self.update_time[n] > self.timeout:
+                    self.timeout_flag = True
+                    break
+                self.timeout_flag = False
+
+        elif len(points) != len(self.target_points):
+            for n, point in enumerate(self.target_points):
+                if time.time() - self.update_time[n] > self.timeout:
+                    self.timeout_flag = True
+                    logger.warning("[Radar] lost point!")
+                    break
+
+        for n, point in enumerate(points):
+            self.target_points[n] = point.distance
+            self.update_time[n] = time.time()
+        return True
 
 
 if __name__ == "__main__":
