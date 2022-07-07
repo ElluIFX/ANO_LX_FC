@@ -1,5 +1,6 @@
 import threading
 from time import sleep, time
+import numpy as np
 
 from FlightController import FC_Client, FC_Controller, logger
 from FlightController.Components import LD_Radar, Map_360, Point_2D
@@ -33,7 +34,9 @@ class Mission(object):
         dis_threshold = 3
         theta_threshold = 0.1
         bar_x_threshold = 3
-        pole_x_threshold = 3
+        rod_x_threshold = 3
+        initial_yaw = self.fc.state.yaw
+        arround_yaw_threshold = 0.2
         ################ 启动线程 ################
         self.running = True
         self.thread_list.append(
@@ -104,10 +107,12 @@ class Mission(object):
         radar.stop_find_point()
         get_picture = False
         while True:
+            sleep(0.01)
             ret, frame = cam.read()
             if not ret:
                 logger.warning("[PICTURE] frame drop ")
                 continue
+            # TODO: 相机角度还未调整
             line_is_find, line_x_offset, line_y_offset, line_t_offset = black_line(frame, 0)
             if line_is_find:
                 if line_y_offset > dis_threshold:
@@ -155,23 +160,104 @@ class Mission(object):
             if get_picture:
                 line_is_find, line_x_offset, line_y_offset, line_t_offset = black_line(frame, 1)
                 if line_is_find:
-                    if line_x_offset > pole_x_threshold:
+                    if line_x_offset > rod_x_threshold:
                         # 还未抵达第二跟杆
                         fc.update_realtime_control(vel_y = 5)
                         continue
-                    elif line_x_offset < -pole_x_threshold:
+                    elif line_x_offset < -rod_x_threshold:
                         # 超过第二根杆
                         fc.update_realtime_control(vel_y = -5)
                         continue
                     else:
                         fc.update_realtime_control(0, 0, 0, 0)
-                        logger.info("[MISSION] get the second pole: %.2f" % line_x_offset)
+                        logger.info("[MISSION] get the second rod: %.2f" % line_x_offset)
                         break
             fc.update_realtime_control(vel_y = 10)
         set_buzzer(True)
         sleep(1)
         set_buzzer(False)
         ####### 到达第二根杆
+        radar.start_find_point(2.5, 1, -30, 30, 3, 2000)
+        yaw_pid = PID(0.4, 0.0, 0.05, setpoint=0, output_limits=(-10, 10))
+        yaw_pid.set_auto_mode(False)
+        dis_pid = PID(0.4, 0.0, 0.05, setpoint=60, output_limits=(-10, 10))
+        dis_pid.set_auto_mode(False)
+        get_picture = False
+        while True:
+            sleep(0.01)
+            ret, frame = cam.read()
+            if not ret:
+                logger.warning("[PICTURE] frame drop ")
+                continue
+            # TODO: 相机角度还未调整
+            line_is_find, line_x_offset, line_y_offset, line_t_offset = black_line(frame, 1)
+            out_yaw = yaw_pid(line_x_offset)
+            # line_x_offset > 0 -> 向右转    line_x_offset < 0 -> 向左转
+            fc.update_realtime_control(yaw = -out_yaw)
+
+            if self.radar.fp_timeout_flag:
+                self.fc.update_realtime_control(vel_x=0, vel_y=0)
+            if len(self.radar.fp_points) > 0:
+                self.radar.fp_points.sort(key=lambda x: abs(deg_360_180(x.degree)))
+                deg = self.radar.fp_points[0].degree
+                deg = deg_360_180(deg)
+                dis = self.radar.fp_points[0].distance / 10
+                logger.info("[MISSION] Find point-2: %.2f, %.2f" % (deg, dis))
+                out_dis = dis_pid(dis)
+                # dis > 60 -> 向前走   dis < 60 -> 向后走
+                fc.update_realtime_control(vel_x = -out_dis)
+            else:
+                # 没有雷达点，x速度置为零
+                fc.update_realtime_control(vel_x = 0)
+            if not get_picture:
+                QR_is_find, QR_x_offset, QR_y_offset = find_QRcode_zbar()
+                if QR_is_find:
+                    if QR_x_offset > bar_x_threshold :
+                        fc.update_realtime_control(vel_y = 5)
+                    elif QR_x_offset < -bar_x_threshold:
+                        fc.update_realtime_control(vel_y = -5)
+                    else:
+                        fc.update_realtime_control(0, 0, 0, 0)
+                        logger.info("[MISSION] get QRcode : %.2f" % (QR_x_offset))
+                        change_cam_resolution(cam, 1920, 1080)
+                        # TODO: 拍照+储存
+                        ret, frame = cam.read()
+                        if ret:
+                            cv2.imwrite('QRcode.jpg',frame)
+                            get_picture = True
+                            change_cam_resolution(cam, 800, 600)
+                            continue
+                        else:
+                            logger.debug("[PICTURE] take picture is failed")
+            # 判断绕杆结束,将yaw轴保持在初始状态的-180度
+            if abs(abs(fc.state.yaw - initial_yaw) - np.pi()) < arround_yaw_threshold :
+                fc.update_realtime_control(0, 0, 0, 0)
+                logger.info("[MISSION] Completed around the rod ")
+                break
+            fc.update_realtime_control(vel_y = 10)
+        set_buzzer(True)
+        sleep(1)
+        set_buzzer(False)        
+        ####### 完成绕杆
+        while True:
+            sleep(0.01)
+            ret, frame = cam.read()
+            if not ret:
+                logger.warning("[PICTURE] frame drop ")
+                continue
+            # TODO: 相机角度还未调整
+            line_is_find, line_x_offset, line_y_offset, line_t_offset = black_line(frame, 1)
+            if line_is_find:
+                # 直接开环向右移动，超过第一根杆后悬停
+                if line_x_offset < -10:
+                    logger.info("[MISSION] Mission1 completed. Ready to land ")
+                    fc.update_realtime_control(0, 0, 0, 0)
+                    break
+            fc.update_realtime_control(vel_y = 15)
+        set_buzzer(True)
+        sleep(1)
+        set_buzzer(False) 
+        ####### 任务1完成
 
 
     def stop(self):
