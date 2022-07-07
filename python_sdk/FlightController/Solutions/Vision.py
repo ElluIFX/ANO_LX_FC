@@ -576,3 +576,18 @@ def update_hsv_selector(img):
     v_h = cv2.getTrackbarPos("V_h", "Selector")
     mask = cv2.inRange(hsv, (h_l, s_l, v_l), (h_h, s_h, v_h))
     cv2.imshow("HSV_img", mask)
+
+
+def change_cam_resolution(cam, width: int, height: int, fps: int = 60):
+    """
+    改变摄像头分辨率
+    return 切换后的 宽,高,fps
+    """
+    cam.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+    cam.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    cam.set(cv2.CAP_PROP_FPS, fps)
+    return (
+        cam.get(cv2.CAP_PROP_FRAME_WIDTH),
+        cam.get(cv2.CAP_PROP_FRAME_HEIGHT),
+        cam.get(cv2.CAP_PROP_FPS),
+    )
