@@ -232,6 +232,13 @@ class LD_Radar(object):
         self._fp_type = type
         self._fp_arg = (from_, to_, num, range_limit)
 
+    def update_find_point_args(self, from_, to_, num, range_limit):
+        """
+        更新目标点查找参数
+        与find_nearest一致
+        """
+        self._fp_arg = (from_, to_, num, range_limit)
+
     def stop_find_point(self):
         """
         停止更新目标点
