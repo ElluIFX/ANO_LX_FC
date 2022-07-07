@@ -147,7 +147,7 @@ def find_yellow_code(image) -> Tuple[bool, float, float]:
     return False, 0, 0
 
 
-def find_laser_point(img):
+def find_laser_point(img) -> Tuple[bool, float, float]:
     """
     寻找激光点
     return: 是否查找到激光点, x偏移值(右正), y偏移值(下正)
@@ -332,7 +332,7 @@ def rescale_image(image, scale: float, fast: bool = False) -> np.ndarray:
     return cv2.resize(image, None, fx=scale, fy=scale, interpolation=inter_mathod)
 
 
-def rescale_aspect_ratio(img, width: int, height: int):
+def rescale_aspect_ratio(img, width: int, height: int) -> np.ndarray:
     """
     将图片缩放到指定宽高(保持长宽比)
     """
@@ -347,7 +347,7 @@ def rescale_aspect_ratio(img, width: int, height: int):
 def get_ROI(
     img,
     ROI: Tuple[Union[int, float]],
-):
+) -> np.ndarray:
     """
     获取兴趣区
     ROI: 若<=1则视为相对图像尺寸的比例值
@@ -390,7 +390,7 @@ class HSV(object):
     WHITE_LOWER = np.array([0, 0, 221])
 
 
-def color_recognition(img, threshold=0.4):
+def color_recognition(img, threshold=0.4) -> Union[str, None]:
     """
     颜色识别(红绿蓝黄)
     threshold: 颜色占比阈值, 大于该阈值则认为是该颜色
@@ -418,7 +418,7 @@ def color_recognition(img, threshold=0.4):
         return None
 
 
-def dp_outline_calc(frame):
+def dp_outline_calc(frame) -> int:
     """
     D-P算法轮廓面积计算
     return: 最大轮廓面积, 未找到时返回0
@@ -445,7 +445,7 @@ def dp_outline_calc(frame):
     return area
 
 
-def FLANN_match(train_img, frame):
+def FLANN_match(train_img, frame) -> Tuple[int, Tuple[float, float]]:
     """
     FLANN单应性特征匹配, 最小值匹配
     train_img: 目标查询图像
@@ -509,7 +509,7 @@ def FLANN_match(train_img, frame):
         return 0, (0, 0)
 
 
-def contours_match(train_img, frame):
+def contours_match(train_img, frame) -> float:
     """
     轮廓匹配
     train_img: 查询图片
@@ -572,7 +572,7 @@ class Meanshift(object):
             self.TERM_MOVE,
         )
 
-    def update(self, frame):
+    def update(self, frame) -> Tuple[float, float]:
         """
         更新目标
         frame: 当前帧
@@ -618,7 +618,7 @@ class Meanshift(object):
 __bs = None
 
 
-def mixed_background_sub(frame):
+def mixed_background_sub(frame) -> Tuple[bool, list[tuple[float, float]]]:
     """
     混合高斯运动检测
     frame: 输入帧
