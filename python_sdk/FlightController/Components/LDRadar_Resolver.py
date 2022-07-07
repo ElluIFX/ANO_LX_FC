@@ -267,7 +267,7 @@ class Map_360(object):
         min_points = [Point_2D(-1, 1e8) for i in range(num)]
         for deg in range_:
             deg %= 360
-            if data[deg] == -1 or self.data[deg] > range_limit:
+            if data[deg] == -1 or data[deg] > range_limit:
                 continue
             for n, point in enumerate(min_points):
                 if data[deg] < point.distance:
@@ -319,7 +319,7 @@ class Map_360(object):
                 data.append(self.data[deg])
             else:
                 data.append(1e9)
-        return self.find_nearest(from_, to_, num, data, range_limit)
+        return self.find_nearest(from_, to_, num, range_limit, data)
 
     def draw_on_cv_image(
         self,
