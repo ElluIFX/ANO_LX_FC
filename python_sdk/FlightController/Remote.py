@@ -219,7 +219,6 @@ class FC_Client(FC_Application):
                             break
                     else:
                         logger.error("[FC_Client] All reconnect failed, closing")
-                        sys.exit(1)
         logger.warning("[FC_Client] State sync thread stopped")
 
     def connect(self, host="127.0.0.1", port=5654, authkey=b"fc"):
