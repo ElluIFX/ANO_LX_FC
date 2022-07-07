@@ -30,6 +30,10 @@ class Mission(object):
         set_buzzer = lambda x: self.fc.set_digital_output(0, x)
         space_distance = 60
         yaw_zero_k = 0.064
+        dis_threshold = 3
+        theta_threshold = 0.1
+        bar_x_threshold = 3
+        pole_x_threshold = 3
         ################ 启动线程 ################
         self.running = True
         self.thread_list.append(
@@ -77,11 +81,11 @@ class Mission(object):
                     self.radar.update_find_point_args(2.5, 1, -45, 45, 1, 1200)
                 ok = 0
                 if deg > 2:
-                    fc.update_realtime_control(yaw=8)
+                    fc.update_realtime_control(vel_y=-8)
                 elif deg < -2:
-                    fc.update_realtime_control(yaw=-8)
+                    fc.update_realtime_control(vel_y=8)
                 else:
-                    fc.update_realtime_control(yaw=0)
+                    fc.update_realtime_control(vel_y=0)
                     ok += 1
                 if dis > space_distance + 5:
                     fc.update_realtime_control(vel_x=10)
@@ -97,6 +101,78 @@ class Mission(object):
         sleep(1)
         set_buzzer(False)
         ######## 到达目标点
+        radar.stop_find_point()
+        get_picture = False
+        while True:
+            ret, frame = cam.read()
+            if not ret:
+                logger.warning("[PICTURE] frame drop ")
+                continue
+            line_is_find, line_x_offset, line_y_offset, line_t_offset = black_line(frame, 0)
+            if line_is_find:
+                if line_y_offset > dis_threshold:
+                    # 远离黑线
+                    fc.update_realtime_control(vel_x = 5)
+                elif line_y_offset < -dis_threshold:
+                    # 靠近黑线
+                    fc.update_realtime_control(vel_x = -5)
+                else:
+                    fc.update_realtime_control(vel_x = 0)
+
+                if (line_t_offset - yaw_zero_k) > theta_threshold:
+                    # yaw轴向左偏
+                    fc.update_realtime_control(yaw = 5)
+                elif (line_t_offset - yaw_zero_k) < -theta_threshold:
+                    # yaw轴向右偏
+                    fc.update_realtime_control(yaw = -5)
+                else:
+                    fc.update_realtime_control(yaw = 0)
+            if not get_picture:
+                bar_is_find, bar_x_offset, bar_y_offset = find_yellow_code(frame)
+                if bar_is_find:
+                    if bar_x_offset > bar_x_threshold:
+                        # 还未抵达条形码处
+                        fc.update_realtime_control(vel_y = 5)
+                        continue
+                    elif bar_x_offset < -bar_x_threshold:
+                        # 超出条形码处
+                        fc.update_realtime_control(vel_y = -5)
+                        continue
+                    else:
+                        fc.update_realtime_control(0, 0, 0, 0)
+                        logger.info("[MISSION] get yellow bar: %.2f" % (bar_x_offset))
+                        change_cam_resolution(cam, 1920, 1080)
+                        # TODO: 拍照+储存
+                        ret, frame = cam.read()
+                        if ret:
+                            cv2.imwrite('yellow_bar.jpg',frame)
+                            get_picture = True
+                            change_cam_resolution(cam, 800, 600)
+                            continue
+                        else:
+                            logger.debug("[PICTURE] take picture is failed")
+                        ####### 成功拍到条形码
+            if get_picture:
+                line_is_find, line_x_offset, line_y_offset, line_t_offset = black_line(frame, 1)
+                if line_is_find:
+                    if line_x_offset > pole_x_threshold:
+                        # 还未抵达第二跟杆
+                        fc.update_realtime_control(vel_y = 5)
+                        continue
+                    elif line_x_offset < -pole_x_threshold:
+                        # 超过第二根杆
+                        fc.update_realtime_control(vel_y = -5)
+                        continue
+                    else:
+                        fc.update_realtime_control(0, 0, 0, 0)
+                        logger.info("[MISSION] get the second pole: %.2f" % line_x_offset)
+                        break
+            fc.update_realtime_control(vel_y = 10)
+        set_buzzer(True)
+        sleep(1)
+        set_buzzer(False)
+        ####### 到达第二根杆
+
 
     def stop(self):
         self.running = False
