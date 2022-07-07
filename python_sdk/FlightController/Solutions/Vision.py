@@ -1,9 +1,33 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
 from pyzbar import pyzbar
 from scipy import ndimage
+
+_DEBUG = False
+
+
+def vision_debug() -> None:
+    """
+    开启视觉模块调试功能
+    启用下列三个窗口用于调试:
+    Origin, Process, Result
+    """
+    global _DEBUG
+    _DEBUG = True
+    x_offset = 400
+    y_offset = 50
+    empty_frame = np.zeros((100, 100, 3), dtype=np.uint8)
+    cv2.namedWindow("Origin", cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow("Process", cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow("Result", cv2.WINDOW_AUTOSIZE)
+    cv2.moveWindow("Origin", 0, 0)
+    cv2.moveWindow("Process", x_offset, y_offset)
+    cv2.moveWindow("Result", x_offset * 2, y_offset * 2)
+    cv2.imshow("Origin", empty_frame)
+    cv2.imshow("Process", empty_frame)
+    cv2.imshow("Result", empty_frame)
 
 
 def black_line(
@@ -22,7 +46,8 @@ def black_line(
     ###########################
     hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv_img, LOWER, UPPER)
-    # cv2.imshow("Process", mask)
+    if _DEBUG:
+        cv2.imshow("Process", mask)
 
     target_theta = 0 if type == 1 else np.pi / 2
     # lines = cv2.HoughLines(mask, 1, np.pi/180, threshold=400, max_theta=0.1)
@@ -68,8 +93,9 @@ def black_line(
             y1 = int(y0 + 1000 * np.cos(theta))
             x2 = int(x0 + 1000 * np.sin(theta))
             y2 = int(y0 - 1000 * np.cos(theta))
-            # cv2.line(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
-            # cv2.imshow("Result", image)
+            if _DEBUG:
+                cv2.line(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                cv2.imshow("Result", image)
             x = abs((x1 + x2) / 2)
             y = abs((y1 + y2) / 2)
             size = image.shape
@@ -102,8 +128,9 @@ def find_yellow_code(image) -> Tuple[bool, float, float]:
     closed = cv2.dilate(closed, None, iterations=4)
     # 找出边界
     conts, hier = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cv2.drawContours(image, conts, -1, (0, 255, 0), 3)  # 画出边框
-    cv2.imshow("Process", image)
+    if _DEBUG:
+        cv2.drawContours(image, conts, -1, (0, 255, 0), 3)  # 画出边框
+        cv2.imshow("Process", image)
     if conts:
         cnts = conts[0]
         area = cv2.contourArea(cnts)
@@ -112,8 +139,9 @@ def find_yellow_code(image) -> Tuple[bool, float, float]:
             M = cv2.moments(cnts)
             cx = int(M["m10"] / (M["m00"]))
             cy = int(M["m01"] / (M["m00"]))
-            cv2.circle(image, (cx, cy), 3, (0, 0, 255), thickness=-1)
-            cv2.imshow("Result", image)
+            if _DEBUG:
+                cv2.circle(image, (cx, cy), 3, (0, 0, 255), thickness=-1)
+                cv2.imshow("Result", image)
             size = image.shape
             return True, cx - size[1] / 2, cy - size[0] / 2
     return False, 0, 0
@@ -129,7 +157,8 @@ def find_laser_point(img):
     # 图像膨胀
     kernel = np.ones((5, 5), np.uint8)  # 定义卷积核
     img = cv2.dilate(img, kernel)
-    # cv2.imshow("Process", img)
+    if _DEBUG:
+        cv2.imshow("Process", img)
     # 设置Blob检测参数
     params = cv2.SimpleBlobDetector_Params()
     # 设置颜色
@@ -154,14 +183,15 @@ def find_laser_point(img):
     # Blob检测
     keypoints = detector.detect(img)
 
-    # img_with_keypoints = cv2.drawKeypoints(
-    #     img,
-    #     keypoints,
-    #     np.array([]),
-    #     (0, 255, 0),
-    #     cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS,
-    # )
-    # cv2.imshow("Result", img_with_keypoints)
+    if _DEBUG:
+        img_with_keypoints = cv2.drawKeypoints(
+            img,
+            keypoints,
+            np.array([]),
+            (0, 255, 0),
+            cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS,
+        )
+        cv2.imshow("Result", img_with_keypoints)
     if keypoints:
         for i in range(0, len(keypoints)):
             x = keypoints[i].pt[0]
@@ -218,13 +248,20 @@ def find_QRcode_zbar(frame) -> Tuple[bool, float, float]:
             cy = int(y + h / 2)
             x_offset = cx - size[1] / 2
             y_offset = cy - size[0] / 2
-            # image = frame.copy()
-            # cv2.circle(image, (cx, cy), 2, (0, 255, 0), 8)
-            # cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 2)
-            # cv2.putText(
-            #     image, data, (x, y - 20), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2
-            # )
-            # cv2.imshow("Result", image)
+            if _DEBUG:
+                image = frame.copy()
+                cv2.circle(image, (cx, cy), 2, (0, 255, 0), 8)
+                cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 2)
+                cv2.putText(
+                    image,
+                    data,
+                    (x, y - 20),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1.0,
+                    (0, 0, 255),
+                    2,
+                )
+                cv2.imshow("Result", image)
             return True, x_offset, y_offset, data
     return False, 0, 0, ""
 
@@ -241,11 +278,9 @@ def find_QRcode_contour(frame) -> Tuple[bool, float, float]:
     gradY = cv2.Sobel(image, ddepth=cv2.CV_32F, dx=0, dy=1, ksize=-1)
     gradient = cv2.subtract(gradX, gradY)
     gradient = cv2.convertScaleAbs(gradient)
-    # cv2.imshow('sobel', gradient)
     # 去噪并提取兴趣区域
     blurred = cv2.blur(gradient, (9, 9))
     (_, thresh) = cv2.threshold(blurred, 90, 255, cv2.THRESH_BINARY)
-    # cv2.imshow("thresh", thresh)
 
     # construct a closing kernel and apply it to the thresholded image
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 7))
@@ -254,7 +289,8 @@ def find_QRcode_contour(frame) -> Tuple[bool, float, float]:
     # 进行开运算和闭运算
     closed = cv2.erode(closed, None, iterations=4)
     closed = cv2.dilate(closed, None, iterations=4)
-    # cv2.imshow("closed", closed)
+    if _DEBUG:
+        cv2.imshow("Process", closed)
     # 处理轮廓，找出最大轮廓
     cnts, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -271,10 +307,11 @@ def find_QRcode_contour(frame) -> Tuple[bool, float, float]:
         x_offset = cx - size[1] / 2
         y_offset = cy - size[0] / 2
         # 做出轮廓和中心坐标点
-        # image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-        # cv2.circle(image, (cx, cy), 2, (0, 255, 0), 8)  # 做出中心坐标
-        # cv2.drawContours(image, [box], -1, (0, 255, 0), 3)
-        # cv2.imshow("Result", image)
+        if _DEBUG:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+            cv2.circle(image, (cx, cy), 2, (0, 255, 0), 8)  # 做出中心坐标
+            cv2.drawContours(image, [box], -1, (0, 255, 0), 3)
+            cv2.imshow("Result", image)
         return True, x_offset, y_offset
     else:
         return False, 0, 0
@@ -293,6 +330,92 @@ def rescale_image(image, scale: float, fast: bool = False) -> np.ndarray:
     else:
         inter_mathod = cv2.INTER_LINEAR
     return cv2.resize(image, None, fx=scale, fy=scale, interpolation=inter_mathod)
+
+
+def rescale_aspect_ratio(img, width: int, height: int):
+    """
+    将图片缩放到指定宽高(保持长宽比)
+    """
+    h, w, _ = img.shape
+    if h > w:
+        img = cv2.resize(img, (height, height * w // h))
+    else:
+        img = cv2.resize(img, (width * h // w, width))
+    return img
+
+
+def get_ROI(
+    img,
+    ROI: Tuple[Union[int, float]],
+):
+    """
+    获取兴趣区
+    ROI: 若<=1则视为相对图像尺寸的比例值
+    """
+    x, y, w, h = ROI
+    if (x + y + w + h) <= 4:
+        x = int(x * img.shape[1])
+        y = int(y * img.shape[0])
+        w = int(w * img.shape[1])
+        h = int(h * img.shape[0])
+    return img[y : y + h, x : x + w]
+
+
+class HSV(object):
+    """
+    常用色值HSV边界
+    """
+
+    RED_UPPER = np.array([10, 255, 255])
+    RED_LOWER = np.array([0, 43, 46])
+    RED_UPPER2 = np.array([180, 255, 255])
+    RED_LOWER2 = np.array([156, 43, 46])
+    YELLOW_UPPER = np.array([34, 255, 255])
+    YELLOW_LOWER = np.array([26, 43, 46])
+    GREEN_UPPER = np.array([77, 255, 255])
+    GREEN_LOWER = np.array([35, 43, 46])
+    BLUE_UPPER = np.array([124, 255, 255])
+    BLUE_LOWER = np.array([100, 43, 46])
+    ORANGE_UPPER = np.array([25, 255, 255])
+    ORANGE_LOWER = np.array([11, 43, 46])
+    CYAN_UPPER = np.array([99, 255, 255])
+    CYAN_LOWER = np.array([78, 43, 46])
+    PURPLE_UPPER = np.array([155, 255, 255])
+    PURPLE_LOWER = np.array([125, 43, 46])
+    BLACK_UPPER = np.array([180, 255, 46])
+    BLACK_LOWER = np.array([0, 0, 0])
+    GRAY_UPPER = np.array([180, 43, 220])
+    GRAY_LOWER = np.array([0, 0, 46])
+    WHITE_UPPER = np.array([180, 30, 255])
+    WHITE_LOWER = np.array([0, 0, 221])
+
+
+def color_recognition(img, threshold=0.4):
+    """
+    颜色识别(红绿蓝黄)
+    threshold: 颜色占比阈值, 大于该阈值则认为是该颜色
+    return: 识别结果的文本, 无法识别则为None
+    """
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    maske_r = cv2.bitwise_or(
+        cv2.inRange(hsv, HSV.RED_LOWER, HSV.RED_UPPER),
+        cv2.inRange(hsv, HSV.RED_LOWER2, HSV.RED_UPPER2),
+    )
+    mask_g = cv2.inRange(hsv, HSV.GREEN_LOWER, HSV.GREEN_UPPER)
+    mask_b = cv2.inRange(hsv, HSV.BLUE_LOWER, HSV.BLUE_UPPER)
+    red_count = cv2.countNonZero(maske_r)
+    green_count = cv2.countNonZero(mask_g)
+    blue_count = cv2.countNonZero(mask_b)
+    max_count = max(red_count, green_count, blue_count)
+    tho = int(img.shape[0] * img.shape[1] * threshold)
+    if max_count == red_count and red_count > tho:
+        return "red"
+    elif max_count == green_count and green_count > tho:
+        return "green"
+    elif max_count == blue_count and blue_count > tho:
+        return "blue"
+    else:
+        return None
 
 
 def dp_outline_calc(frame):
@@ -316,8 +439,9 @@ def dp_outline_calc(frame):
     epsilon = 0.000001 * cv2.arcLength(cnt, True)
     approx = cv2.approxPolyDP(cnt, epsilon, True)
     area = cv2.contourArea(approx)
-    # frame = cv2.drawContours(frame, approx, -1, (255, 0, 0), 3)
-    # cv2.imshow("Process", frame)
+    if _DEBUG:
+        frame = cv2.drawContours(frame, approx, -1, (255, 0, 0), 3)
+        cv2.imshow("Process", frame)
     return area
 
 
@@ -363,18 +487,22 @@ def FLANN_match(train_img, frame):
         p1, p2, p3, p4 = dst.reshape(4, 2)
         center_point = (p1 + p2 + p3 + p4) / 4
         ####### 透视关系
-        # matchesMask = mask.ravel().tolist()
-        # draw_params = dict(
-        #     matchColor=(0, 255, 0),  # draw matches in green color
-        #     singlePointColor=None,
-        #     matchesMask=matchesMask,  # draw only inliers
-        #     flags=2,
-        # )
-        # img3 = cv2.drawMatches(train_img, kp1, frame, kp2, good, None, **draw_params)
-        # cv2.imshow("Process", img3)
+        if _DEBUG:
+            matchesMask = mask.ravel().tolist()
+            draw_params = dict(
+                matchColor=(0, 255, 0),  # draw matches in green color
+                singlePointColor=None,
+                matchesMask=matchesMask,  # draw only inliers
+                flags=2,
+            )
+            img3 = cv2.drawMatches(
+                train_img, kp1, frame, kp2, good, None, **draw_params
+            )
+            cv2.imshow("Process", img3)
         ####### 目标匹配
-        # frame = cv2.polylines(frame, [dst], True, 255, 3, cv2.LINE_AA)
-        # cv2.imshow("Result", frame)
+        if _DEBUG:
+            frame = cv2.polylines(frame, [dst], True, 255, 3, cv2.LINE_AA)
+            cv2.imshow("Result", frame)
         ###############
         return len(good), center_point
     else:
@@ -404,6 +532,9 @@ def contours_match(train_img, frame):
     cnt2 = contours2[0]
     # 计算匹配度
     matching_value = cv2.matchShapes(cnt1, cnt2, 1, 0.0)
+    if _DEBUG:
+        frame = cv2.drawContours(frame, contours1, -1, (255, 0, 0), 3)
+        cv2.imshow("Result", frame)
     return matching_value
 
 
@@ -415,13 +546,17 @@ class Meanshift(object):
     TERM_ITER = 10  # 终止条件: 迭代次数
     TERM_MOVE = 1  # 终止条件: 移动距离
     ###########################
-    def __init__(self, frame, init_ROI):
+    def __init__(self, init_ROI: Tuple[Union[int, float]]):
         """
         均值漂移目标跟踪
-        frame:当前帧
-        init_ROI: 初始兴趣区域, (c, r, w, h) (角点和宽高)
+        init_ROI: 初始兴趣区域, (x, y, w, h) (角点和宽高), 传入小于1的值时, 自动计算比例
         """
-        self.ROI = np.array(init_ROI)
+        self.init_ROI = init_ROI
+        self.inited = False
+
+    def _init_local(self, frame):
+        self.img_shape = frame.shape
+        self.reset_roi(self.init_ROI)
         # c, r, w, h = ROI
         # roi = frame[r : r + h, c : c + w]
         hsv_roi = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -436,7 +571,6 @@ class Meanshift(object):
             self.TERM_ITER,
             self.TERM_MOVE,
         )
-        self.update(frame)
 
     def update(self, frame):
         """
@@ -444,7 +578,9 @@ class Meanshift(object):
         frame: 当前帧
         return: 目标x偏移, 目标y偏移
         """
-        size = frame.shape
+        if not self.inited:
+            self._init_local(frame)
+            self.inited = True
         # 处理训练图像
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         # 直方图反向投影，求得每个像素点的概率
@@ -458,15 +594,25 @@ class Meanshift(object):
         # 计算中心点坐标
         cx = int(x + w / 2)
         cy = int(y + h / 2)
-        output_img = cv2.rectangle(frame, (x, y), (x + w, y + h), 255, 2)
-        cv2.imshow("Result", output_img)
-        return cx - size[1] / 2, cy - size[0] / 2
+        if _DEBUG:
+            output_img = cv2.rectangle(frame, (x, y), (x + w, y + h), 255, 2)
+            cv2.imshow("Result", output_img)
+        return cx - self.img_shape[1] / 2, cy - self.img_shape[0] / 2
 
-    def reset_roi(self, ROI):
+    def reset_roi(self, ROI: Tuple[Union[int, float]] = None) -> None:
         """
         重置ROI
         """
-        self.ROI = np.array(ROI)
+        if ROI is None:
+            ROI = self.init_ROI
+        x, y, w, h = ROI
+        if (x + y + w + h) <= 4:
+            x = int(self.img_shape[1] * x)
+            y = int(self.img_shape[0] * y)
+            w = int(self.img_shape[1] * w)
+            h = int(self.img_shape[0] * h)
+        self.ROI = np.array([x, y, w, h])
+        self.inited = False
 
 
 __bs = None
@@ -482,7 +628,7 @@ def mixed_background_sub(frame):
     if __bs is None:
         __bs = cv2.createBackgroundSubtractorKNN(detectShadows=True)
     fgmask = __bs.apply(frame)
-    th = cv2.threshold(fgmask.copy(), 244, 255, cv2.THRESH_BINARY)[1]  # 将非纯白色像素设为0
+    th = cv2.threshold(fgmask, 244, 255, cv2.THRESH_BINARY)[1]  # 将非纯白色像素设为0
     th = cv2.erode(
         th, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)), iterations=2
     )  # 腐蚀图像
@@ -497,11 +643,12 @@ def mixed_background_sub(frame):
         if cv2.contourArea(c) > 1000:
             (x, y, w, h) = cv2.boundingRect(c)
             detection_list.append((x + w / 2, y + h / 2))
-            # cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 0), 2)
-    # cv2.imshow("mog", fgmask)
-    # cv2.imshow("thresh", th)
-    # cv2.imshow("diff", frame & cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR))
-    # cv2.imshow("detection", frame)
+            if _DEBUG:
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 0), 2)
+    if _DEBUG:
+        # cv2.imshow("diff", frame & cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR))
+        cv2.imshow("Process", th)
+        cv2.imshow("Result", frame)
     if len(detection_list) > 0:
         return True, detection_list
     return False, []
