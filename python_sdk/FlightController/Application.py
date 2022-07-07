@@ -152,11 +152,10 @@ class FC_Application(FC_Protocol):
                 if not pauesed:
                     self._action_log("realtime control", "paused")
                 pauesed = True
-                time.sleep(0.1)
                 continue
             if pauesed:  # 取消暂停时先清空数据避免失控
                 pauesed = False
-                self._realtime_control_data_in_xyzYaw = (0, 0, 0, 0)
+                self._realtime_control_data_in_xyzYaw = [0, 0, 0, 0]
                 self._action_log("realtime control", "resumed")
             try:
                 self.send_realtime_control_data(*self._realtime_control_data_in_xyzYaw)
@@ -192,7 +191,7 @@ class FC_Application(FC_Protocol):
             self._realtime_control_thread.join()
             self._thread_list.remove(self._realtime_control_thread)
             self._realtime_control_thread = None
-        self._realtime_control_data_in_xyzYaw = (0, 0, 0, 0)
+        self._realtime_control_data_in_xyzYaw = [0, 0, 0, 0]
 
     def update_realtime_control(
         self, vel_x: int = None, vel_y: int = None, vel_z: int = None, yaw: int = None
