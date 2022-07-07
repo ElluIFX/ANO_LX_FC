@@ -22,7 +22,7 @@ fc.wait_for_connection()
 fc.settings.action_log_output = False
 
 fc.set_PWM_output(0, camera_up_pwm)
-fc.set_PWM_output(1, 40)
+fc.set_PWM_output(1, 80)
 
 fc.set_flight_mode(fc.PROGRAM_MODE)
 

@@ -26,7 +26,9 @@ class Mission(object):
         camera_down_45_pwm = 52.25
         camera_up_pwm = 72
         camera_up_45_pwm = 91.75
+        radar_pwm = 50
         set_buzzer = lambda x: self.fc.set_digital_output(0, x)
+        space_distance = 60
         ################ 启动线程 ################
         self.running = True
         self.thread_list.append(
@@ -37,7 +39,10 @@ class Mission(object):
         ################ 初始化 ################
         fc = self.fc
         radar = self.radar
+        cam = cv2.VideoCapture(0)
+        change_cam_resolution(cam, 800, 600)
         fc.set_PWM_output(0, camera_up_pwm)
+        fc.set_PWM_output(1, 40)
         fc.set_flight_mode(fc.PROGRAM_MODE)
         ################ 初始化完成 ################
 
@@ -47,14 +52,39 @@ class Mission(object):
         fc.take_off()
         fc.wait_for_takeoff_done()
         ######## 已起飞
-        radar.start_find_point(
-            timeout=1, type=0, from_=-45, to_=45, num=1, range_limit=1500
-        )
+        radar.start_find_point(2.5, 1, -60, 60, 3, 2000)
         fc.set_flight_mode(fc.HOLD_POS_MODE)
         self.keep_height_flag = True
         fc.start_realtime_control()
-        sleep(10)
         ######## 闭环定高
+        def deg_360_180(deg):
+            if deg > 180:
+                deg = deg - 360
+            return deg
+
+        while True:
+            sleep(0.01)
+            if self.radar.fp_timeout_flag:
+                self.fc.update_realtime_control(vel_x=0, vel_y=0)
+            if len(self.radar.fp_points) > 0:
+                self.radar.fp_points.sort(key=lambda x: abs(deg_360_180(x.degree)))
+                deg = self.radar.fp_points[0].degree
+                deg = deg_360_180(deg)
+                dis = self.radar.fp_points[0].distance / 10
+                logger.info("[MISSION] Find point: %.2f, %.2f" % (deg, dis))
+                if deg > 2:
+                    fc.update_realtime_control(yaw=8)
+                elif deg < -2:
+                    fc.update_realtime_control(yaw=-8)
+                else:
+                    fc.update_realtime_control(yaw=0)
+                    # radar.update_find_point_args(-30, 30, 1, 1500)
+                if dis > space_distance + 5:
+                    fc.update_realtime_control(vel_x=10)
+                elif dis < space_distance - 5:
+                    fc.update_realtime_control(vel_x=-10)
+                else:
+                    fc.update_realtime_control(vel_x=0)
 
     def stop(self):
         self.running = False
