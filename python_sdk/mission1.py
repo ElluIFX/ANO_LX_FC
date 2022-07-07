@@ -25,10 +25,11 @@ class Mission(object):
         camera_down_pwm = 32.5
         camera_down_45_pwm = 52.25
         camera_up_pwm = 72
-        camera_up_45_pwm = 91.75
+        camera_up_45_pwm = 78.5
         radar_pwm = 50
         set_buzzer = lambda x: self.fc.set_digital_output(0, x)
         space_distance = 60
+        yaw_zero_k = 0.064
         ################ 启动线程 ################
         self.running = True
         self.thread_list.append(
@@ -72,22 +73,34 @@ class Mission(object):
                 deg = deg_360_180(deg)
                 dis = self.radar.fp_points[0].distance / 10
                 logger.info("[MISSION] Find point: %.2f, %.2f" % (deg, dis))
+                if dis < 100:
+                    self.radar.update_find_point_args(2.5, 1, -45, 45, 1, 1200)
+                ok = 0
                 if deg > 2:
                     fc.update_realtime_control(yaw=8)
                 elif deg < -2:
                     fc.update_realtime_control(yaw=-8)
                 else:
                     fc.update_realtime_control(yaw=0)
-                    # radar.update_find_point_args(-30, 30, 1, 1500)
+                    ok += 1
                 if dis > space_distance + 5:
                     fc.update_realtime_control(vel_x=10)
                 elif dis < space_distance - 5:
                     fc.update_realtime_control(vel_x=-10)
                 else:
                     fc.update_realtime_control(vel_x=0)
+                    ok += 1
+                if ok == 2:
+                    fc.update_realtime_control(vel_x=0, vel_y=0)
+                    break
+        set_buzzer(True)
+        sleep(1)
+        set_buzzer(False)
+        ######## 到达目标点
 
     def stop(self):
         self.running = False
+        self.fc.stop_realtime_control()
 
     def keep_height_task(self):
         paused = False
