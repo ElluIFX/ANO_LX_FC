@@ -5,7 +5,7 @@ from FlightController.Components import LD_Radar, Map_360, Point_2D
 
 fc = FC_Client()
 fc.connect()
-fc.start_sync_state()
+fc.start_sync_state(False)
 radar = LD_Radar()
 radar.start("/dev/ttyUSB0", "LD08")
 
@@ -26,7 +26,7 @@ fc.set_PWM_output(1, 40)
 
 fc.set_flight_mode(fc.PROGRAM_MODE)
 
-target_mission = 1
+target_mission = None
 _light_cnt = 0
 
 logger.info("[MISSION] Waiting for input")
