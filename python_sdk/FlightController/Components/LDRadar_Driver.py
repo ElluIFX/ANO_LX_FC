@@ -244,7 +244,7 @@ class LD_Radar(object):
         """
         if self.fp_timeout_flag and len(points) > 0:
             self.fp_timeout_flag = False
-        else:
+        elif len(points) > 0:
             self.fp_points = points
             self._fp_update_time = time.time()
 
