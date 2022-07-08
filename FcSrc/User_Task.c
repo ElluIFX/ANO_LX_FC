@@ -46,17 +46,17 @@ void UserTask_OneKeyCmd(void) {
       //复位标记，以便再次执行
       one_key_takeoff_f = 0;
     }
-    //第七通道
-    if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] > 1700 &&
-        rc_in.rc_ch.st_data.ch_[ch_7_aux3] < 2200) {
-      if (emergency_stop_f == 0) {
-        emergency_stop_f = 1;
-        //执行一键锁桨
-        FC_Lock();
-      }
-    } else {
-      emergency_stop_f = 0;
-    }
     ////////////////////////////////////////////////////////////////////////
+  }
+  //第七通道
+  if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] > 1700 &&
+      rc_in.rc_ch.st_data.ch_[ch_7_aux3] < 2200) {
+    if (emergency_stop_f == 0) {
+      emergency_stop_f = 1;
+      //执行一键锁桨
+      FC_Lock();
+    }
+  } else {
+    emergency_stop_f = 0;
   }
 }
