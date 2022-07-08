@@ -28,7 +28,8 @@ def vision_debug() -> None:
     cv2.imshow("Origin", empty_frame)
     cv2.imshow("Process", empty_frame)
     cv2.imshow("Result", empty_frame)
-
+    cv2.waitKey(10)
+ 
 
 def black_line(
     image, type: int = 1, theta_threshold=0.25
