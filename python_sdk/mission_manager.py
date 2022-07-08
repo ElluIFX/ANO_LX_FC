@@ -7,7 +7,7 @@ fc = FC_Client()
 fc.connect()
 fc.start_sync_state(False)
 radar = LD_Radar()
-radar.start("/dev/ttyUSB0", "LD08")
+radar.start("/dev/ttyUSB0", "LD06")
 
 ############################## 参数 ##############################
 camera_down_pwm = 32.5
@@ -22,7 +22,6 @@ fc.wait_for_connection()
 fc.settings.action_log_output = False
 
 fc.set_PWM_output(0, camera_up_pwm)
-fc.set_PWM_output(1, 80)
 
 fc.set_flight_mode(fc.PROGRAM_MODE)
 
@@ -83,7 +82,9 @@ try:
 
     logger.info("[MISSION] Mission Finished")
 except Exception as e:
-    logger.error(f"[MISSION] Mission Failed: {e}")
+    import traceback
+
+    logger.error(f"[MISSION] Mission Failed: {traceback.format_exc()}")
 finally:
     if mission is not None:
         mission.stop()
@@ -101,7 +102,7 @@ finally:
 fc.set_PWM_output(1, 0)
 fc.set_rgb_led(0, 255, 0)
 set_buzzer(True)
-sleep(1)
+sleep(0.5)
 set_buzzer(False)
 fc.set_rgb_led(0, 0, 0)
 fc.quit()
