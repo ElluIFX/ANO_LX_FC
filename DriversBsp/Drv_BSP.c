@@ -219,7 +219,8 @@ void DrvRcInputTask(float dT_s) {
     if ((rc_in.rc_ch.st_data.ch_[ch_5_aux1] > 1200 &&
          rc_in.rc_ch.st_data.ch_[ch_5_aux1] < 1400) ||
         (rc_in.rc_ch.st_data.ch_[ch_5_aux1] > 1600 &&
-         rc_in.rc_ch.st_data.ch_[ch_5_aux1] < 1800)) {
+         rc_in.rc_ch.st_data.ch_[ch_5_aux1] < 1800) ||
+        (rc_in.rc_ch.st_data.ch_[ch_8_aux4] > 1800)) {
       //满足设置，标记为失控
       failsafe = 1;
     } else {
