@@ -29,7 +29,7 @@ def vision_debug() -> None:
     cv2.imshow("Process", empty_frame)
     cv2.imshow("Result", empty_frame)
     cv2.waitKey(10)
- 
+
 
 def black_line(
     image, type: int = 1, theta_threshold=0.25
@@ -118,8 +118,8 @@ def find_yellow_code(image) -> Tuple[bool, float, float]:
     ######### 参数设置 #########
     # LOWER = np.array([20, 40, 100])
     # UPPER = np.array([60, 150, 255])
-    LOWER = np.array([17, 108, 71])
-    UPPER = np.array([59, 198, 131])
+    LOWER = np.array([0, 78, 42])
+    UPPER = np.array([56, 255, 200])
     ###########################
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     # 根据闸值构建掩模
@@ -135,15 +135,22 @@ def find_yellow_code(image) -> Tuple[bool, float, float]:
         cv2.drawContours(image, conts, -1, (0, 255, 0), 3)  # 画出边框
         cv2.imshow("Process", image)
     if conts:
-        cnts = conts[0]
-        area = cv2.contourArea(cnts)
+        max_area = 0
+        max_index = 0
+        for n, cnts in enumerate(conts):
+            area = cv2.contourArea(cnts)
+            if area > max_area:
+                max_area = area
+                max_index = n
         # 设定面积闸值，排除黄色小噪点影响
-        if area > 200:
+        cnts = conts[max_index]
+        area = max_area
+        if area > 800:
             M = cv2.moments(cnts)
             cx = int(M["m10"] / (M["m00"]))
             cy = int(M["m01"] / (M["m00"]))
             if _DEBUG:
-                cv2.circle(image, (cx, cy), 3, (0, 0, 255), thickness=-1)
+                cv2.circle(image, (cx, cy), 8, (0, 0, 255), thickness=-1)
                 cv2.imshow("Result", image)
             size = image.shape
             return True, cx - size[1] / 2, cy - size[0] / 2
