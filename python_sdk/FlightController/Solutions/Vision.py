@@ -40,8 +40,8 @@ def black_line(
     return: 是否查找到黑线, x偏移值(右正), y偏移值(下正), 弧度偏移值(顺时针正)
     """
     ######### 参数设置 #########
-    LOWER = np.array([0, 0, 0])
-    UPPER = np.array([180, 255, 50])
+    LOWER = np.array([0, 60, 0])
+    UPPER = np.array([150, 255, 75])
     HOUGH_THRESHOLD = 200
     ###########################
     hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -115,8 +115,10 @@ def find_yellow_code(image) -> Tuple[bool, float, float]:
     return: 是否查找到黄色条码, x偏移值(右正), y偏移值(下正)
     """
     ######### 参数设置 #########
-    LOWER = np.array([20, 40, 100])
-    UPPER = np.array([60, 150, 255])
+    # LOWER = np.array([20, 40, 100])
+    # UPPER = np.array([60, 150, 255])
+    LOWER = np.array([17, 108, 71])
+    UPPER = np.array([59, 198, 131])
     ###########################
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     # 根据闸值构建掩模
@@ -135,7 +137,7 @@ def find_yellow_code(image) -> Tuple[bool, float, float]:
         cnts = conts[0]
         area = cv2.contourArea(cnts)
         # 设定面积闸值，排除黄色小噪点影响
-        if area > 150:
+        if area > 200:
             M = cv2.moments(cnts)
             cx = int(M["m10"] / (M["m00"]))
             cy = int(M["m01"] / (M["m00"]))
@@ -698,11 +700,11 @@ def init_hsv_selector():
     """
     (调试工具) 初始化HSV颜色选择器
     """
-    cv2.namedWindow("Selector", cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow("Selector", cv2.WINDOW_NORMAL)
     cv2.namedWindow("HSV_img", cv2.WINDOW_AUTOSIZE)
     nothing = lambda x: 0
-    cv2.createTrackbar("H_l", "Selector", 0, 180, nothing)
-    cv2.createTrackbar("H_h", "Selector", 0, 180, nothing)
+    cv2.createTrackbar("H_l", "Selector", 0, 255, nothing)
+    cv2.createTrackbar("H_h", "Selector", 0, 255, nothing)
     cv2.createTrackbar("S_l", "Selector", 0, 255, nothing)
     cv2.createTrackbar("S_h", "Selector", 0, 255, nothing)
     cv2.createTrackbar("V_l", "Selector", 0, 255, nothing)
