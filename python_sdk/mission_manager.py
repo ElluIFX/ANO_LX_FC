@@ -4,7 +4,13 @@ from FlightController import FC_Client, FC_Controller, logger
 from FlightController.Components import LD_Radar, Map_360, Point_2D
 
 fc = FC_Client()
-fc.connect()
+while True:
+    try:
+        fc.connect()
+        break
+    except:
+        logger.warning("Connection failed, retrying...")
+        sleep(1)
 fc.start_sync_state(False)
 radar = LD_Radar()
 radar.start("/dev/ttyUSB0", "LD06")
@@ -106,3 +112,11 @@ sleep(0.5)
 set_buzzer(False)
 fc.set_rgb_led(0, 0, 0)
 fc.quit()
+
+########################## 重启自身 #############################
+import os
+import sys
+
+sleep(1)
+logger.info("[MISSION] Manager Restarting")
+os.execl(sys.executable, sys.executable, *sys.argv)
