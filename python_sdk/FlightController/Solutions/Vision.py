@@ -84,10 +84,6 @@ def black_line(
     if lines is not None:
         for line in lines:
             r, theta = line[0]
-            # if (
-            #     abs(theta - target_theta) < theta_threshold
-            #     or abs(theta - target_theta - np.pi) < theta_threshold
-            # ):
             x0 = r * np.cos(theta)
             y0 = r * np.sin(theta)
             x1 = int(x0 - 1000 * np.sin(theta))
@@ -748,3 +744,21 @@ def change_cam_resolution(cam, width: int, height: int, fps: int = 60):
         cam.get(cv2.CAP_PROP_FRAME_HEIGHT),
         cam.get(cv2.CAP_PROP_FPS),
     )
+
+
+def rotate_img(image, angle, fill_color=(0, 0, 0)):
+    """
+    任意角度旋转图片
+    angle: 旋转角度，顺时针方向, 角度制
+    fill_color: 填充颜色
+    """
+    (h, w) = image.shape[:2]
+    (cX, cY) = (w // 2, h // 2)
+    M = cv2.getRotationMatrix2D((cX, cY), -angle, 1.0)
+    cos = np.abs(M[0, 0])
+    sin = np.abs(M[0, 1])
+    nW = int((h * sin) + (w * cos))
+    nH = int((h * cos) + (w * sin))
+    M[0, 2] += (nW / 2) - cX
+    M[1, 2] += (nH / 2) - cY
+    return cv2.warpAffine(image, M, (nW, nH), borderValue=fill_color)
