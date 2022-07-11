@@ -202,12 +202,16 @@ class LD_Radar(object):
             )
             cv2.imshow("Radar Map", img_)
             key = cv2.waitKey(int(1000 / 50))
-            if key == 27:
+            if key == ord("q"):
                 break
             elif key == ord("w"):
                 self.__radar_map_img_scale *= 1.1
             elif key == ord("s"):
                 self.__radar_map_img_scale *= 0.9
+            elif key == ord("a"):
+                out = self.map.output_cloud()
+                cv2.imwrite(f"radar_map.png", out)
+                cv2.imshow("Cloud", out)
 
     def start_find_point(
         self,

@@ -351,6 +351,16 @@ class Map_360(object):
         )
         return img
 
+    def output_cloud(self, scale: float = 0.1, size=800) -> np.ndarray:
+        black_img = np.zeros((size, size, 1), dtype=np.uint8)
+        center_point = np.array([size // 2, size // 2])
+        for point in self.in_deg(0, 359):
+            pos = point.to_cv_xy() * scale + center_point
+            x, y = int(pos[0]), int(pos[1])
+            if 0 <= x < size and 0 <= y < size:
+                black_img[y, x] = 255
+        return black_img
+
     def get_distance(self, angle: int) -> int:
         return self.data[int(angle % 360)]
 
