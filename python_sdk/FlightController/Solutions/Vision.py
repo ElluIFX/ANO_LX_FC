@@ -424,6 +424,18 @@ def color_recognition(img, threshold=0.4) -> Union[str, None]:
         return None
 
 
+def hsv_checker(img, lower, upper, threshold=0.4) -> bool:
+    """
+    计算hsv图像中目标色值占比是否超过阈值
+    lower, upper: hsv色值范围
+    threshold: 阈值
+    return: 超过阈值
+    """
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, lower, upper)
+    return cv2.countNonZero(mask) / (img.shape[0] * img.shape[1]) > threshold
+
+
 def dp_outline_calc(frame) -> int:
     """
     D-P算法轮廓面积计算
