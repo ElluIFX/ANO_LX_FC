@@ -19,16 +19,14 @@ def radar_resolve_rt_pose(img) -> list[float, float, float]:
     ############参数设置##############
     KERNAL_DI = 9
     KERNAL_ER = 5
-    HOUGH_THRESHOLD = 120
-    MIN_LINE_LENGTH = 100
+    HOUGH_THRESHOLD = 80
+    MIN_LINE_LENGTH = 60
     LOW_PASS_RATIO = 0.1  # 平滑滤波系数
     #################################
     kernel_di = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (KERNAL_DI, KERNAL_DI))
     kernel_er = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (KERNAL_ER, KERNAL_ER))
-    img = cv2.dilate(img, kernel_di)
-    img = cv2.erode(img, kernel_er)
-    if _DEBUG:
-        cv2.imshow("Process", img)
+    img = cv2.dilate(img, kernel_di)  # 膨胀
+    img = cv2.erode(img, kernel_er)  # 腐蚀
     lines = cv2.HoughLinesP(
         img,
         1,
@@ -41,37 +39,57 @@ def radar_resolve_rt_pose(img) -> list[float, float, float]:
     x0, y0 = size[0] // 2, size[1] // 2
     if _DEBUG:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    right_lines = []
+    back_lines = []
     if lines is not None:
         for line in lines:
             x1, y1, x2, y2 = line[0]
             if (
                 x1 > x0 and x2 > x0 and ((y1 > y0 and y2 < y0) or (y1 < y0 and y2 > y0))
             ):  # 右侧线
-                x, yaw = get_point_line_distance(x0, y0, x1, y1, x2, y2, 0)
-                _rt_pose[0] = _rt_pose[0] + LOW_PASS_RATIO * (x - _rt_pose[0])
-                _rt_pose[2] = _rt_pose[2] + LOW_PASS_RATIO * (yaw - _rt_pose[2])
-                if _DEBUG:
-                    cv2.line(img, (x1, y1), (x2, y2), (255, 255, 0), 2)
-                    p = Point_2D(_rt_pose[2] + 90, _rt_pose[0])
-                    target = p.to_cv_xy() + np.array([x0, y0])
-                    cv2.line(
-                        img, (x0, y0), (int(target[0]), int(target[1])), (0, 0, 255), 1
-                    )
+                if x1 > x2:
+                    right_lines.append((x2, y2, x1, y1))
+                else:
+                    right_lines.append((x1, y1, x2, y2))
             elif (
                 y1 > y0 and y2 > y0 and ((x1 > x0 and x2 < x0) or (x1 < x0 and x2 > x0))
             ):  # 下侧线
-                y, yaw = get_point_line_distance(x0, y0, x1, y1, x2, y2, 1)
-                _rt_pose[1] = _rt_pose[1] + LOW_PASS_RATIO * (y - _rt_pose[1])
-                _rt_pose[2] = _rt_pose[2] + LOW_PASS_RATIO * (yaw - _rt_pose[2])
-                if _DEBUG:
-                    cv2.line(img, (x1, y1), (x2, y2), (0, 255, 255), 2)
-                    p = Point_2D(_rt_pose[2] + 180, _rt_pose[1])
-                    target = p.to_cv_xy() + np.array([x0, y0])
-                    cv2.line(
-                        img, (x0, y0), (int(target[0]), int(target[1])), (0, 0, 255), 1
-                    )
-
+                if y1 > y2:
+                    back_lines.append((x2, y2, x1, y1))
+                else:
+                    back_lines.append((x1, y1, x2, y2))
+    right_lines.sort(key=lambda line: line[0])
+    back_lines.sort(key=lambda line: line[1])
+    if len(right_lines) > 0:
+        x1, y1, x2, y2 = right_lines[0]
+        x, yaw = get_point_line_distance(x0, y0, x1, y1, x2, y2, 0)
+        _rt_pose[0] = _rt_pose[0] + LOW_PASS_RATIO * (x - _rt_pose[0])
+        _rt_pose[2] = _rt_pose[2] + LOW_PASS_RATIO * (-yaw - _rt_pose[2])
+        if _DEBUG:
+            cv2.line(img, (x1, y1), (x2, y2), (255, 255, 0), 2)
+            p = Point_2D(-_rt_pose[2] + 90, _rt_pose[0])
+            target = p.to_cv_xy() + np.array([x0, y0])
+            cv2.line(img, (x0, y0), (int(target[0]), int(target[1])), (0, 0, 255), 1)
+    if len(back_lines) > 0:
+        x1, y1, x2, y2 = back_lines[0]
+        y, yaw = get_point_line_distance(x0, y0, x1, y1, x2, y2, 1)
+        _rt_pose[1] = _rt_pose[1] + LOW_PASS_RATIO * (y - _rt_pose[1])
+        _rt_pose[2] = _rt_pose[2] + LOW_PASS_RATIO * (-yaw - _rt_pose[2])
+        if _DEBUG:
+            cv2.line(img, (x1, y1), (x2, y2), (0, 255, 255), 2)
+            p = Point_2D(-_rt_pose[2] + 180, _rt_pose[1])
+            target = p.to_cv_xy() + np.array([x0, y0])
+            cv2.line(img, (x0, y0), (int(target[0]), int(target[1])), (0, 0, 255), 1)
     if _DEBUG:
+        cv2.putText(
+            img,
+            f"({_rt_pose[0]:.1f}, {_rt_pose[1]:.1f},{_rt_pose[2]:.1f})",
+            (x0, y0 - 20),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (0, 0, 255),
+            1,
+        )
         cv2.imshow("Result", img)
     return _rt_pose
 
