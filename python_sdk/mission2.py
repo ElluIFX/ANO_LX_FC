@@ -16,9 +16,10 @@ def deg_360_180(deg):
 
 
 class Mission(object):
-    def __init__(self, fc: FC_Controller, radar: LD_Radar):
+    def __init__(self, fc: FC_Controller, radar: LD_Radar, camera: cv2.VideoCapture):
         self.fc = fc
         self.radar = radar
+        self.cam = camera
         ############### PID #################
         self.height_pid = PID(0.8, 0.0, 0.1, setpoint=86, output_limits=(-30, 30))  # 86
         self.height_pid.set_auto_mode(False)

@@ -1,5 +1,6 @@
 from time import sleep, time
 
+import cv2
 from FlightController import FC_Client, FC_Controller, logger
 from FlightController.Components import LD_Radar, Map_360, Point_2D
 
@@ -14,6 +15,11 @@ while True:
 fc.start_sync_state(False)
 radar = LD_Radar()
 radar.start("/dev/ttyUSB0", "LD06")
+cam = cv2.VideoCapture(0)
+while not cam.isOpened():
+    cam.open(0)
+    if not cam.isOpened():
+        raise Exception("Camera open failed")
 
 ############################## 参数 ##############################
 camera_down_pwm = 32.5
@@ -73,15 +79,15 @@ try:
     if target_mission == 1:
         from mission1 import Mission
 
-        mission = Mission(fc, radar)
+        mission = Mission(fc, radar, cam)
     elif target_mission == 2:
         from mission2 import Mission
 
-        mission = Mission(fc, radar)
+        mission = Mission(fc, radar, cam)
     elif target_mission == 3:
         from mission3 import Mission
 
-        mission = Mission(fc, radar)
+        mission = Mission(fc, radar, cam)
     logger.info("[MISSION] Calling Mission")
 
     mission.run()
@@ -112,6 +118,7 @@ sleep(0.5)
 set_buzzer(False)
 fc.set_rgb_led(0, 0, 0)
 fc.quit()
+cam.release()
 
 ########################## 重启自身 #############################
 import os
