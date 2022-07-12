@@ -3,16 +3,16 @@ from typing import Literal
 import cv2
 import numpy as np
 
-from ..Components import Point_2D
-from .Vision import _DEBUG
+from ..Components.LDRadar_Resolver import Point_2D
 
 _rt_pose = [0, 0, 0]  # x,y,yaw
 
 
-def radar_resolve_rt_pose(img) -> list[float, float, float]:
+def radar_resolve_rt_pose(img, _DEBUG=False) -> list[float, float, float]:
     """
     从雷达点云图像中解析出中点位置
     img: 雷达点云图像(灰度图)
+    _DEBUG: 显示解析结果
     return: 位姿(x,y,yaw)
     """
     global _rt_pose
@@ -90,7 +90,7 @@ def radar_resolve_rt_pose(img) -> list[float, float, float]:
             (0, 0, 255),
             1,
         )
-        cv2.imshow("Result", img)
+        cv2.imshow("Map Resolve", img)
     return _rt_pose
 
 

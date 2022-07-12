@@ -6,6 +6,7 @@ import numpy as np
 import serial
 
 from ..Logger import logger
+from ..Solutions.Radar import radar_resolve_rt_pose
 from .LDRadar_Resolver import Map_360, Point_2D, Radar_Package, resolve_radar_data
 
 
@@ -16,8 +17,11 @@ class LD_Radar(object):
         self._package = Radar_Package()
         self._serial = None
         self._update_callback = None
+        self._map_updated_event = threading.Event()
         self._fp_flag = False
+        self._rtpose_flag = False
         self.fp_points = []
+        self.rt_pose = [0, 0, 0]
         self.map = Map_360()
 
     def start(self, com_port, radar_type: str = "LD08", update_callback=None):
@@ -42,6 +46,11 @@ class LD_Radar(object):
         thread.start()
         self._thread_list.append(thread)
         logger.info("[RADAR] Listenning thread started")
+        thread = threading.Thread(target=self._map_resolve_task)
+        thread.daemon = True
+        thread.start()
+        self._thread_list.append(thread)
+        logger.info("[RADAR] Map resolve thread started")
 
     def stop(self):
         """
@@ -76,17 +85,7 @@ class LD_Radar(object):
                         reading_flag = False
                         resolve_radar_data(read_buffer, self._package)
                         self.map.update(self._package)
-                        if self._fp_flag:
-                            if self._fp_type == 0:
-                                self._update_target_point(
-                                    self.map.find_nearest(*self._fp_arg)
-                                )
-                            elif self._fp_type == 1:
-                                self._update_target_point(
-                                    self.map.find_nearest_with_ext_point_opt(
-                                        *self._fp_arg
-                                    )
-                                )
+                        self._map_updated_event.set()
                         if self._update_callback != None:
                             self._update_callback()
                 else:
@@ -95,6 +94,34 @@ class LD_Radar(object):
                     self._check_target_point()
             except Exception as e:
                 logger.error(f"[RADAR] Listenning thread error: {e}")
+                time.sleep(0.5)
+
+    def _map_resolve_task(self):
+        counter = 0
+        while self.running:
+            try:
+                if self._map_updated_event.wait(1):
+                    self._map_updated_event.clear()
+                    counter += 1
+                    if self._fp_flag:
+                        if self._fp_type == 0:
+                            self._update_target_point(
+                                self.map.find_nearest(*self._fp_arg)
+                            )
+                        elif self._fp_type == 1:
+                            self._update_target_point(
+                                self.map.find_nearest_with_ext_point_opt(*self._fp_arg)
+                            )
+                    if self._rtpose_flag:
+                        if counter % self._rtpose_freq_div == 0:
+                            self.rt_pose = radar_resolve_rt_pose(
+                                self.map.output_cloud(size=self._rtpose_size)
+                            )
+                else:
+                    logger.warning("[RADAR] Map resolve thread wait timeout")
+            except Exception as e:
+                logger.error(f"[RADAR] Map resolve thread error: {e}")
+                time.sleep(0.5)
 
     def _init_radar_map(self):
         self._radar_map_img = np.zeros((600, 600, 3), dtype=np.uint8)
@@ -269,6 +296,30 @@ class LD_Radar(object):
         ):
             self.fp_timeout_flag = True
             logger.warning("[Radar] lost point!")
+
+    def start_resolve_pose(self, freq_div: int = 1, size: int = 1000):
+        """
+        开始使用点云图解算位姿
+        freq_div: 更新降频系数
+        size: 解算范围(长宽为size的正方形)
+        """
+        self._rtpose_flag = True
+        self._rtpose_size = size
+        self._rtpose_freq_div = freq_div
+        self.rt_pose = [0, 0, 0]
+
+    def stop_resolve_pose(self):
+        """
+        停止使用点云图解算位姿
+        """
+        self._rtpose_flag = False
+
+    def update_resolve_pose_args(self, size: int = 1000):
+        """
+        更新参数
+        size: 解算范围(长宽为size的正方形)
+        """
+        self._rtpose_size = range
 
 
 if __name__ == "__main__":
