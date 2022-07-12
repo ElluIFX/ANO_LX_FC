@@ -4,10 +4,16 @@ from FlightController import FC_Client, FC_Controller, logger
 from FlightController.Components import LD_Radar, Map_360, Point_2D
 
 fc = FC_Client()
-fc.connect()
-fc.start_sync_state()
+while True:
+    try:
+        fc.connect()
+        break
+    except:
+        logger.warning("Connection failed, retrying...")
+        sleep(1)
+fc.start_sync_state(False)
 radar = LD_Radar()
-radar.start("/dev/ttyUSB0", "LD08")
+radar.start("/dev/ttyUSB0", "LD06")
 
 ############################## 参数 ##############################
 camera_down_pwm = 32.5
@@ -22,11 +28,10 @@ fc.wait_for_connection()
 fc.settings.action_log_output = False
 
 fc.set_PWM_output(0, camera_up_pwm)
-fc.set_PWM_output(1, 40)
 
 fc.set_flight_mode(fc.PROGRAM_MODE)
 
-target_mission = 1
+target_mission = None
 _light_cnt = 0
 
 logger.info("[MISSION] Waiting for input")
@@ -83,7 +88,9 @@ try:
 
     logger.info("[MISSION] Mission Finished")
 except Exception as e:
-    logger.error(f"[MISSION] Mission Failed: {e}")
+    import traceback
+
+    logger.error(f"[MISSION] Mission Failed: {traceback.format_exc()}")
 finally:
     if mission is not None:
         mission.stop()
@@ -101,7 +108,15 @@ finally:
 fc.set_PWM_output(1, 0)
 fc.set_rgb_led(0, 255, 0)
 set_buzzer(True)
-sleep(1)
+sleep(0.5)
 set_buzzer(False)
 fc.set_rgb_led(0, 0, 0)
 fc.quit()
+
+########################## 重启自身 #############################
+import os
+import sys
+
+sleep(1)
+logger.info("[MISSION] Manager Restarting")
+os.execl(sys.executable, sys.executable, *sys.argv)
