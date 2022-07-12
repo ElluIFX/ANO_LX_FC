@@ -62,22 +62,22 @@ def radar_resolve_rt_pose(img, _DEBUG=False) -> list[float, float, float]:
     back_lines.sort(key=lambda line: line[1])
     if len(right_lines) > 0:
         x1, y1, x2, y2 = right_lines[0]
-        x, yaw = get_point_line_distance(x0, y0, x1, y1, x2, y2, 0)
-        _rt_pose[0] = _rt_pose[0] + LOW_PASS_RATIO * (x - _rt_pose[0])
+        dis, yaw = get_point_line_distance(x0, y0, x1, y1, x2, y2, 0)
+        _rt_pose[1] = _rt_pose[1] + LOW_PASS_RATIO * (dis - _rt_pose[1])
         _rt_pose[2] = _rt_pose[2] + LOW_PASS_RATIO * (-yaw - _rt_pose[2])
         if _DEBUG:
             cv2.line(img, (x1, y1), (x2, y2), (255, 255, 0), 2)
-            p = Point_2D(-_rt_pose[2] + 90, _rt_pose[0])
+            p = Point_2D(-_rt_pose[2] + 90, _rt_pose[1])
             target = p.to_cv_xy() + np.array([x0, y0])
             cv2.line(img, (x0, y0), (int(target[0]), int(target[1])), (0, 0, 255), 1)
     if len(back_lines) > 0:
         x1, y1, x2, y2 = back_lines[0]
-        y, yaw = get_point_line_distance(x0, y0, x1, y1, x2, y2, 1)
-        _rt_pose[1] = _rt_pose[1] + LOW_PASS_RATIO * (y - _rt_pose[1])
+        dis, yaw = get_point_line_distance(x0, y0, x1, y1, x2, y2, 1)
+        _rt_pose[0] = _rt_pose[0] + LOW_PASS_RATIO * (dis - _rt_pose[0])
         _rt_pose[2] = _rt_pose[2] + LOW_PASS_RATIO * (-yaw - _rt_pose[2])
         if _DEBUG:
             cv2.line(img, (x1, y1), (x2, y2), (0, 255, 255), 2)
-            p = Point_2D(-_rt_pose[2] + 180, _rt_pose[1])
+            p = Point_2D(-_rt_pose[2] + 180, _rt_pose[0])
             target = p.to_cv_xy() + np.array([x0, y0])
             cv2.line(img, (x0, y0), (int(target[0]), int(target[1])), (0, 0, 255), 1)
     if _DEBUG:
