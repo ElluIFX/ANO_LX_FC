@@ -206,3 +206,9 @@ class FC_Application(FC_Protocol):
         for n, target in enumerate([vel_x, vel_y, vel_z, yaw]):
             if target is not None:
                 self._realtime_control_data_in_xyzYaw[n] = target
+
+    def set_action_log(self, output: bool) -> None:
+        """
+        设置动作日志输出
+        """
+        self.settings.action_log_output = output
