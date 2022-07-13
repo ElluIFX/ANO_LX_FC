@@ -433,6 +433,8 @@ def hsv_checker(img, lower, upper, threshold=0.4) -> bool:
     """
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, lower, upper)
+    if _DEBUG:
+        cv2.imshow("Process", mask)
     return cv2.countNonZero(mask) / (img.shape[0] * img.shape[1]) > threshold
 
 
