@@ -1,5 +1,6 @@
 import threading
 import time
+from re import I
 
 import cv2
 import numpy as np
@@ -112,13 +113,23 @@ class LD_Radar(object):
                             )
                     if self._rtpose_flag:
                         img = self.map.output_cloud(
-                            size=int(self._rtpose_size * self._rtpose_ratio)
+                            size=int(self._rtpose_size),
+                            scale=0.1 * self._rtpose_scale_ratio,
                         )
-                        rt_pose = radar_resolve_rt_pose(img)
-                        if self._rtpose_ratio != 1:
-                            rt_pose[0] = self._rtpose_ratio * rt_pose[0]
-                            rt_pose[1] = self._rtpose_ratio * rt_pose[1]
-                        self.rt_pose = rt_pose
+                        x, y, yaw = radar_resolve_rt_pose(img)
+                        if x is not None:
+                            self.rt_pose[0] += (
+                                x / self._rtpose_scale_ratio - self.rt_pose[0]
+                            ) * self._rtpose_low_pass_ratio
+                        if y is not None:
+                            self.rt_pose[1] += (
+                                y / self._rtpose_scale_ratio - self.rt_pose[1]
+                            ) * self._rtpose_low_pass_ratio
+                        if yaw is not None:
+                            self.rt_pose[2] += (
+                                yaw - self.rt_pose[2]
+                            ) * self._rtpose_low_pass_ratio
+                        self.rt_pose_update_event.set()
                 else:
                     logger.warning("[RADAR] Map resolve thread wait timeout")
             except Exception as e:
@@ -299,31 +310,42 @@ class LD_Radar(object):
             self.fp_timeout_flag = True
             logger.warning("[Radar] lost point!")
 
-    def start_resolve_pose(self, size: int = 1000, ratio: float = 1):
+    def start_resolve_pose(
+        self, size: int = 1000, scale_ratio: float = 1, low_pass_ratio: float = 0.5
+    ):
         """
         开始使用点云图解算位姿
         freq_div: 更新降频系数
         size: 解算范围(长宽为size的正方形)
-        ratio: 降采样比例, 降低精度节省计算资源
+        scale_ratio: 降采样比例, 降低精度节省计算资源
+        low_pass_ratio: 低通滤波比例
         """
         self._rtpose_flag = True
         self._rtpose_size = size
-        self._rtpose_ratio = ratio
+        self._rtpose_scale_ratio = scale_ratio
+        self._rtpose_low_pass_ratio = low_pass_ratio
         self.rt_pose = [0, 0, 0]
+        self.rt_pose_update_event = threading.Event()
 
     def stop_resolve_pose(self):
         """
         停止使用点云图解算位姿
         """
         self._rtpose_flag = False
+        self.rt_pose = [0, 0, 0]
+        self.rt_pose_update_event.clear()
 
-    def update_resolve_pose_args(self, size: int = 1000, ratio: float = 1):
+    def update_resolve_pose_args(
+        self, size: int = 1000, ratio: float = 1, low_pass_ratio: float = 0.5
+    ):
         """
         更新参数
         size: 解算范围(长宽为size的正方形)
+        scale_ratio: 降采样比例, 降低精度节省计算资源
+        low_pass_ratio: 低通滤波比例
         """
         self._rtpose_size = size
-        self._rtpose_ratio = ratio
+        self._rtpose_scale_ratio = ratio
 
 
 if __name__ == "__main__":

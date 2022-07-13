@@ -5,8 +5,6 @@ import numpy as np
 
 from ..Components.LDRadar_Resolver import Point_2D
 
-_rt_pose = [0, 0, 0]  # x,y,yaw
-
 
 def radar_resolve_rt_pose(img, _DEBUG=False) -> list[float, float, float]:
     """
@@ -15,13 +13,11 @@ def radar_resolve_rt_pose(img, _DEBUG=False) -> list[float, float, float]:
     _DEBUG: 显示解析结果
     return: 位姿(x,y,yaw)
     """
-    global _rt_pose
     ############参数设置##############
     KERNAL_DI = 9
     KERNAL_ER = 5
     HOUGH_THRESHOLD = 80
     MIN_LINE_LENGTH = 60
-    LOW_PASS_RATIO = 0.1  # 平滑滤波系数
     #################################
     kernel_di = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (KERNAL_DI, KERNAL_DI))
     kernel_er = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (KERNAL_ER, KERNAL_ER))
@@ -39,6 +35,10 @@ def radar_resolve_rt_pose(img, _DEBUG=False) -> list[float, float, float]:
     x0, y0 = size[0] // 2, size[1] // 2
     if _DEBUG:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    x_out = None
+    y_out = None
+    yaw_out_1 = None
+    yaw_out_2 = None
     right_lines = []
     back_lines = []
     if lines is not None:
@@ -63,27 +63,38 @@ def radar_resolve_rt_pose(img, _DEBUG=False) -> list[float, float, float]:
     if len(right_lines) > 0:
         x1, y1, x2, y2 = right_lines[0]
         dis, yaw = get_point_line_distance(x0, y0, x1, y1, x2, y2, 0)
-        _rt_pose[1] = _rt_pose[1] + LOW_PASS_RATIO * (dis - _rt_pose[1])
-        _rt_pose[2] = _rt_pose[2] + LOW_PASS_RATIO * (-yaw - _rt_pose[2])
+        y_out = dis
+        yaw_out_1 = -yaw
         if _DEBUG:
             cv2.line(img, (x1, y1), (x2, y2), (255, 255, 0), 2)
-            p = Point_2D(-_rt_pose[2] + 90, _rt_pose[1])
+            p = Point_2D(yaw + 90, dis)
             target = p.to_cv_xy() + np.array([x0, y0])
             cv2.line(img, (x0, y0), (int(target[0]), int(target[1])), (0, 0, 255), 1)
     if len(back_lines) > 0:
         x1, y1, x2, y2 = back_lines[0]
         dis, yaw = get_point_line_distance(x0, y0, x1, y1, x2, y2, 1)
-        _rt_pose[0] = _rt_pose[0] + LOW_PASS_RATIO * (dis - _rt_pose[0])
-        _rt_pose[2] = _rt_pose[2] + LOW_PASS_RATIO * (-yaw - _rt_pose[2])
+        x_out = dis
+        yaw_out_2 = -yaw
         if _DEBUG:
             cv2.line(img, (x1, y1), (x2, y2), (0, 255, 255), 2)
-            p = Point_2D(-_rt_pose[2] + 180, _rt_pose[0])
+            p = Point_2D(yaw + 180, dis)
             target = p.to_cv_xy() + np.array([x0, y0])
             cv2.line(img, (x0, y0), (int(target[0]), int(target[1])), (0, 0, 255), 1)
+    if yaw_out_1 and yaw_out_2:
+        yaw_out = (yaw_out_1 + yaw_out_2) / 2
+    elif yaw_out_1:
+        yaw_out = yaw_out_1
+    elif yaw_out_2:
+        yaw_out = yaw_out_2
+    else:
+        yaw_out = None
     if _DEBUG:
+        x_ = x_out if x_out else -1
+        y_ = y_out if y_out else -1
+        yaw_ = yaw_out if yaw_out else 0
         cv2.putText(
             img,
-            f"({_rt_pose[0]:.1f}, {_rt_pose[1]:.1f},{_rt_pose[2]:.1f})",
+            f"({x_:.1f}, {y_:.1f}, {yaw_:.1f})",
             (x0, y0 - 20),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.7,
@@ -91,7 +102,7 @@ def radar_resolve_rt_pose(img, _DEBUG=False) -> list[float, float, float]:
             1,
         )
         cv2.imshow("Map Resolve", img)
-    return _rt_pose
+    return x_out, y_out, yaw_out
 
 
 def get_point_line_distance(
