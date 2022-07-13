@@ -97,12 +97,10 @@ class LD_Radar(object):
                 time.sleep(0.5)
 
     def _map_resolve_task(self):
-        counter = 0
         while self.running:
             try:
                 if self._map_updated_event.wait(1):
                     self._map_updated_event.clear()
-                    counter += 1
                     if self._fp_flag:
                         if self._fp_type == 0:
                             self._update_target_point(
@@ -113,10 +111,14 @@ class LD_Radar(object):
                                 self.map.find_nearest_with_ext_point_opt(*self._fp_arg)
                             )
                     if self._rtpose_flag:
-                        if counter % self._rtpose_freq_div == 0:
-                            self.rt_pose = radar_resolve_rt_pose(
-                                self.map.output_cloud(size=self._rtpose_size)
-                            )
+                        img = self.map.output_cloud(
+                            size=int(self._rtpose_size * self._rtpose_ratio)
+                        )
+                        rt_pose = radar_resolve_rt_pose(img)
+                        if self._rtpose_ratio != 1:
+                            rt_pose[0] = self._rtpose_ratio * rt_pose[0]
+                            rt_pose[1] = self._rtpose_ratio * rt_pose[1]
+                        self.rt_pose = rt_pose
                 else:
                     logger.warning("[RADAR] Map resolve thread wait timeout")
             except Exception as e:
@@ -297,15 +299,16 @@ class LD_Radar(object):
             self.fp_timeout_flag = True
             logger.warning("[Radar] lost point!")
 
-    def start_resolve_pose(self, freq_div: int = 1, size: int = 1000):
+    def start_resolve_pose(self, size: int = 1000, ratio: float = 1):
         """
         开始使用点云图解算位姿
         freq_div: 更新降频系数
         size: 解算范围(长宽为size的正方形)
+        ratio: 降采样比例, 降低精度节省计算资源
         """
         self._rtpose_flag = True
         self._rtpose_size = size
-        self._rtpose_freq_div = freq_div
+        self._rtpose_ratio = ratio
         self.rt_pose = [0, 0, 0]
 
     def stop_resolve_pose(self):
@@ -314,12 +317,13 @@ class LD_Radar(object):
         """
         self._rtpose_flag = False
 
-    def update_resolve_pose_args(self, size: int = 1000):
+    def update_resolve_pose_args(self, size: int = 1000, ratio: float = 1):
         """
         更新参数
         size: 解算范围(长宽为size的正方形)
         """
-        self._rtpose_size = range
+        self._rtpose_size = size
+        self._rtpose_ratio = ratio
 
 
 if __name__ == "__main__":
