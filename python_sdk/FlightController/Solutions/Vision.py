@@ -776,3 +776,14 @@ def rotate_img(image, angle, fill_color=(0, 0, 0)):
     M[0, 2] += (nW / 2) - cX
     M[1, 2] += (nH / 2) - cY
     return cv2.warpAffine(image, M, (nW, nH), borderValue=fill_color)
+
+
+def set_cam_autowb(cam, enable=True,manual_temp=5500):
+    """
+    设置摄像头自动白平衡
+    enable: 是否启用自动白平衡
+    manual_temp: 手动模式下的色温
+    """
+    cam.set(cv2.CAP_PROP_AUTO_WB, int(enable))
+    if not enable:
+        cam.set(cv2.CAP_PROP_WB_TEMPERATURE, manual_temp)
