@@ -19,6 +19,7 @@ class LD_Radar(object):
         self._serial = None
         self._update_callback = None
         self._map_updated_event = threading.Event()
+        self.rt_pose_update_event = threading.Event()
         self._fp_flag = False
         self._rtpose_flag = False
         self.fp_points = []
@@ -325,7 +326,6 @@ class LD_Radar(object):
         self._rtpose_scale_ratio = scale_ratio
         self._rtpose_low_pass_ratio = low_pass_ratio
         self.rt_pose = [0, 0, 0]
-        self.rt_pose_update_event = threading.Event()
 
     def stop_resolve_pose(self):
         """
