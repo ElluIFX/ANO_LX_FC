@@ -155,6 +155,24 @@ class Mission(object):
         img = get_ROI(img, ROI)
         return hsv_checker(img, LOWER, UPPER, THRESHOLD)
 
+    def find_barcode(self):
+        img = self.cam.read()[1]
+        get, dx, dy, data = find_QRcode_zbar(img)
+        if get:
+            try:
+                num = int(data)
+                logger.info(f"[MISSION] Barcode detected: {num}")
+                for _ in range(num):  # 声光报警
+                    self.fc.set_rgb_led(255, 255, 0)
+                    self.fc.set_digital_output(0, 1)
+                    sleep(0.6)
+                    self.fc.set_rgb_led(0, 0, 0)
+                    self.fc.set_digital_output(0, 0)
+                    sleep(0.4)
+                # TODO: 修改降落点位置
+            except Exception as e:
+                logger.error(f"[MISSION] Barcode error: {e}")
+
     def stop(self):
         self.running = False
         self.fc.stop_realtime_control()
@@ -162,7 +180,7 @@ class Mission(object):
     def keep_height_task(self):
         paused = False
         while self.running:
-            sleep(1 / 10)
+            sleep(1 / 10)  # 飞控参数以20Hz回传
             if (
                 self.keep_height_flag
                 and self.fc.state.mode.value == self.fc.HOLD_POS_MODE
@@ -186,7 +204,7 @@ class Mission(object):
     def navigation_task(self):
         paused = False
         while self.running:
-            sleep(1 / 15)
+            sleep(1 / 15)  # 应匹配雷达位姿解算的更新频率
             if (
                 self.navigation_flag
                 and self.fc.state.mode.value == self.fc.HOLD_POS_MODE
