@@ -15,14 +15,54 @@ def deg_360_180(deg):
     return deg
 
 
+OFFSET = np.array([18, 25])
+CORNER_POINT = np.array([53, 51]) + OFFSET
+Y_BOX = np.array([0, 50])
+X_BOX = np.array([50, 0])
+
+m_point = lambda x, y: CORNER_POINT + X_BOX * x + Y_BOX * y
+# 进入航线
+enter_points = np.array([m_point(0, 7.2), m_point(4, 7.2)])
 # 进入点 (A)
-start_point = (200, 200)
+start_point = m_point(4, 6)
 # 任务点
-waypoints = [(250, 200), (250, 320), (200, 320), (200, 200)]
+waypoints = np.array(
+    [
+        m_point(5, 6),
+        m_point(5, 5),
+        m_point(5, 4),
+        m_point(5, 3),
+        m_point(5, 2),
+        m_point(5, 1),
+        m_point(5, 0),
+        m_point(4, 0),
+        m_point(3, 0),
+        m_point(3, 1),
+        m_point(4, 1),
+        m_point(4, 2),
+        m_point(3, 2),
+        m_point(2, 2),
+        m_point(1, 2),
+        m_point(1, 1),
+        m_point(1, 0),
+        m_point(0, 0),
+        m_point(0, 1),
+        m_point(0, 2),
+        m_point(0, 3),
+        m_point(1, 3),
+        m_point(2, 3),
+        m_point(3, 3),
+        m_point(4, 3),
+        m_point(4, 4),
+        m_point(4, 5),
+    ]
+)
 # 回航点
-return_points = []
+return_points = np.array([m_point(4, 7)])
 # 基地点
-base_point = (100, 300)
+base_point = m_point(0, 7)  # np.array([82, 432])  # m_point(0, 7)
+# 降落点
+landing_point = base_point + np.array([60, 0])  # 这个偏移根据一维码调整，写完了把这个删掉
 
 
 class Mission(object):
@@ -33,20 +73,20 @@ class Mission(object):
         self.inital_yaw = self.fc.state.yaw.value
         ############### PID #################
         self.height_pid = PID(
-            0.8, 0.0, 0.1, setpoint=80, output_limits=(-15, 15), auto_mode=False
+            0.8, 0.0, 0.1, setpoint=135, output_limits=(-15, 15), auto_mode=False
         )
         self.navi_x_pid = PID(
-            0.6,
-            0.01,
-            0.03,
+            0.5,
+            0,
+            0.02,
             setpoint=start_point[0],
             output_limits=(-0.01, 0.01),
             auto_mode=False,
         )
         self.navi_y_pid = PID(
-            0.6,
-            0.01,
-            0.03,
+            0.5,
+            0,
+            0.02,
             setpoint=start_point[1],
             output_limits=(-0.01, 0.01),
             auto_mode=False,
@@ -70,7 +110,7 @@ class Mission(object):
         ############### 参数 #################
         camera_down_pwm = 32.5
         camera_up_pwm = 72
-        navigation_speed = 35
+        navigation_speed = 25
         ################ 启动线程 ################
         self.running = True
         self.thread_list.append(
@@ -87,10 +127,12 @@ class Mission(object):
         radar = self.radar
         cam = self.cam
         change_cam_resolution(cam, 800, 600)
+        set_cam_autowb(cam, False)  # 关闭自动白平衡
+        for _ in range(10):
+            cam.read()
         fc.set_PWM_output(0, camera_up_pwm)
         fc.set_flight_mode(fc.PROGRAM_MODE)
         self.set_navigation_speed(navigation_speed)
-        set_cam_autowb(cam, False)  # 关闭自动白平衡
         ################ 初始化完成 ################
         logger.info("[MISSION] Mission-1 Started")
         fc.unlock()
@@ -100,13 +142,20 @@ class Mission(object):
         ######## 闭环定高
         fc.set_flight_mode(fc.HOLD_POS_MODE)
         self.keep_height_flag = True
-        fc.start_realtime_control()
+        fc.start_realtime_control(10)
         sleep(2)
-        ######## 飞进入点
-        logger.info("[MISSION] Navigation to start point")
-        self.navigation_to_waypoint(start_point)
+        self.navigation_to_waypoint(base_point)  # 初始化路径点
+        sleep(0.1)
         self.navigation_flag = True
         fc.set_PWM_output(0, camera_down_pwm)
+        ########进入
+        for n, enter_point in enumerate(enter_points):
+            logger.info(f"[MISSION] Navigation to Enter-{n:02d}: {enter_point}")
+            self.navigation_to_waypoint(enter_point)
+            self.wait_for_waypoint()
+        ######## 飞进入点
+        logger.info("[MISSION] Navigation to Start point")
+        self.navigation_to_waypoint(start_point)
         self.wait_for_waypoint()
         self.sow()
         ######## 遍历路径
@@ -115,7 +164,6 @@ class Mission(object):
             self.navigation_to_waypoint(waypoint)
             self.wait_for_waypoint()
             self.sow()
-        return
         ######## 返航
         for n, return_point in enumerate(return_points):
             logger.info(f"[MISSION] Navigation to Return-{n:02d}: {return_point}")
@@ -123,11 +171,12 @@ class Mission(object):
             self.wait_for_waypoint()
         ######## 精准着陆
         logger.info("[MISSION] Landing")
-        self.height_pid.setpoint = 30
-        self.navigation_to_waypoint(base_point)
+        self.height_pid.setpoint = 80
+        self.navigation_to_waypoint(landing_point)
         self.wait_for_waypoint()
-        self.height_pid.setpoint = 20
+        self.height_pid.setpoint = 40
         sleep(1)
+        self.wait_for_waypoint()
         fc.set_flight_mode(fc.PROGRAM_MODE)
         fc.stop_realtime_control()
         fc.land()
@@ -137,31 +186,39 @@ class Mission(object):
     def sow(self):  # 播撒
         if not self.check_green_ground():
             logger.info("[MISSION] No green ground, skipped")
-            sleep(0.5)
             return
         logger.info("[MISSION] Green ground detected")
         self.fc.set_action_log(False)
-        for _ in range(2):
-            self.fc.set_digital_output(2, 1)
-            sleep(1)
-            self.fc.set_digital_output(2, 0)
-            sleep(0.5)
+        self.fc.set_digital_output(2, 1)
+        self.fc.set_digital_output(0, 1)
+        sleep(1)
+        self.fc.set_digital_output(2, 0)
+        self.fc.set_digital_output(0, 0)
+        sleep(0.5)
         self.fc.set_action_log(True)
         logger.info("[MISSION] Sow Done")
 
     def check_green_ground(self):
-        LOWER = np.array([12, 69, 127])
-        UPPER = np.array([95, 215, 228])
-        THRESHOLD = 0.6  # 颜色判断阈值
+        LOWER = HSV.GREEN_LOWER
+        UPPER = HSV.GREEN_UPPER
+        THRESHOLD = 0.7  # 颜色判断阈值
         ROI = (0.45, 0.6, 0.1, 0.1)  # 根据高度调整
-        CHECK_NUM = 3  # 检测次数
-        results = []
+        CHECK_NUM = 10  # 检测次数
+        # results = []
+        # for _ in range(CHECK_NUM):
+        #     img = self.cam.read()[1]
+        #     img = get_ROI(img, ROI)
+        #     results.append(hsv_checker(img, LOWER, UPPER, THRESHOLD))
+        # logger.info(f"[MISSION] Green ground: {results}")
+        # return all(results)
         for _ in range(CHECK_NUM):
             img = self.cam.read()[1]
-            img = get_ROI(img, ROI)
-            results.append(hsv_checker(img, LOWER, UPPER, THRESHOLD))
-        logger.info(f"[MISSION] Green ground: {results}")
-        return all(results)
+        img = self.cam.read()[1]
+        cv2.imshow("Origin", img)
+        img = get_ROI(img, ROI)
+        result = hsv_checker(img, LOWER, UPPER, THRESHOLD)
+        cv2.waitKey(10)
+        return result
 
     def find_barcode(self):
         img = self.cam.read()[1]
@@ -214,7 +271,7 @@ class Mission(object):
         ########################
         paused = False
         while self.running:
-            sleep(0.01)
+            sleep(0.05)
             if (
                 self.navigation_flag
                 and self.fc.state.mode.value == self.fc.HOLD_POS_MODE
@@ -233,25 +290,30 @@ class Mission(object):
                     )
                     logger.info("[MISSION] Resolve pose started")
                     sleep(0.01)
-                if self.radar.rt_pose_update_event.wait(1):  # 等待地图更新
-                    self.radar.rt_pose_update_event.clear()
-                    current_x = self.radar.rt_pose[0]
-                    current_y = self.radar.rt_pose[1]
-                    current_yaw = self.radar.rt_pose[2]
-                    out_x = 0
-                    out_y = 0
-                    out_yaw = 0
-                    if current_x > 0:  # 0 为无效值
-                        out_x = int(self.navi_x_pid(current_x))
+                # if self.radar.rt_pose_update_event.wait(1):  # 等待地图更新
+                #     self.radar.rt_pose_update_event.clear()
+                current_x = self.radar.rt_pose[0]
+                current_y = self.radar.rt_pose[1]
+                if current_x > 0 and current_y > 0:
+                    self.fc.send_general_position(x=current_x, y=current_y)
+                current_yaw = self.radar.rt_pose[2]
+                out_x = None
+                out_y = None
+                out_yaw = None
+                if current_x > 0:  # 0 为无效值
+                    out_x = int(self.navi_x_pid(current_x))
+                    if out_x is not None:
                         self.fc.update_realtime_control(vel_x=out_x)
-                    if current_y > 0:
-                        out_y = int(self.navi_y_pid(current_y))
+                if current_y > 0:
+                    out_y = int(self.navi_y_pid(current_y))
+                    if out_y is not None:
                         self.fc.update_realtime_control(vel_y=out_y)
-                    out_yaw = int(self.navi_yaw_pid(current_yaw))
+                out_yaw = int(self.navi_yaw_pid(current_yaw))
+                if out_yaw is not None:
                     self.fc.update_realtime_control(yaw=out_yaw)
-                    # logger.debug(
-                    #     f"[MISSION] Current pose: {current_x}, {current_y}, {current_yaw}; Output: {out_x}, {out_y}, {out_yaw}"
-                    # )
+                logger.debug(
+                    f"[MISSION] Current pose: {current_x}, {current_y}, {current_yaw}; Output: {out_x}, {out_y}, {out_yaw}"
+                )
             else:
                 self.radar.stop_resolve_pose()
                 if not paused:
@@ -272,21 +334,24 @@ class Mission(object):
         self.navi_y_pid.output_limits = (-speed, speed)
 
     def reached_waypoint(self):
-        THRESHOLD = 10
+        THRESHOLD = 15
         return (
             abs(self.radar.rt_pose[0] - self.navi_x_pid.setpoint) < THRESHOLD
             and abs(self.radar.rt_pose[1] - self.navi_y_pid.setpoint) < THRESHOLD
         )
 
     def wait_for_waypoint(self):
-        TIME_THRESHOLD = 1.5
+        TIME_THRESHOLD = 1
+        OVERTIME_THRESHOLD = 30
         time_count = 0
+        time_start = time()
         while True:
             sleep(0.1)
             if self.reached_waypoint():
                 time_count += 0.1
-            else:
-                time_count = 0
             if time_count >= TIME_THRESHOLD:
                 logger.info("[MISSION] Reached waypoint")
+                return
+            if time() - time_start > OVERTIME_THRESHOLD:
+                logger.warning("[MISSION] Waypoint overtime")
                 return
