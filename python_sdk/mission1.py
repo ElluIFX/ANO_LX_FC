@@ -16,7 +16,7 @@ def deg_360_180(deg):
 
 
 M_OFFSET = np.array([18, 18])
-B_OFFSET = np.array([25, 25])
+B_OFFSET = np.array([22, 30])
 CORNER_POINT = np.array([53, 51])
 Y_BOX = np.array([0, 50])
 X_BOX = np.array([50, 0])
@@ -173,10 +173,10 @@ class Mission(object):
             self.wait_for_waypoint()
         ######## 精准着陆
         logger.info("[MISSION] Landing")
-        self.height_pid.setpoint = 80
+        self.height_pid.setpoint = 60
         self.navigation_to_waypoint(landing_point)
         self.wait_for_waypoint()
-        self.height_pid.setpoint = 40
+        self.height_pid.setpoint = 20
         sleep(1)
         self.wait_for_waypoint()
         fc.set_flight_mode(fc.PROGRAM_MODE)
@@ -214,24 +214,6 @@ class Mission(object):
         result = hsv_checker(img, LOWER, UPPER, THRESHOLD)
         cv2.waitKey(10)
         return result
-
-    def find_barcode(self):
-        img = self.cam.read()[1]
-        get, dx, dy, data = find_QRcode_zbar(img)
-        if get:
-            try:
-                num = int(data)
-                logger.info(f"[MISSION] Barcode detected: {num}")
-                for _ in range(num):  # 声光报警
-                    self.fc.set_rgb_led(255, 255, 0)
-                    self.fc.set_digital_output(0, 1)
-                    sleep(0.6)
-                    self.fc.set_rgb_led(0, 0, 0)
-                    self.fc.set_digital_output(0, 0)
-                    sleep(0.4)
-                # TODO: 修改降落点位置
-            except Exception as e:
-                logger.error(f"[MISSION] Barcode error: {e}")
 
     def stop(self):
         self.running = False
