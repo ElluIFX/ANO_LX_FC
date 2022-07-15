@@ -192,10 +192,9 @@ class Mission(object):
         self.fc.set_action_log(False)
         self.fc.set_digital_output(2, 1)
         self.fc.set_digital_output(0, 1)
-        sleep(1)
+        sleep(1.2)
         self.fc.set_digital_output(2, 0)
         self.fc.set_digital_output(0, 0)
-        sleep(0.5)
         self.fc.set_action_log(True)
         logger.info("[MISSION] Sow Done")
 

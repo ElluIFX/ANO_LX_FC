@@ -190,7 +190,9 @@ class Mission(object):
         test_Wait = time()
         height_origin = self.height_pid.setpoint
         num = 0
-        count = 0
+        blink_count = 0
+        blink_num = 0
+        last_blink_time = time()
         speed_y = 6
         speed_x = 8
         while run:
@@ -227,16 +229,21 @@ class Mission(object):
                     else:
                         fc.update_realtime_control(vel_x=0)
                         x_locked = True
-                if num > 0:
+                if num > 0 and (time() - last_blink_time) > 1.5:
                     self.fc.set_rgb_led(255, 0, 0)
                     self.fc.set_digital_output(0, 1)
                     sleep(0.2)
                     self.fc.set_rgb_led(0, 0, 0)
                     self.fc.set_digital_output(0, 0)
                     sleep(0.2)
-                    count += 1
-                    if count == num:
-                        logger.info("[MISSION] Blink done")
+                    blink_count += 1
+                    if blink_count == num and blink_num == 0:
+                        logger.info("[MISSION] First blink done")
+                        blink_num = 1
+                        blink_count = 0
+                        last_blink_time = time()
+                    elif blink_count == num and blink_num == 1:
+                        logger.info("[MISSION] Second blink done")
                         break
                 if x_locked and y_locked and (time() - test_Wait) > 3 and num == 0:
                     fc.update_realtime_control(vel_x=0, vel_y=0)
@@ -282,10 +289,9 @@ class Mission(object):
         self.fc.set_action_log(False)
         self.fc.set_digital_output(2, 1)
         self.fc.set_digital_output(0, 1)
-        sleep(1)
+        sleep(1.2)
         self.fc.set_digital_output(2, 0)
         self.fc.set_digital_output(0, 0)
-        sleep(0.5)
         self.fc.set_action_log(True)
         logger.info("[MISSION] Sow Done")
 
