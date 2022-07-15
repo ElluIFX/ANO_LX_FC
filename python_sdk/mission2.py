@@ -151,21 +151,21 @@ class Mission(object):
         self.navigation_flag = True
         fc.set_PWM_output(0, camera_down_pwm)
         ########进入
-        # for n, enter_point in enumerate(enter_points):
-        #     logger.info(f"[MISSION] Navigation to Enter-{n:02d}: {enter_point}")
-        #     self.navigation_to_waypoint(enter_point)
-        #     self.wait_for_waypoint()
-        # ######## 飞进入点
-        # logger.info("[MISSION] Navigation to Start point")
-        # self.navigation_to_waypoint(start_point)
-        # self.wait_for_waypoint()
-        # self.sow()
-        # ######## 遍历路径
-        # for n, waypoint in enumerate(waypoints):
-        #     logger.info(f"[MISSION] Navigation to Waypoint-{n:02d}: {waypoint}")
-        #     self.navigation_to_waypoint(waypoint)
-        #     self.wait_for_waypoint()
-        #     self.sow()
+        for n, enter_point in enumerate(enter_points):
+            logger.info(f"[MISSION] Navigation to Enter-{n:02d}: {enter_point}")
+            self.navigation_to_waypoint(enter_point)
+            self.wait_for_waypoint()
+        ######## 飞进入点
+        logger.info("[MISSION] Navigation to Start point")
+        self.navigation_to_waypoint(start_point)
+        self.wait_for_waypoint()
+        self.sow()
+        ######## 遍历路径
+        for n, waypoint in enumerate(waypoints):
+            logger.info(f"[MISSION] Navigation to Waypoint-{n:02d}: {waypoint}")
+            self.navigation_to_waypoint(waypoint)
+            self.wait_for_waypoint()
+            self.sow()
         ######## 寻杆，找条形码
         fc.set_PWM_output(0, camera_up_pwm)
         radar.start_find_point(2.5, 0, -30, 30, 1, 2000)
