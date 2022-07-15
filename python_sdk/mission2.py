@@ -15,12 +15,14 @@ def deg_360_180(deg):
     return deg
 
 
-OFFSET = np.array([18, 25])
-CORNER_POINT = np.array([53, 51]) + OFFSET
+M_OFFSET = np.array([18, 18])
+B_OFFSET = np.array([22, 30])
+CORNER_POINT = np.array([53, 51])
 Y_BOX = np.array([0, 50])
 X_BOX = np.array([50, 0])
 
-m_point = lambda x, y: CORNER_POINT + X_BOX * x + Y_BOX * y
+m_point = lambda x, y: CORNER_POINT + X_BOX * x + Y_BOX * y + M_OFFSET
+b_point = lambda x, y: CORNER_POINT + X_BOX * x + Y_BOX * y + B_OFFSET
 # 进入航线
 enter_points = np.array([m_point(0, 7.2), m_point(4, 7.2)])
 # 进入点 (A)
@@ -30,6 +32,8 @@ waypoints = np.array(
     [
         m_point(5, 6),
         m_point(5, 5),
+        m_point(4, 5),
+        m_point(4, 4),
         m_point(5, 4),
         m_point(5, 3),
         m_point(5, 2),
@@ -40,8 +44,12 @@ waypoints = np.array(
         m_point(3, 1),
         m_point(4, 1),
         m_point(4, 2),
+        m_point(4, 3),
+        m_point(3, 3),
         m_point(3, 2),
         m_point(2, 2),
+        m_point(2, 3),
+        m_point(1, 3),
         m_point(1, 2),
         m_point(1, 1),
         m_point(1, 0),
@@ -49,18 +57,12 @@ waypoints = np.array(
         m_point(0, 1),
         m_point(0, 2),
         m_point(0, 3),
-        m_point(1, 3),
-        m_point(2, 3),
-        m_point(3, 3),
-        m_point(4, 3),
-        m_point(4, 4),
-        m_point(4, 5),
     ]
 )
 # 回航点
-return_points = np.array([m_point(4, 7)])
+return_points = np.array([])
 # 基地点
-base_point = m_point(0, 7)  # np.array([82, 432])  # m_point(0, 7)
+base_point = b_point(0, 7)  # np.array([82, 432])  # m_point(0, 7)
 # 降落点
 landing_point = base_point
 
@@ -111,7 +113,6 @@ class Mission(object):
         camera_down_pwm = 32.5
         camera_up_pwm = 72
         navigation_speed = 25
-        space_distance = 50
         ################ 启动线程 ################
         self.running = True
         self.thread_list.append(
@@ -150,39 +151,39 @@ class Mission(object):
         self.navigation_flag = True
         fc.set_PWM_output(0, camera_down_pwm)
         ########进入
-        for n, enter_point in enumerate(enter_points):
-            logger.info(f"[MISSION] Navigation to Enter-{n:02d}: {enter_point}")
-            self.navigation_to_waypoint(enter_point)
-            self.wait_for_waypoint()
-        ######## 飞进入点
-        logger.info("[MISSION] Navigation to Start point")
-        self.navigation_to_waypoint(start_point)
-        self.wait_for_waypoint()
-        self.sow()
-        ######## 遍历路径
-        for n, waypoint in enumerate(waypoints):
-            logger.info(f"[MISSION] Navigation to Waypoint-{n:02d}: {waypoint}")
-            self.navigation_to_waypoint(waypoint)
-            self.wait_for_waypoint()
-            self.sow()
+        # for n, enter_point in enumerate(enter_points):
+        #     logger.info(f"[MISSION] Navigation to Enter-{n:02d}: {enter_point}")
+        #     self.navigation_to_waypoint(enter_point)
+        #     self.wait_for_waypoint()
+        # ######## 飞进入点
+        # logger.info("[MISSION] Navigation to Start point")
+        # self.navigation_to_waypoint(start_point)
+        # self.wait_for_waypoint()
+        # self.sow()
+        # ######## 遍历路径
+        # for n, waypoint in enumerate(waypoints):
+        #     logger.info(f"[MISSION] Navigation to Waypoint-{n:02d}: {waypoint}")
+        #     self.navigation_to_waypoint(waypoint)
+        #     self.wait_for_waypoint()
+        #     self.sow()
         ######## 寻杆，找条形码
         fc.set_PWM_output(0, camera_up_pwm)
-        self.navigation_flag = False
-        fc.set_flight_mode(fc.PROGRAM_MODE)
-        fc.turn_right(180, 90)
-        fc.wait_for_hovering()
-        fc.set_flight_mode(fc.HOLD_POS_MODE)
-        self.navigation_to_waypoint((125, 175))
-        self.navigation_flag = True
-        self.set_navigation_speed(navigation_speed * 2)
+        radar.start_find_point(2.5, 0, -30, 30, 1, 2000)
+        self.navigation_to_waypoint(b_point(0, 5))
         self.wait_for_waypoint()
         self.navigation_flag = False
-        radar.start_find_point(2.5, 0, -30, 30, 1, 2000)
+        inital_yaw = self.fc.state.yaw.value
+        space_distance = 50
         x_locked = False
         y_locked = False
-        find_QR = False
-        time_out = 10
+        time_out = 30
         start_time = time()
+        test = -1
+        test_height = [140, 130, 120, 110, 100]
+        test_Wait = time()
+        height_origin = self.height_pid.setpoint
+        num = 0
+        count = 0
         while True:
             sleep(0.01)
             if self.radar.fp_timeout_flag:
@@ -200,6 +201,12 @@ class Mission(object):
                 else:
                     fc.update_realtime_control(vel_y=0)
                     y_locked = True
+                if self.fc.state.yaw.value - inital_yaw > 1:
+                    fc.update_realtime_control(yaw=-3)
+                elif self.fc.state.yaw.value - inital_yaw < -1:
+                    fc.update_realtime_control(yaw=3)
+                else:
+                    fc.update_realtime_control(yaw=0)
                 if y_locked:
                     if dis > space_distance + 5:
                         fc.update_realtime_control(vel_x=8)
@@ -208,24 +215,34 @@ class Mission(object):
                     else:
                         fc.update_realtime_control(vel_x=0)
                         x_locked = True
-                if x_locked and y_locked:
+                if num > 0:
+                    self.fc.set_rgb_led(255, 0, 0)
+                    self.fc.set_digital_output(0, 1)
+                    sleep(0.2)
+                    self.fc.set_rgb_led(0, 0, 0)
+                    self.fc.set_digital_output(0, 0)
+                    sleep(0.2)
+                    count += 1
+                    if count == num:
+                        logger.info("[MISSION] Blink done")
+                        break
+                if x_locked and y_locked and (time() - test_Wait) > 3 and num == 0:
                     fc.update_realtime_control(vel_x=0, vel_y=0)
-                    for n in range(5):
-                        if self.find_barcode():
-                            find_QR = True
+                    num = self.find_barcode()
+                    if num > 0:
+                        continue
+                    else:
+                        test += 1
+                        if test >= len(test_height):
+                            logger.info("[MISSION] Find barcode Failed")
                             break
-                        else:
-                            fc.set_PWM_output(0, camera_up_pwm - n * 0.5)
-                            logger.info(f"[MISSON] QR not found :{n}")
-                if find_QR or time() - start_time > time_out:
+                        self.height_pid.setpoint = test_height[test]
+                        test_Wait = time()
+                if time() - start_time > time_out:
+                    logger.info("[MISSION] Find barcode timeout")
                     break
+        self.height_pid.setpoint = height_origin
         radar.stop_find_point()
-        fc.set_flight_mode(fc.PROGRAM_MODE)
-        fc.turn_right(180, 60)
-        fc.wait_for_last_command_done()
-        fc.horizontal_move(25, 15, 270)
-        fc.wait_for_last_command_done()
-        fc.set_flight_mode(fc.HOLD_POS_MODE)
         self.navigation_flag = True
         ######## 返航
         for n, return_point in enumerate(return_points):
@@ -234,10 +251,10 @@ class Mission(object):
             self.wait_for_waypoint()
         ######## 精准着陆
         logger.info("[MISSION] Landing")
-        self.height_pid.setpoint = 80
+        self.height_pid.setpoint = 60
         self.navigation_to_waypoint(landing_point)
         self.wait_for_waypoint()
-        self.height_pid.setpoint = 40
+        self.height_pid.setpoint = 20
         sleep(1)
         self.wait_for_waypoint()
         fc.set_flight_mode(fc.PROGRAM_MODE)
@@ -267,13 +284,6 @@ class Mission(object):
         THRESHOLD = 0.7  # 颜色判断阈值
         ROI = (0.45, 0.6, 0.1, 0.1)  # 根据高度调整
         CHECK_NUM = 10  # 检测次数
-        # results = []
-        # for _ in range(CHECK_NUM):
-        #     img = self.cam.read()[1]
-        #     img = get_ROI(img, ROI)
-        #     results.append(hsv_checker(img, LOWER, UPPER, THRESHOLD))
-        # logger.info(f"[MISSION] Green ground: {results}")
-        # return all(results)
         for _ in range(CHECK_NUM):
             img = self.cam.read()[1]
         img = self.cam.read()[1]
@@ -285,22 +295,23 @@ class Mission(object):
 
     def find_barcode(self):
         global landing_point
+        CHECK_NUM = 10  # 检测次数
+        for _ in range(CHECK_NUM):
+            img = self.cam.read()[1]
         img = self.cam.read()[1]
+        cv2.imshow("Origin", img)
+        img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
         get, dx, dy, data = find_QRcode_zbar(img)
+        cv2.waitKey(10)
         if get:
             try:
                 num = int(data)
                 logger.info(f"[MISSION] Barcode detected: {num}")
-                for _ in range(num):  # 声光报警
-                    self.fc.set_rgb_led(255, 255, 0)
-                    self.fc.set_digital_output(0, 1)
-                    sleep(0.6)
-                    self.fc.set_rgb_led(0, 0, 0)
-                    self.fc.set_digital_output(0, 0)
-                    sleep(0.4)
-                landing_point += np.array([int(num * 10), 0])
+                landing_point += np.array([0, -num * 10])
+                return num
             except Exception as e:
                 logger.error(f"[MISSION] Barcode error: {e}")
+        return 0
 
     def stop(self):
         self.running = False

@@ -15,12 +15,14 @@ def deg_360_180(deg):
     return deg
 
 
-OFFSET = np.array([18, 25])
-CORNER_POINT = np.array([53, 51]) + OFFSET
+M_OFFSET = np.array([18, 18])
+B_OFFSET = np.array([25, 25])
+CORNER_POINT = np.array([53, 51])
 Y_BOX = np.array([0, 50])
 X_BOX = np.array([50, 0])
 
-m_point = lambda x, y: CORNER_POINT + X_BOX * x + Y_BOX * y
+m_point = lambda x, y: CORNER_POINT + X_BOX * x + Y_BOX * y + M_OFFSET
+b_point = lambda x, y: CORNER_POINT + X_BOX * x + Y_BOX * y + B_OFFSET
 # 进入航线
 enter_points = np.array([m_point(0, 7.2), m_point(4, 7.2)])
 # 进入点 (A)
@@ -30,6 +32,8 @@ waypoints = np.array(
     [
         m_point(5, 6),
         m_point(5, 5),
+        m_point(4, 5),
+        m_point(4, 4),
         m_point(5, 4),
         m_point(5, 3),
         m_point(5, 2),
@@ -40,8 +44,12 @@ waypoints = np.array(
         m_point(3, 1),
         m_point(4, 1),
         m_point(4, 2),
+        m_point(4, 3),
+        m_point(3, 3),
         m_point(3, 2),
         m_point(2, 2),
+        m_point(2, 3),
+        m_point(1, 3),
         m_point(1, 2),
         m_point(1, 1),
         m_point(1, 0),
@@ -49,20 +57,14 @@ waypoints = np.array(
         m_point(0, 1),
         m_point(0, 2),
         m_point(0, 3),
-        m_point(1, 3),
-        m_point(2, 3),
-        m_point(3, 3),
-        m_point(4, 3),
-        m_point(4, 4),
-        m_point(4, 5),
     ]
 )
 # 回航点
-return_points = np.array([m_point(4, 7)])
+return_points = np.array([])
 # 基地点
-base_point = m_point(0, 7)  # np.array([82, 432])  # m_point(0, 7)
+base_point = b_point(0, 7)  # np.array([82, 432])  # m_point(0, 7)
 # 降落点
-landing_point = base_point + np.array([60, 0])  # 这个偏移根据一维码调整，写完了把这个删掉
+landing_point = base_point
 
 
 class Mission(object):
@@ -204,13 +206,6 @@ class Mission(object):
         THRESHOLD = 0.7  # 颜色判断阈值
         ROI = (0.45, 0.6, 0.1, 0.1)  # 根据高度调整
         CHECK_NUM = 10  # 检测次数
-        # results = []
-        # for _ in range(CHECK_NUM):
-        #     img = self.cam.read()[1]
-        #     img = get_ROI(img, ROI)
-        #     results.append(hsv_checker(img, LOWER, UPPER, THRESHOLD))
-        # logger.info(f"[MISSION] Green ground: {results}")
-        # return all(results)
         for _ in range(CHECK_NUM):
             img = self.cam.read()[1]
         img = self.cam.read()[1]
