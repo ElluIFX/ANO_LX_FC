@@ -16,7 +16,7 @@ def deg_360_180(deg):
 
 
 M_OFFSET = np.array([18, 18])
-B_OFFSET = np.array([22, 30])
+B_OFFSET = np.array([22, 25])
 CORNER_POINT = np.array([53, 51])
 Y_BOX = np.array([0, 50])
 X_BOX = np.array([50, 0])
@@ -60,9 +60,9 @@ waypoints = np.array(
     ]
 )
 # 回航点
-return_points = np.array([])
+return_points = np.array([b_point(0, 7)])
 # 基地点
-base_point = b_point(0, 7)  # np.array([82, 432])  # m_point(0, 7)
+base_point = b_point(0, 7)  # np.array([82, 432])
 # 降落点
 landing_point = base_point
 
@@ -112,7 +112,7 @@ class Mission(object):
         ############### 参数 #################
         camera_down_pwm = 32.5
         camera_up_pwm = 72
-        navigation_speed = 25
+        navigation_speed = 40
         ################ 启动线程 ################
         self.running = True
         self.thread_list.append(
@@ -171,7 +171,7 @@ class Mission(object):
         try_ = [4, 5, 6]
         run = True
         for i in try_:
-            self.navigation_to_waypoint(b_point(0, i))
+            self.navigation_to_waypoint(m_point(0, i))
             self.wait_for_waypoint()
             if len(self.radar.map.find_nearest(-20, 20, 1, 2000)) > 0:
                 break
@@ -191,6 +191,8 @@ class Mission(object):
         height_origin = self.height_pid.setpoint
         num = 0
         count = 0
+        speed_y = 6
+        speed_x = 8
         while run:
             sleep(0.01)
             if self.radar.fp_timeout_flag:
@@ -201,10 +203,11 @@ class Mission(object):
                 deg = deg_360_180(deg)
                 dis = self.radar.fp_points[0].distance / 10
                 logger.info("[MISSION] find point 1: %.2f, %.2f" % (deg, dis))
+                speed_y = 6 if abs(deg) < 3 else 15
                 if deg > 1:
-                    fc.update_realtime_control(vel_y=-6)
+                    fc.update_realtime_control(vel_y=-speed_y)
                 elif deg < -1:
-                    fc.update_realtime_control(vel_y=6)
+                    fc.update_realtime_control(vel_y=speed_y)
                 else:
                     fc.update_realtime_control(vel_y=0)
                     y_locked = True
@@ -215,10 +218,12 @@ class Mission(object):
                 else:
                     fc.update_realtime_control(yaw=0)
                 if y_locked:
-                    if dis > space_distance + 5:
-                        fc.update_realtime_control(vel_x=8)
-                    elif dis < space_distance - 5:
-                        fc.update_realtime_control(vel_x=-8)
+                    diff = dis - space_distance
+                    speed_x = 8 if abs(diff) < 50 else 20
+                    if diff > 5:
+                        fc.update_realtime_control(vel_x=speed_x)
+                    elif diff < -5:
+                        fc.update_realtime_control(vel_x=-speed_x)
                     else:
                         fc.update_realtime_control(vel_x=0)
                         x_locked = True
@@ -264,10 +269,9 @@ class Mission(object):
         self.height_pid.setpoint = 20
         sleep(2)
         self.wait_for_waypoint()
-        fc.set_flight_mode(fc.PROGRAM_MODE)
-        fc.stop_realtime_control()
-        fc.land()
-        fc.wait_for_lock()
+        self.height_pid.setpoint = 0
+        fc.wait_for_lock(4)
+        fc.lock()
         logger.info("[MISSION] Mission-1 Finished")
 
     def sow(self):  # 播撒
@@ -314,7 +318,7 @@ class Mission(object):
             try:
                 num = int(data)
                 logger.info(f"[MISSION] Barcode detected: {num}")
-                landing_point += np.array([0, -num * 10])
+                landing_point += np.array([num * 10, 0])
                 return num
             except Exception as e:
                 logger.error(f"[MISSION] Barcode error: {e}")

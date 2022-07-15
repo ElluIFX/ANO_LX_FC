@@ -16,7 +16,7 @@ def deg_360_180(deg):
 
 
 M_OFFSET = np.array([18, 18])
-B_OFFSET = np.array([22, 30])
+B_OFFSET = np.array([22, 25])
 CORNER_POINT = np.array([53, 51])
 Y_BOX = np.array([0, 50])
 X_BOX = np.array([50, 0])
@@ -60,9 +60,9 @@ waypoints = np.array(
     ]
 )
 # 回航点
-return_points = np.array([])
+return_points = np.array([b_point(0, 7)])
 # 基地点
-base_point = b_point(0, 7)  # np.array([82, 432])  # m_point(0, 7)
+base_point = b_point(0, 7)  # np.array([82, 432])
 # 降落点
 landing_point = base_point
 
@@ -112,7 +112,7 @@ class Mission(object):
         ############### 参数 #################
         camera_down_pwm = 32.5
         camera_up_pwm = 72
-        navigation_speed = 25
+        navigation_speed = 40
         ################ 启动线程 ################
         self.running = True
         self.thread_list.append(
@@ -179,10 +179,9 @@ class Mission(object):
         self.height_pid.setpoint = 20
         sleep(2)
         self.wait_for_waypoint()
-        fc.set_flight_mode(fc.PROGRAM_MODE)
-        fc.stop_realtime_control()
-        fc.land()
-        fc.wait_for_lock()
+        self.height_pid.setpoint = 0
+        fc.wait_for_lock(4)
+        fc.lock()
         logger.info("[MISSION] Mission-1 Finished")
 
     def sow(self):  # 播撒
