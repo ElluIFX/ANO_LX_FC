@@ -168,9 +168,16 @@ class Mission(object):
             self.sow()
         ######## 寻杆，找条形码
         fc.set_PWM_output(0, camera_up_pwm)
-        radar.start_find_point(2.5, 0, -30, 30, 1, 2000)
-        self.navigation_to_waypoint(b_point(0, 5))
-        self.wait_for_waypoint()
+        try_ = [4, 5, 6]
+        run = True
+        for i in try_:
+            self.navigation_to_waypoint(b_point(0, i))
+            self.wait_for_waypoint()
+            if len(self.radar.map.find_nearest(-20, 20, 1, 2000)) > 0:
+                break
+        else:
+            run = False
+        radar.start_find_point(2.5, 0, -20, 20, 1, 2000)
         self.navigation_flag = False
         inital_yaw = self.fc.state.yaw.value
         space_distance = 50
@@ -184,7 +191,7 @@ class Mission(object):
         height_origin = self.height_pid.setpoint
         num = 0
         count = 0
-        while True:
+        while run:
             sleep(0.01)
             if self.radar.fp_timeout_flag:
                 self.fc.update_realtime_control(vel_x=0, vel_y=0)
@@ -255,7 +262,7 @@ class Mission(object):
         self.navigation_to_waypoint(landing_point)
         self.wait_for_waypoint()
         self.height_pid.setpoint = 20
-        sleep(1)
+        sleep(2)
         self.wait_for_waypoint()
         fc.set_flight_mode(fc.PROGRAM_MODE)
         fc.stop_realtime_control()

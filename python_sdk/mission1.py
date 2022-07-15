@@ -177,7 +177,7 @@ class Mission(object):
         self.navigation_to_waypoint(landing_point)
         self.wait_for_waypoint()
         self.height_pid.setpoint = 20
-        sleep(1)
+        sleep(2)
         self.wait_for_waypoint()
         fc.set_flight_mode(fc.PROGRAM_MODE)
         fc.stop_realtime_control()
