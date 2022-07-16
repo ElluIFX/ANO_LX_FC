@@ -177,6 +177,11 @@ class Map_360(object):
     ######### 状态 #########
     rotation_spd = 0  # 转速 rpm
     update_count = 0  # 更新计数
+    ####### 辅助计算 #######
+    _rad_arr = np.deg2rad(np.arange(0, 360))  # 弧度
+    _deg_arr = np.arange(0, 360)  # 角度
+    _sin_arr = np.sin(_rad_arr)
+    _cos_arr = np.cos(_rad_arr)
 
     def __init__(self):
         pass
@@ -322,9 +327,19 @@ class Map_360(object):
     ):
         img_size = img.shape
         center_point = np.array([img_size[1] / 2, img_size[0] / 2])
-        for point in self.in_deg(0, 359):
-            pos = center_point + point.to_cv_xy() * scale
-            cv2.circle(img, (int(pos[0]), int(pos[1])), point_size, color, -1)
+        points_pos = (
+            np.array(
+                [
+                    self.data * self._sin_arr,
+                    self.data * self._cos_arr,
+                ]
+            )
+            * scale
+        )
+        for n in range(360):
+            pos = points_pos[:, n] + center_point
+            if self.data[n] != -1:
+                cv2.circle(img, tuple(pos.astype(int)), point_size, color, -1)
         for point in add_points:
             pos = center_point + point.to_cv_xy() * scale
             cv2.circle(
@@ -343,11 +358,20 @@ class Map_360(object):
     def output_cloud(self, scale: float = 0.1, size=800) -> np.ndarray:
         black_img = np.zeros((size, size, 1), dtype=np.uint8)
         center_point = np.array([size // 2, size // 2])
-        for point in self.in_deg(0, 359):
-            pos = point.to_cv_xy() * scale + center_point
-            x, y = int(pos[0]), int(pos[1])
-            if 0 <= x < size and 0 <= y < size:
-                black_img[y, x] = 255
+        points_pos = (
+            np.array(
+                [
+                    self.data * self._sin_arr,
+                    self.data * self._cos_arr,
+                ]
+            )
+            * scale
+        )
+        for n in range(360):
+            pos = points_pos[:, n] + center_point
+            if self.data[n] != -1:
+                if 0 <= pos[0] < size and 0 <= pos[1] < size:
+                    black_img[int(pos[1]), int(pos[0])] = 255
         return black_img
 
     def get_distance(self, angle: int) -> int:
