@@ -246,7 +246,7 @@ class Mission(object):
         ########################
         paused = False
         while self.running:
-            sleep(0.05)
+            sleep(0.01)
             if (
                 self.navigation_flag
                 and self.fc.state.mode.value == self.fc.HOLD_POS_MODE
@@ -265,30 +265,30 @@ class Mission(object):
                     )
                     logger.info("[MISSION] Resolve pose started")
                     sleep(0.01)
-                # if self.radar.rt_pose_update_event.wait(1):  # 等待地图更新
-                #     self.radar.rt_pose_update_event.clear()
-                current_x = self.radar.rt_pose[0]
-                current_y = self.radar.rt_pose[1]
-                if current_x > 0 and current_y > 0:
-                    self.fc.send_general_position(x=current_x, y=current_y)
-                current_yaw = self.radar.rt_pose[2]
-                out_x = None
-                out_y = None
-                out_yaw = None
-                if current_x > 0:  # 0 为无效值
-                    out_x = int(self.navi_x_pid(current_x))
-                    if out_x is not None:
-                        self.fc.update_realtime_control(vel_x=out_x)
-                if current_y > 0:
-                    out_y = int(self.navi_y_pid(current_y))
-                    if out_y is not None:
-                        self.fc.update_realtime_control(vel_y=out_y)
-                out_yaw = int(self.navi_yaw_pid(current_yaw))
-                if out_yaw is not None:
-                    self.fc.update_realtime_control(yaw=out_yaw)
-                logger.debug(
-                    f"[MISSION] Current pose: {current_x}, {current_y}, {current_yaw}; Output: {out_x}, {out_y}, {out_yaw}"
-                )
+                if self.radar.rt_pose_update_event.wait(1):  # 等待地图更新
+                    self.radar.rt_pose_update_event.clear()
+                    current_x = self.radar.rt_pose[0]
+                    current_y = self.radar.rt_pose[1]
+                    if current_x > 0 and current_y > 0:
+                        self.fc.send_general_position(x=current_x, y=current_y)
+                    current_yaw = self.radar.rt_pose[2]
+                    out_x = None
+                    out_y = None
+                    out_yaw = None
+                    if current_x > 0:  # 0 为无效值
+                        out_x = int(self.navi_x_pid(current_x))
+                        if out_x is not None:
+                            self.fc.update_realtime_control(vel_x=out_x)
+                    if current_y > 0:
+                        out_y = int(self.navi_y_pid(current_y))
+                        if out_y is not None:
+                            self.fc.update_realtime_control(vel_y=out_y)
+                    out_yaw = int(self.navi_yaw_pid(current_yaw))
+                    if out_yaw is not None:
+                        self.fc.update_realtime_control(yaw=out_yaw)
+                    logger.debug(
+                        f"[MISSION] Current pose: {current_x}, {current_y}, {current_yaw}; Output: {out_x}, {out_y}, {out_yaw}"
+                    )
             else:
                 self.radar.stop_resolve_pose()
                 if not paused:
