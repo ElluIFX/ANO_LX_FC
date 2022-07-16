@@ -331,7 +331,7 @@ class Map_360(object):
             np.array(
                 [
                     self.data * self._sin_arr,
-                    self.data * self._cos_arr,
+                    -self.data * self._cos_arr,
                 ]
             )
             * scale
@@ -362,7 +362,7 @@ class Map_360(object):
             np.array(
                 [
                     self.data * self._sin_arr,
-                    self.data * self._cos_arr,
+                    -self.data * self._cos_arr,
                 ]
             )
             * scale
