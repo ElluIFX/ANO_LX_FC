@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
+from scipy.signal import find_peaks
 
 from ..Logger import logger
 from ._Driver_Components import calculate_crc8
@@ -161,8 +162,8 @@ class Map_360(object):
     将点云数据映射到一个360度的圆上
     """
 
-    data = [-1] * 360  # -1 for no valid data
-    time_stamp = [0] * 360  # s
+    data = np.ones(360, dtype=np.int64) * -1  # -1: 未知
+    time_stamp = np.zeros(360, dtype=np.float64)  # 时间戳
     ######### 映射方法 ########
     MODE_MIN = 0  # 在范围内选择最近的点更新
     MODE_MAX = 1  # 在范围内选择最远的点更新
@@ -209,9 +210,7 @@ class Map_360(object):
             if self.timeout_clear:
                 self.time_stamp[deg] = time.time()
         if self.timeout_clear:
-            for deg in range(360):
-                if time.time() - self.time_stamp[deg] > self.timeout_time:
-                    self.data[deg] = -1
+            self.data[self.time_stamp < time.time() - self.timeout_time] = -1
         self.rotation_spd = data.rotation_spd / 360
         self.update_count += 1
 
@@ -225,29 +224,19 @@ class Map_360(object):
             if self.data[deg] != -1
         ]
 
-    def in_distance(self, from_: int, to_: int) -> List[Point_2D]:
-        """
-        截取选定距离范围的点
-        """
-        return [
-            Point_2D(deg, self.data[deg])
-            for deg in range(360)
-            if from_ <= self.data[deg] <= to_
-        ]
-
     def clear(self):
         """
         清空数据
         """
-        self.data = [-1] * 360
-        self.time_stamp = [0] * 360
+        self.data[:] = -1
+        self.time_stamp[:] = 0
 
     def rotation(self, angle: int):
         """
         旋转整个地图, 正角度代表坐标系顺时针旋转, 地图逆时针旋转
         """
-        self.data = [self.data[(deg + angle) % 360] for deg in range(360)]
-        self.time_stamp = [self.time_stamp[(deg + angle) % 360] for deg in range(360)]
+        self.data = np.roll(self.data, angle)
+        self.time_stamp = np.roll(self.time_stamp, angle)
 
     def find_nearest(
         self, from_: int = 0, to_: int = 359, num=1, range_limit: int = 1e9, data=None
