@@ -15,13 +15,16 @@ class Point_2D(object):
     distance = 0  # 距离 mm
     confidence = 0  # 置信度 典型值=200
 
-    def __init__(self, degree=0, distance=0, confidence=0):
+    def __init__(self, degree=0, distance=0, confidence=None):
         self.degree = degree
         self.distance = distance
         self.confidence = confidence
 
     def __str__(self):
-        return f"Point: deg = {self.degree:>6.2f}, dist = {self.distance:>4.0f}, conf = {self.confidence:>3.0f}"
+        s = f"Point: deg = {self.degree:>6.2f}, dist = {self.distance:>4.0f}"
+        if self.confidence is not None:
+            s += f", conf = {self.confidence:>3.0f}"
+        return s
 
     def __repr__(self):
         return self.__str__()
@@ -65,11 +68,7 @@ class Point_2D(object):
     def __eq__(self, __o: object) -> bool:
         if not isinstance(__o, Point_2D):
             return False
-        return (
-            self.degree == __o.degree
-            and self.distance == __o.distance
-            and self.confidence == __o.confidence
-        )
+        return self.degree == __o.degree and self.distance == __o.distance
 
     def to_180_degree(self):
         """
@@ -244,7 +243,7 @@ class Map_360(object):
         self.time_stamp = np.roll(self.time_stamp, angle)
 
     def find_nearest(
-        self, from_: int = 0, to_: int = 359, num=1, range_limit: int = 1e9, data=None
+        self, from_: int = 0, to_: int = 359, num=1, range_limit: int = 1e7, data=None
     ) -> List[Point_2D]:
         """
         在给定范围内查找给定个数的最近点
@@ -254,28 +253,22 @@ class Map_360(object):
         """
         if not data:
             data = self.data
+        view = (self.data < range_limit) & (self.data != -1)
         if from_ > to_:
-            range_ = list(range(from_, 360)) + list(range(0, to_))
+            view[to_ + 2 : from_] = False
         else:
-            range_ = range(from_, to_ + 1)
-        min_points = [Point_2D(-1, 1e8) for i in range(num)]
-        for deg in range_:
-            deg %= 360
-            if data[deg] == -1 or data[deg] > range_limit:
-                continue
-            for n, point in enumerate(min_points):
-                if data[deg] < point.distance:
-                    k = num - 1
-                    while k > n:
-                        min_points[k] = min_points[k - 1]
-                        k -= 1
-                    min_points[n] = Point_2D(deg, data[deg])
-                    break
-        min_points = [point for point in min_points if point.degree != -1]
-        return min_points
+            view[to_ + 2 : 360] = False
+            view[:from_] = False
+        deg_arr = np.where(view)[0]
+        data_view = data[view]
+        sort_view = np.argpartition(data_view, num)[:num]
+        points = []
+        for index in sort_view:
+            points.append(Point_2D(deg_arr[index], data_view[index]))
+        return points
 
     def find_nearest_with_ext_point_opt(
-        self, from_: int = 0, to_: int = 359, num=1, range_limit: int = 1e9
+        self, from_: int = 0, to_: int = 359, num=1, range_limit: int = 1e7
     ) -> List[Point_2D]:
         """
         在给定范围内查找给定个数的最近点, 只查找极值点
@@ -405,3 +398,5 @@ if __name__ == "__main__":
     map_.update(pack)
     print(pack)
     print(map_)
+    find = map_.find_nearest(0, 359, 4)
+    print(find)
