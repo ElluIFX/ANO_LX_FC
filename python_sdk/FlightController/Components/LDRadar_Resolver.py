@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
+from scipy.signal import find_peaks
 
 from ..Logger import logger
 from ._Driver_Components import calculate_crc8
@@ -14,13 +15,16 @@ class Point_2D(object):
     distance = 0  # 距离 mm
     confidence = 0  # 置信度 典型值=200
 
-    def __init__(self, degree=0, distance=0, confidence=0):
+    def __init__(self, degree=0, distance=0, confidence=None):
         self.degree = degree
         self.distance = distance
         self.confidence = confidence
 
     def __str__(self):
-        return f"Point: deg = {self.degree:>6.2f}, dist = {self.distance:>4.0f}, conf = {self.confidence:>3.0f}"
+        s = f"Point: deg = {self.degree:>6.2f}, dist = {self.distance:>4.0f}"
+        if self.confidence is not None:
+            s += f", conf = {self.confidence:>3.0f}"
+        return s
 
     def __repr__(self):
         return self.__str__()
@@ -64,11 +68,7 @@ class Point_2D(object):
     def __eq__(self, __o: object) -> bool:
         if not isinstance(__o, Point_2D):
             return False
-        return (
-            self.degree == __o.degree
-            and self.distance == __o.distance
-            and self.confidence == __o.confidence
-        )
+        return self.degree == __o.degree and self.distance == __o.distance
 
     def to_180_degree(self):
         """
@@ -161,8 +161,8 @@ class Map_360(object):
     将点云数据映射到一个360度的圆上
     """
 
-    data = [-1] * 360  # -1 for no valid data
-    time_stamp = [0] * 360  # s
+    data = np.ones(360, dtype=np.int64) * -1  # -1: 未知
+    time_stamp = np.zeros(360, dtype=np.float64)  # 时间戳
     ######### 映射方法 ########
     MODE_MIN = 0  # 在范围内选择最近的点更新
     MODE_MAX = 1  # 在范围内选择最远的点更新
@@ -176,6 +176,11 @@ class Map_360(object):
     ######### 状态 #########
     rotation_spd = 0  # 转速 rpm
     update_count = 0  # 更新计数
+    ####### 辅助计算 #######
+    _rad_arr = np.deg2rad(np.arange(0, 360))  # 弧度
+    _deg_arr = np.arange(0, 360)  # 角度
+    _sin_arr = np.sin(_rad_arr)
+    _cos_arr = np.cos(_rad_arr)
 
     def __init__(self):
         pass
@@ -209,9 +214,7 @@ class Map_360(object):
             if self.timeout_clear:
                 self.time_stamp[deg] = time.time()
         if self.timeout_clear:
-            for deg in range(360):
-                if time.time() - self.time_stamp[deg] > self.timeout_time:
-                    self.data[deg] = -1
+            self.data[self.time_stamp < time.time() - self.timeout_time] = -1
         self.rotation_spd = data.rotation_spd / 360
         self.update_count += 1
 
@@ -225,63 +228,53 @@ class Map_360(object):
             if self.data[deg] != -1
         ]
 
-    def in_distance(self, from_: int, to_: int) -> List[Point_2D]:
-        """
-        截取选定距离范围的点
-        """
-        return [
-            Point_2D(deg, self.data[deg])
-            for deg in range(360)
-            if from_ <= self.data[deg] <= to_
-        ]
-
     def clear(self):
         """
         清空数据
         """
-        self.data = [-1] * 360
-        self.time_stamp = [0] * 360
+        self.data[:] = -1
+        self.time_stamp[:] = 0
 
     def rotation(self, angle: int):
         """
         旋转整个地图, 正角度代表坐标系顺时针旋转, 地图逆时针旋转
         """
-        self.data = [self.data[(deg + angle) % 360] for deg in range(360)]
-        self.time_stamp = [self.time_stamp[(deg + angle) % 360] for deg in range(360)]
+        self.data = np.roll(self.data, angle)
+        self.time_stamp = np.roll(self.time_stamp, angle)
 
     def find_nearest(
-        self, from_: int = 0, to_: int = 359, num=1, range_limit: int = 1e9, data=None
+        self, from_: int = 0, to_: int = 359, num=1, range_limit: int = 1e7, view=None
     ) -> List[Point_2D]:
         """
         在给定范围内查找给定个数的最近点
         from_: int 起始角度
         to_: int 结束角度(包含)
         num: int 查找点的个数
+        view: numpy视图, 当指定时上述参数仅num生效
         """
-        if not data:
-            data = self.data
-        if from_ > to_:
-            range_ = list(range(from_, 360)) + list(range(0, to_))
+        if view is None:
+            view = (self.data < range_limit) & (self.data != -1)
+            if from_ > to_:
+                view[to_ + 2 : from_] = False
+            else:
+                view[to_ + 2 : 360] = False
+                view[:from_] = False
+        deg_arr = np.where(view)[0]
+        data_view = self.data[view]
+        p_num = len(deg_arr)
+        if p_num == 0:
+            return []
+        elif p_num <= num:
+            sort_view = np.argsort(data_view)
         else:
-            range_ = range(from_, to_ + 1)
-        min_points = [Point_2D(-1, 1e8) for i in range(num)]
-        for deg in range_:
-            deg %= 360
-            if data[deg] == -1 or data[deg] > range_limit:
-                continue
-            for n, point in enumerate(min_points):
-                if data[deg] < point.distance:
-                    k = num - 1
-                    while k > n:
-                        min_points[k] = min_points[k - 1]
-                        k -= 1
-                    min_points[n] = Point_2D(deg, data[deg])
-                    break
-        min_points = [point for point in min_points if point.degree != -1]
-        return min_points
+            sort_view = np.argpartition(data_view, num)[:num]
+        points = []
+        for index in sort_view:
+            points.append(Point_2D(deg_arr[index], data_view[index]))
+        return points
 
     def find_nearest_with_ext_point_opt(
-        self, from_: int = 0, to_: int = 359, num=1, range_limit: int = 1e9
+        self, from_: int = 0, to_: int = 359, num=1, range_limit: int = 1e7
     ) -> List[Point_2D]:
         """
         在给定范围内查找给定个数的最近点, 只查找极值点
@@ -290,36 +283,22 @@ class Map_360(object):
         num: int 查找点的个数
         range_limit: int 距离限制
         """
-        last = 1e9
-        last_deg = -1
-        ex_points = []
-        state = 0  # 0:falling 1:rising
-        data = []
+        view = (self.data < range_limit) & (self.data != -1)
         if from_ > to_:
-            range_ = list(range(from_, 360)) + list(range(0, to_))
+            view[to_ + 2 : from_] = False
         else:
-            range_ = range(from_, to_ + 1)
-        for deg in range_:
-            deg %= 360
-            if self.data[deg] == -1:
-                continue
-            if state == 0:
-                if self.data[deg] > last:
-                    state = 1
-                    ex_points.append(deg - 1)
-            else:
-                if self.data[deg] < last:
-                    state = 0
-            last = self.data[deg]
-            last_deg = deg
-        if state == 0 and last_deg != -1:
-            ex_points.append(last_deg)
-        for deg in range(360):
-            if deg in ex_points and self.data[deg] < range_limit:
-                data.append(self.data[deg])
-            else:
-                data.append(1e9)
-        return self.find_nearest(from_, to_, num, range_limit, data)
+            view[to_ + 2 : 360] = False
+            view[:from_] = False
+        data_view = self.data[view]
+        deg_arr = np.where(view)[0]
+        peak = find_peaks(-data_view)[0]
+        if len(data_view) > 2:
+            if data_view[-1] < data_view[-2]:
+                peak = np.append(peak, len(data_view) - 1)
+        peak_deg = deg_arr[peak]
+        new_view = np.zeros(360, dtype=bool)
+        new_view[peak_deg] = True
+        return self.find_nearest(from_, to_, num, range_limit, new_view)
 
     def draw_on_cv_image(
         self,
@@ -333,9 +312,19 @@ class Map_360(object):
     ):
         img_size = img.shape
         center_point = np.array([img_size[1] / 2, img_size[0] / 2])
-        for point in self.in_deg(0, 359):
-            pos = center_point + point.to_cv_xy() * scale
-            cv2.circle(img, (int(pos[0]), int(pos[1])), point_size, color, -1)
+        points_pos = (
+            np.array(
+                [
+                    self.data * self._sin_arr,
+                    -self.data * self._cos_arr,
+                ]
+            )
+            * scale
+        )
+        for n in range(360):
+            pos = points_pos[:, n] + center_point
+            if self.data[n] != -1:
+                cv2.circle(img, tuple(pos.astype(int)), point_size, color, -1)
         for point in add_points:
             pos = center_point + point.to_cv_xy() * scale
             cv2.circle(
@@ -354,11 +343,20 @@ class Map_360(object):
     def output_cloud(self, scale: float = 0.1, size=800) -> np.ndarray:
         black_img = np.zeros((size, size, 1), dtype=np.uint8)
         center_point = np.array([size // 2, size // 2])
-        for point in self.in_deg(0, 359):
-            pos = point.to_cv_xy() * scale + center_point
-            x, y = int(pos[0]), int(pos[1])
-            if 0 <= x < size and 0 <= y < size:
-                black_img[y, x] = 255
+        points_pos = (
+            np.array(
+                [
+                    self.data * self._sin_arr,
+                    -self.data * self._cos_arr,
+                ]
+            )
+            * scale
+        )
+        for n in range(360):
+            pos = points_pos[:, n] + center_point
+            if self.data[n] != -1:
+                if 0 <= pos[0] < size and 0 <= pos[1] < size:
+                    black_img[int(pos[1]), int(pos[0])] = 255
         return black_img
 
     def get_distance(self, angle: int) -> int:
@@ -392,3 +390,5 @@ if __name__ == "__main__":
     map_.update(pack)
     print(pack)
     print(map_)
+    find = map_.find_nearest_with_ext_point_opt(0, 359, 4)
+    print(find)
