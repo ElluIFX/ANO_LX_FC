@@ -243,25 +243,31 @@ class Map_360(object):
         self.time_stamp = np.roll(self.time_stamp, angle)
 
     def find_nearest(
-        self, from_: int = 0, to_: int = 359, num=1, range_limit: int = 1e7, data=None
+        self, from_: int = 0, to_: int = 359, num=1, range_limit: int = 1e7, view=None
     ) -> List[Point_2D]:
         """
         在给定范围内查找给定个数的最近点
         from_: int 起始角度
         to_: int 结束角度(包含)
         num: int 查找点的个数
+        view: numpy视图, 当指定时上述参数仅num生效
         """
-        if not data:
-            data = self.data
-        view = (self.data < range_limit) & (self.data != -1)
-        if from_ > to_:
-            view[to_ + 2 : from_] = False
-        else:
-            view[to_ + 2 : 360] = False
-            view[:from_] = False
+        if view is None:
+            view = (self.data < range_limit) & (self.data != -1)
+            if from_ > to_:
+                view[to_ + 2 : from_] = False
+            else:
+                view[to_ + 2 : 360] = False
+                view[:from_] = False
         deg_arr = np.where(view)[0]
-        data_view = data[view]
-        sort_view = np.argpartition(data_view, num)[:num]
+        data_view = self.data[view]
+        p_num = len(deg_arr)
+        if p_num == 0:
+            return []
+        elif p_num <= num:
+            sort_view = np.argsort(data_view)
+        else:
+            sort_view = np.argpartition(data_view, num)[:num]
         points = []
         for index in sort_view:
             points.append(Point_2D(deg_arr[index], data_view[index]))
@@ -277,36 +283,22 @@ class Map_360(object):
         num: int 查找点的个数
         range_limit: int 距离限制
         """
-        last = 1e9
-        last_deg = -1
-        ex_points = []
-        state = 0  # 0:falling 1:rising
-        data = []
+        view = (self.data < range_limit) & (self.data != -1)
         if from_ > to_:
-            range_ = list(range(from_, 360)) + list(range(0, to_))
+            view[to_ + 2 : from_] = False
         else:
-            range_ = range(from_, to_ + 1)
-        for deg in range_:
-            deg %= 360
-            if self.data[deg] == -1:
-                continue
-            if state == 0:
-                if self.data[deg] > last:
-                    state = 1
-                    ex_points.append(deg - 1)
-            else:
-                if self.data[deg] < last:
-                    state = 0
-            last = self.data[deg]
-            last_deg = deg
-        if state == 0 and last_deg != -1:
-            ex_points.append(last_deg)
-        for deg in range(360):
-            if deg in ex_points and self.data[deg] < range_limit:
-                data.append(self.data[deg])
-            else:
-                data.append(1e9)
-        return self.find_nearest(from_, to_, num, range_limit, data)
+            view[to_ + 2 : 360] = False
+            view[:from_] = False
+        data_view = self.data[view]
+        deg_arr = np.where(view)[0]
+        peak = find_peaks(-data_view)[0]
+        if len(data_view) > 2:
+            if data_view[-1] < data_view[-2]:
+                peak = np.append(peak, len(data_view) - 1)
+        peak_deg = deg_arr[peak]
+        new_view = np.zeros(360, dtype=bool)
+        new_view[peak_deg] = True
+        return self.find_nearest(from_, to_, num, range_limit, new_view)
 
     def draw_on_cv_image(
         self,
@@ -398,5 +390,5 @@ if __name__ == "__main__":
     map_.update(pack)
     print(pack)
     print(map_)
-    find = map_.find_nearest(0, 359, 4)
+    find = map_.find_nearest_with_ext_point_opt(0, 359, 4)
     print(find)

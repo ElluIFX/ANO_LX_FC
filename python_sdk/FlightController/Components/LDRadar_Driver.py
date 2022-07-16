@@ -134,7 +134,8 @@ class LD_Radar(object):
                 else:
                     logger.warning("[RADAR] Map resolve thread wait timeout")
             except Exception as e:
-                logger.error(f"[RADAR] Map resolve thread error: {e}")
+                import traceback
+                logger.error(f"[RADAR] Map resolve thread error: {traceback.format_exc()}")
                 time.sleep(0.5)
 
     def _init_radar_map(self):
