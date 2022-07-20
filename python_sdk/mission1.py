@@ -15,22 +15,22 @@ def deg_360_180(deg):
     return deg
 
 
-M_OFFSET = np.array([18, 18])
-B_OFFSET = np.array([22, 25])
-CORNER_POINT = np.array([53, 51])
-Y_BOX = np.array([0, 50])
-X_BOX = np.array([50, 0])
+TARGET_POINT1 = np.array([0, 0])  # 左上方
+TARGET_POINT2 = np.array([0, 0])  # 右上方
+TARGET_POINT3 = np.array([0, 0])  # 右下方
 
-m_point = lambda x, y: CORNER_POINT + X_BOX * x + Y_BOX * y + M_OFFSET
-b_point = lambda x, y: CORNER_POINT + X_BOX * x + Y_BOX * y + B_OFFSET
-# 进入点
-start_point = m_point(4, 6)
 # 任务点
 waypoints = np.array([])
 # 基地点
-base_point = b_point(0, 7)
+base_point = np.array([0, 0])
 # 降落点
 landing_point = base_point
+
+target_pos_dict = {}
+
+target_action_dict = {}
+
+target_list = []
 
 
 class Mission(object):
@@ -39,6 +39,7 @@ class Mission(object):
         self.radar = radar
         self.cam = camera
         self.inital_yaw = self.fc.state.yaw.value
+        self.fd = FastestDetOnnx(drawOutput=True)  # 初始化神经网络
         ############### PID #################
         self.height_pid = PID(
             0.8, 0.0, 0.1, setpoint=135, output_limits=(-15, 15), auto_mode=False
@@ -47,7 +48,7 @@ class Mission(object):
             0.5,
             0,
             0.02,
-            setpoint=start_point[0],
+            setpoint=0,
             output_limits=(-0.01, 0.01),
             auto_mode=False,
         )
@@ -55,7 +56,7 @@ class Mission(object):
             0.5,
             0,
             0.02,
-            setpoint=start_point[1],
+            setpoint=0,
             output_limits=(-0.01, 0.01),
             auto_mode=False,
         )
@@ -72,7 +73,7 @@ class Mission(object):
         self.navigation_flag = False
         self.running = False
         self.thread_list = []
-        # vision_debug()
+        vision_debug()
 
     def run(self):
         fc = self.fc
@@ -95,6 +96,7 @@ class Mission(object):
         self.thread_list[-1].start()
         logger.info("[MISSION] Threads started")
         ################ 初始化 ################
+        fc.set_action_log(False)
         change_cam_resolution(cam, 800, 600)
         set_cam_autowb(cam, False)  # 关闭自动白平衡
         for _ in range(10):
@@ -102,15 +104,20 @@ class Mission(object):
         fc.set_PWM_output(0, camera_up_pwm)
         fc.set_flight_mode(fc.PROGRAM_MODE)
         self.set_navigation_speed(navigation_speed)
+        self.read_mission_info()
+        fc.set_rgb_led(255, 0, 255)
+        fc.event.key_short.wait_clear()
+        fc.set_action_log(True)
+        return
         ################ 初始化完成 ################
         logger.info("[MISSION] Mission-1 Started")
-        fc.set_rgb_led(255, 0, 0) # 起飞前警告
+        fc.set_rgb_led(255, 0, 0)  # 起飞前警告
         for i in range(10):
             sleep(0.1)
             set_buzzer(True)
             sleep(0.1)
             set_buzzer(False)
-        fc.set_rgb_led(0, 0, 0) 
+        fc.set_rgb_led(0, 0, 0)
         fc.unlock()
         sleep(2)  # 等待电机启动
         fc.take_off(80)
@@ -124,11 +131,6 @@ class Mission(object):
         sleep(0.1)
         self.navigation_flag = True
         fc.set_PWM_output(0, camera_down_pwm)
-        ######## 飞进入点
-        logger.info("[MISSION] Navigation to Start point")
-        self.navigation_to_waypoint(start_point)
-        self.wait_for_waypoint()
-        self.sow()
         ######## 遍历路径
         for n, waypoint in enumerate(waypoints):
             logger.info(f"[MISSION] Navigation to Waypoint-{n:02d}: {waypoint}")
@@ -265,3 +267,80 @@ class Mission(object):
             if time() - time_start > OVERTIME_THRESHOLD:
                 logger.warning("[MISSION] Waypoint overtime")
                 return
+
+    def read_mission_info(self):
+        global target_pos_dict
+        global target_action_dict
+        global target_list
+        cam = self.cam
+        fd = self.fd
+        fc = self.fc
+        for i in range(15):
+            cam.read()  # 清除缓存
+        # 读入路径点顺序
+        logger.info("[MISSION] Ready to read targets pos")
+        fc.set_rgb_led(255, 255, 0)
+        for pos in (TARGET_POINT1, TARGET_POINT2, TARGET_POINT3):
+            while True:
+                cv2.waitKey(1)
+                frame = cam.read()[1]
+                cv2.imshow("Origin", frame)
+                if frame is None:
+                    continue
+                get = fd.detect(frame)
+                cv2.imshow("Result", frame)
+                cv2.waitKey(1)
+                if len(get) > 0:
+                    _, name, _ = get[0]
+                    if name not in target_pos_dict:
+                        logger.info(f"[MISSION] Target {name} in {pos}")
+                        target_pos_dict[name] = pos
+                        fc.set_rgb_led(0, 255, 0)
+                        sleep(0.5)
+                        fc.set_rgb_led(255, 255, 0)
+                        break
+        logger.info("[MISSION] Done")
+        fc.set_rgb_led(0, 0, 255)
+        for i in range(30):
+            cam.read()  # 清除缓存
+        fc.set_rgb_led(255, 255, 0)
+        logger.info("[MISSION] Ready to read targets info")
+        for i in range(3):
+            while True:
+                frame = cam.read()[1]
+                cv2.imshow("Origin", frame)
+                if frame is None:
+                    continue
+                get = fd.detect(frame)
+                cv2.imshow("Result", frame)
+                cv2.waitKey(1)
+                if len(get) > 0:
+                    _, name, _ = get[0]
+                    if name not in target_list:
+                        logger.info(f"[MISSION] Target {i} -> {name}")
+                        target_list.append(name)
+                        fc.set_rgb_led(0, 255, 0)
+                        sleep(0.5)
+                        fc.set_rgb_led(255, 255, 0)
+                        break
+            while True:
+                frame = cam.read()[1]
+                cv2.imshow("Origin", frame)
+                if frame is None:
+                    continue
+                get, _, _, data = find_QRcode_zbar(frame)
+                cv2.waitKey(1)
+                if get:
+                    logger.info(f"[MISSION] Action {i} -> {data}")
+                    target_action_dict[name] = int(data)
+                    fc.set_rgb_led(0, 255, 0)
+                    sleep(0.5)
+                    fc.set_rgb_led(255, 255, 0)
+                    break
+        logger.info("[MISSION] All Done")
+        logger.info(f"[MISSION] target_pos_dict: {target_pos_dict}")
+        logger.info(f"[MISSION] target_action_dict: {target_action_dict}")
+        logger.info(f"[MISSION] target_list: {target_list}")
+        fc.set_rgb_led(0, 0, 255)
+        sleep(1)
+        fc.set_rgb_led(255, 255, 0)
