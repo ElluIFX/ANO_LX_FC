@@ -23,14 +23,23 @@ X_BOX = np.array([50, 0])
 
 m_point = lambda x, y: CORNER_POINT + X_BOX * x + Y_BOX * y + M_OFFSET
 b_point = lambda x, y: CORNER_POINT + X_BOX * x + Y_BOX * y + B_OFFSET
-# 进入点
-start_point = m_point(4, 6)
-# 任务点
-waypoints = np.array([])
 # 基地点
 base_point = b_point(0, 7)
+# 进入点
+start_point = b_point(1, 7)
+# 雷达点
+radar_points = np.array([m_point(1, 5), m_point(5, 5)])
 # 降落点
 landing_point = base_point
+
+# 如果修改了这里的变量，对相应的调用也进行修改即可
+# 录入飞行顺序和对应操作时改变以下两个数组
+# 默认点以 左上 - 右上 - 右下 为顺序
+# 0 -> house   1 -> car   2 -> hospital
+# 0 -> pick    1 -> put
+default_points = np.array([[150, 150], [150, 10], [10, 10]])
+building_points = np.array([0, 0, 0])
+building_operate = np.zeros((3, 2))
 
 
 class Mission(object):
@@ -70,19 +79,17 @@ class Mission(object):
         #####################################
         self.keep_height_flag = False
         self.navigation_flag = False
+        self.avoidance_flag = False
         self.running = False
         self.thread_list = []
         # vision_debug()
 
     def run(self):
-        fc = self.fc
-        radar = self.radar
-        cam = self.cam
+        global building_points, building_operate
         ############### 参数 #################
-        camera_down_pwm = 32.5
-        camera_up_pwm = 72
-        navigation_speed = 40
-        set_buzzer = lambda x: fc.set_digital_output(0, x)
+        camera_down_pwm = 20
+        camera_up_pwm = 60
+        navigation_speed = 25
         ################ 启动线程 ################
         self.running = True
         self.thread_list.append(
@@ -95,22 +102,21 @@ class Mission(object):
         self.thread_list[-1].start()
         logger.info("[MISSION] Threads started")
         ################ 初始化 ################
-        change_cam_resolution(cam, 800, 600)
-        set_cam_autowb(cam, False)  # 关闭自动白平衡
-        for _ in range(10):
+        fc = self.fc
+        radar = self.radar
+        cam = self.cam
+        change_cam_resolution(cam, 1200, 800)
+        set_cam_autowb(cam, True)  # 关闭自动白平衡
+        for _ in range(5):
             cam.read()
         fc.set_PWM_output(0, camera_up_pwm)
         fc.set_flight_mode(fc.PROGRAM_MODE)
         self.set_navigation_speed(navigation_speed)
         ################ 初始化完成 ################
+        ################ 进行信息录入 ################
+        pass
+        ################ 录入信息完成 ################
         logger.info("[MISSION] Mission-1 Started")
-        fc.set_rgb_led(255, 0, 0) # 起飞前警告
-        for i in range(10):
-            sleep(0.1)
-            set_buzzer(True)
-            sleep(0.1)
-            set_buzzer(False)
-        fc.set_rgb_led(0, 0, 0) 
         fc.unlock()
         sleep(2)  # 等待电机启动
         fc.take_off(80)
@@ -120,33 +126,66 @@ class Mission(object):
         self.keep_height_flag = True
         fc.start_realtime_control(10)
         sleep(2)
-        self.navigation_to_waypoint(base_point)  # 初始化路径点
+        self.navigation_to_waypoint(np.array([20, -40]))  # 初始化路径点
         sleep(0.1)
         self.navigation_flag = True
         fc.set_PWM_output(0, camera_down_pwm)
-        ######## 飞进入点
-        logger.info("[MISSION] Navigation to Start point")
-        self.navigation_to_waypoint(start_point)
+        ######## 穿过呼啦圈
+        self.navigation_to_waypoint(radar_points[0])
         self.wait_for_waypoint()
-        self.sow()
-        ######## 遍历路径
-        for n, waypoint in enumerate(waypoints):
-            logger.info(f"[MISSION] Navigation to Waypoint-{n:02d}: {waypoint}")
-            self.navigation_to_waypoint(waypoint)
+        self.across_hoop(0)
+        sleep(1)
+        ######## 依次前往三个建筑物
+        for i in range(3):
+            self.navigation_to_waypoint(building_points[building_operate[i, 0]])
             self.wait_for_waypoint()
-            self.sow()
-        ######## 精准着陆
+            # TODO: 识别下方的建筑物类型，决定是否进行放药任务
+
+            self.handling_goods(building_operate[i, 1])
+        sleep(1)
+        ######## 再次穿过呼啦圈
+        self.navigation_to_waypoint(radar_points[1])
+        self.wait_for_waypoint()
+        self.across_hoop(1)
+        sleep(1)
+        ######## 回到基地点
+        self.navigation_to_waypoint(base_point)
+        self.wait_for_waypoint()
+        sleep(1)
+        ######## 精准降落
         logger.info("[MISSION] Landing")
         self.height_pid.setpoint = 60
-        self.navigation_to_waypoint(landing_point)
+        sleep(1.5)
         self.wait_for_waypoint()
         self.height_pid.setpoint = 20
         sleep(2)
         self.wait_for_waypoint()
-        self.height_pid.setpoint = 0
-        fc.wait_for_lock(4)
-        fc.lock()
-        logger.info("[MISSION] Mission-1 Finished")
+        fc.set_flight_mode(fc.PROGRAM_MODE)
+        fc.stop_realtime_control()
+        fc.land()
+        fc.wait_for_lock()
+        logger.info("[MISSION] Misson-1 Finished")
+
+    def find_barcode(self):
+        global landing_point
+        CHECK_NUM = 5  # 检测次数
+        for _ in range(CHECK_NUM):
+            img = self.cam.read()[1]
+        img = self.cam.read()[1]
+        # img = get_ROI(img, (0.3, 0.2, 0.5, 0.6))
+        img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+        cv2.imshow("Origin", img)
+        get, dx, dy, data = find_QRcode_zbar(img)
+        cv2.waitKey(10)
+        if get:
+            try:
+                num = int(data)
+                logger.info(f"[MISSION] Barcode detected: {num}")
+                landing_point += np.array([0, -num * 10])
+                return num
+            except Exception as e:
+                logger.error(f"[MISSION] Barcode error: {e}")
+        return 0
 
     def stop(self):
         self.running = False
@@ -265,3 +304,96 @@ class Mission(object):
             if time() - time_start > OVERTIME_THRESHOLD:
                 logger.warning("[MISSION] Waypoint overtime")
                 return
+
+    def across_hoop(self, type: int):
+        """
+        type: 0: 顺X轴方向穿过, 1: 逆X轴方向穿过
+        """
+        left_distance = 0
+        right_distance = 0
+        left_rad = 0
+        right_rad = 0
+        delta_y_distance = 0
+        x_distance = 0
+        calu_deg = lambda x: x * 90 + x * type * 90
+
+        while True:
+            sleep(0.1)
+            left_point = self.radar.map.find_nearest(calu_deg(-1), calu_deg(0), 1, 1800)
+            if left_point is not None:
+                right_point = self.radar.map.find_nearest(
+                    calu_deg(0), calu_deg(1), 1, 1800
+                )
+                if right_point is not None:
+                    left_distance = left_point[0].distance / 10  # cm
+                    right_distance = right_point[0].distance / 10
+                    left_rad = np.deg2rad(360 - left_point[0].degree)
+                    right_rad = np.deg2rad(right_point[0].degree)
+                    x_distance = left_distance * np.cos(left_rad)
+                    delta_y_distance = (
+                        left_distance * np.sin(left_rad)
+                        - right_distance * np.sin(right_rad)
+                    ) / 2
+                    logger.info(
+                        "[MISSION] Deviate distance: %.2f cm" % delta_y_distance
+                    )
+                    if delta_y_distance < 3:
+                        logger.info("[MISSION] Ready to across the hula hoop")
+                        break
+                    else:
+                        current_point = np.array(
+                            [self.radar.rt_pose[0], self.radar.rt_pose[1]]
+                        )
+                        self.navigation_to_waypoint(
+                            current_point + np.array([0, delta_y_distance])
+                        )
+                        self.wait_for_waypoint()
+        current_point = np.array([self.radar.rt_pose[0], self.radar.rt_pose[1]])
+        if type == 0:
+            self.navigation_to_waypoint(current_point + np.array([2 * x_distance, 0]))
+        else:
+            self.navigation_to_waypoint(current_point + np.array([-2 * x_distance, 0]))
+        self.wait_for_waypoint()
+
+    def handling_goods(self, type: int):
+        """
+        type: 0->取货   1->放货
+        """
+        if type == 0:
+            for i in range(3):
+                self.fc.set_digital_output(2, 1)
+                self.fc.set_rgb_led(255, 0, 0)
+                sleep(0.2)
+                self.fc.set_digital_output(2, 0)
+                self.fc.set_rgb_led(0, 0, 0)
+                sleep(0.2)
+        elif type == 1:
+            for i in range(3):
+                self.fc.set_digital_output(2, 1)
+                self.fc.set_rgb_led(0, 0, 255)
+                sleep(0.2)
+                self.fc.set_digital_output(2, 0)
+                self.fc.set_rgb_led(0, 0, 0)
+                sleep(0.2)
+
+    def avoidance_task(self):
+        """
+        开启实时避障,未完成
+        """
+        paused = False
+        while self.running:
+            sleep(0.1)
+            if self.avoidance_flag:
+                if paused:
+                    paused = False
+                    self.radar.start_find_point(2.5, 0, 0, 359, 1, 800)
+                if self.radar.fp_points[0].distance < 400:
+                    logger.info("[MISSION] find obstacle")
+                    self.height_pid.setpoint = 180
+
+            else:
+                self.radar.stop_find_point()
+                if not paused:
+                    paused = True
+                    self.update_realtime_control(vel_z=0)
+                    logger.info("[MISSION] Avoidance paused")
