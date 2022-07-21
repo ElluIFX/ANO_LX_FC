@@ -28,22 +28,23 @@ TARGET_POINT3 = np.array([0, 0])  # 右下方
 # 基地点
 base_point = np.array([79, 425])
 # 钻圈点
-circle_in = np.array([148, 250])
-circle_out = circle_in + np.array([150, 0])
+circle_in = np.array([138, 250])
+circle_out = circle_in + np.array([130, 0])
 circle_speed = 30
+circle_height = 136
 # 降落点
 landing_point = base_point
 
-# target_pos_dict = {}
-# target_action_dict = {}
-# target_list = []
-target_pos_dict = {
-    "hospital": TARGET_POINT1,
-    "house": TARGET_POINT2,
-    "car": TARGET_POINT3,
-}
-target_action_dict = {"hospital": 1, "house": 2, "car": 1}
-target_list = ["hospital", "house", "car"]
+target_pos_dict = {}
+target_action_dict = {}
+target_list = []
+# target_pos_dict = {
+#     "hospital": TARGET_POINT1,
+#     "house": TARGET_POINT2,
+#     "car": TARGET_POINT3,
+# }
+# target_action_dict = {"hospital": 1, "house": 2, "car": 1}
+# target_list = ["hospital", "house", "car"]
 
 
 class Mission(object):
@@ -87,8 +88,8 @@ class Mission(object):
         self.avoidance_flag = False
         self.running = False
         self.thread_list = []
-        vision_debug()
-        
+        # vision_debug()
+
     def stop(self):
         self.running = False
         self.fc.stop_realtime_control()
@@ -98,11 +99,11 @@ class Mission(object):
         radar = self.radar
         cam = self.cam
         ############### 参数 #################
-        camera_down_pwm = 32.5
-        camera_up_pwm = 72
+        self.camera_down_pwm = 32.5
+        self.camera_up_pwm = 72
         self.navigation_speed = 30  # 导航速度
         self.cruise_height = 135  # 巡航高度
-        set_buzzer = lambda x: fc.set_digital_output(0, x)
+        self.set_buzzer = lambda x: fc.set_digital_output(0, x)
         ################ 启动线程 ################
         self.running = True
         self.thread_list.append(
@@ -120,38 +121,29 @@ class Mission(object):
         set_cam_autowb(cam, False)  # 关闭自动白平衡
         for _ in range(10):
             cam.read()
-        fc.set_PWM_output(0, camera_up_pwm)
+        fc.set_PWM_output(0, self.camera_up_pwm)
         fc.set_flight_mode(fc.PROGRAM_MODE)
         self.set_navigation_speed(self.navigation_speed)
-        # self.read_mission_info()
+        self.read_mission_info()
         fc.set_rgb_led(255, 0, 255)
-        # fc.event.key_short.wait_clear()
-        fc.set_PWM_output(0, camera_down_pwm)
+        fc.event.key_short.wait_clear()
         fc.set_rgb_led(255, 0, 0)  # 起飞前警告
         for i in range(10):
             sleep(0.1)
-            set_buzzer(True)
+            self.set_buzzer(True)
             sleep(0.1)
-            set_buzzer(False)
+            self.set_buzzer(False)
         fc.set_rgb_led(0, 0, 0)
+        fc.set_PWM_output(0, self.camera_down_pwm)
         fc.set_action_log(True)
+        return
         ################ 初始化完成 ################
         logger.info("[MISSION] Mission-1 Started")
         self.pointing_takeoff(base_point)
         ######## 穿过呼啦圈
-        last_height_setpoint = self.height_pid.setpoint
-        self.height_pid.setpoint = 136
-        self.navigation_to_waypoint(circle_in)
-        self.wait_for_waypoint()
-        sleep(2)
-        self.keep_height_flag = False
-        self.set_navigation_speed(circle_speed)
-        self.navigation_to_waypoint(circle_out)
-        self.wait_for_waypoint()
-        self.keep_height_flag = True
-        sleep(2)
-        self.set_navigation_speed(self.navigation_speed)
-        self.height_pid.setpoint = last_height_setpoint
+        self.across_hoop(0)
+        self.across_hoop(1)
+        self.pointing_land(landing_point)
         return
         ######## 依次前往三个建筑物
         for i in range(3):
@@ -178,16 +170,17 @@ class Mission(object):
         定点起飞
         """
         logger.info(f"[MISSION] Takeoff at {point}")
+        self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
         self.fc.unlock()
         sleep(2)  # 等待电机启动
-        self.fc.take_off(60)
+        self.fc.take_off(80)
         self.fc.wait_for_takeoff_done()
         ######## 闭环定高
         self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
         self.height_pid.setpoint = self.cruise_height
         self.keep_height_flag = True
-        self.fc.start_realtime_control(15)
-        sleep(1.5)
+        self.fc.start_realtime_control(10)
+        sleep(2)
         self.navigation_to_waypoint(point)  # 初始化路径点
         sleep(0.1)
         self.navigation_flag = True
@@ -197,18 +190,18 @@ class Mission(object):
         定点降落
         """
         logger.info(f"[MISSION] Landing at {point}")
-        sleep(2)
+        self.navigation_to_waypoint(point)
+        self.wait_for_waypoint()
+        sleep(1)
         self.height_pid.setpoint = 60
         sleep(1.5)
         self.wait_for_waypoint()
         self.height_pid.setpoint = 20
         sleep(2)
         self.wait_for_waypoint()
-        self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
-        self.fc.stop_realtime_control()
-        self.fc.land()
-        if not self.fc.wait_for_lock():
-            self.fc.lock()
+        self.height_pid.setpoint = 0
+        self.fc.wait_for_lock(6)
+        self.fc.lock()
 
     def keep_height_task(self):
         paused = False
@@ -235,7 +228,7 @@ class Mission(object):
         ######## 解算参数 ########
         SIZE = 1000
         SCALE_RATIO = 0.5
-        LOW_PASS_RATIO = 0.5
+        LOW_PASS_RATIO = 0.2
         ########################
         paused = False
         while self.running:
@@ -279,9 +272,10 @@ class Mission(object):
                     out_yaw = int(self.navi_yaw_pid(current_yaw))
                     if out_yaw is not None:
                         self.fc.update_realtime_control(yaw=out_yaw)
-                    logger.debug(
-                        f"[MISSION] Current pose: {current_x}, {current_y}, {current_yaw}; Output: {out_x}, {out_y}, {out_yaw}"
-                    )
+                    if False:  # debug
+                        logger.debug(
+                            f"[MISSION] Current pose: {current_x}, {current_y}, {current_yaw}; Output: {out_x}, {out_y}, {out_yaw}"
+                        )
             else:
                 self.radar.stop_resolve_pose()
                 if not paused:
@@ -301,26 +295,23 @@ class Mission(object):
         self.navi_x_pid.output_limits = (-speed, speed)
         self.navi_y_pid.output_limits = (-speed, speed)
 
-    def reached_waypoint(self):
-        THRESHOLD = 15
+    def reached_waypoint(self, pos_thres=15):
         return (
-            abs(self.radar.rt_pose[0] - self.navi_x_pid.setpoint) < THRESHOLD
-            and abs(self.radar.rt_pose[1] - self.navi_y_pid.setpoint) < THRESHOLD
+            abs(self.radar.rt_pose[0] - self.navi_x_pid.setpoint) < pos_thres
+            and abs(self.radar.rt_pose[1] - self.navi_y_pid.setpoint) < pos_thres
         )
 
-    def wait_for_waypoint(self):
-        TIME_THRESHOLD = 1
-        OVERTIME_THRESHOLD = 30
+    def wait_for_waypoint(self, time_thres=1, pos_thres=15, timeout=30):
         time_count = 0
         time_start = time()
         while True:
             sleep(0.1)
-            if self.reached_waypoint():
+            if self.reached_waypoint(pos_thres):
                 time_count += 0.1
-            if time_count >= TIME_THRESHOLD:
+            if time_count >= time_thres:
                 logger.info("[MISSION] Reached waypoint")
                 return
-            if time() - time_start > OVERTIME_THRESHOLD:
+            if time() - time_start > timeout:
                 logger.warning("[MISSION] Waypoint overtime")
                 return
 
@@ -405,51 +396,27 @@ class Mission(object):
         """
         type: 0: 顺X轴方向穿过, 1: 逆X轴方向穿过
         """
-        left_distance = 0
-        right_distance = 0
-        left_rad = 0
-        right_rad = 0
-        delta_y_distance = 0
-        x_distance = 0
-        calu_deg = lambda x: x * 90 + x * type * 90
-
-        while True:
-            sleep(0.1)
-            left_point = self.radar.map.find_nearest(calu_deg(-1), calu_deg(0), 1, 1800)
-            if left_point is not None:
-                right_point = self.radar.map.find_nearest(
-                    calu_deg(0), calu_deg(1), 1, 1800
-                )
-                if right_point is not None:
-                    left_distance = left_point[0].distance / 10  # cm
-                    right_distance = right_point[0].distance / 10
-                    left_rad = np.deg2rad(360 - left_point[0].degree)
-                    right_rad = np.deg2rad(right_point[0].degree)
-                    x_distance = left_distance * np.cos(left_rad)
-                    delta_y_distance = (
-                        left_distance * np.sin(left_rad)
-                        - right_distance * np.sin(right_rad)
-                    ) / 2
-                    logger.info(
-                        "[MISSION] Deviate distance: %.2f cm" % delta_y_distance
-                    )
-                    if delta_y_distance < 3:
-                        logger.info("[MISSION] Ready to across the hula hoop")
-                        break
-                    else:
-                        current_point = np.array(
-                            [self.radar.rt_pose[0], self.radar.rt_pose[1]]
-                        )
-                        self.navigation_to_waypoint(
-                            current_point + np.array([0, delta_y_distance])
-                        )
-                        self.wait_for_waypoint()
-        current_point = np.array([self.radar.rt_pose[0], self.radar.rt_pose[1]])
         if type == 0:
-            self.navigation_to_waypoint(current_point + np.array([2 * x_distance, 0]))
+            in_point = circle_in
+            out_point = circle_out
+        elif type == 1:
+            in_point = circle_out
+            out_point = circle_in
         else:
-            self.navigation_to_waypoint(current_point + np.array([-2 * x_distance, 0]))
-        self.wait_for_waypoint()
+            raise ValueError("type must be 0 or 1")
+        self.height_pid.setpoint = circle_height
+        self.navigation_to_waypoint(in_point)
+        self.wait_for_waypoint(time_thres=2)
+        sleep(0.5)
+        self.keep_height_flag = False
+        sleep(0.5)
+        self.set_navigation_speed(circle_speed)
+        self.navigation_to_waypoint(out_point)
+        self.wait_for_waypoint(time_thres=2)
+        self.keep_height_flag = True
+        sleep(1)
+        self.set_navigation_speed(self.navigation_speed)
+        self.height_pid.setpoint = self.cruise_height
 
     def handling_goods(self, type: int):
         """
@@ -457,18 +424,18 @@ class Mission(object):
         """
         if type == 1:
             for i in range(3):
-                self.fc.set_digital_output(2, 1)
-                self.fc.set_rgb_led(255, 0, 0)
+                self.set_buzzer(True)
+                self.fc.set_rgb_led(255, 255, 0)
                 sleep(0.2)
-                self.fc.set_digital_output(2, 0)
+                self.set_buzzer(False)
                 self.fc.set_rgb_led(0, 0, 0)
                 sleep(0.2)
         elif type == 2:
             for i in range(3):
-                self.fc.set_digital_output(2, 1)
+                self.set_buzzer(True)
                 self.fc.set_rgb_led(0, 0, 255)
                 sleep(0.2)
-                self.fc.set_digital_output(2, 0)
+                self.set_buzzer(False)
                 self.fc.set_rgb_led(0, 0, 0)
                 sleep(0.2)
 

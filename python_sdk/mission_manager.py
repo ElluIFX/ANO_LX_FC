@@ -4,11 +4,10 @@ import sys
 ####### 清理日志 #######
 path = os.path.dirname(os.path.abspath(__file__))
 log_path = os.path.join(path, "fc_log.log")
-if os.path.exists(log_path):
-    try:
-        os.remove(log_path)
-    except:
-        pass
+try:
+    os.remove(log_path)
+except:
+    pass
 ####################
 from time import sleep, time
 
