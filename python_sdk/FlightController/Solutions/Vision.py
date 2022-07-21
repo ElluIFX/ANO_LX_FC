@@ -790,6 +790,17 @@ def set_cam_autowb(cam, enable=True, manual_temp=5500):
         cam.set(cv2.CAP_PROP_WB_TEMPERATURE, manual_temp)
 
 
+def set_cam_autoexp(cam, enable=True, manual_exposure=0.25):
+    """
+    设置摄像头自动曝光
+    enable: 是否启用自动曝光
+    manual_exposure: 手动模式下的曝光时间
+    """
+    cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, int(enable))
+    if not enable:
+        cam.set(cv2.CAP_PROP_EXPOSURE, manual_exposure)
+
+
 class fps_counter:
     def __init__(self, max_sample=60) -> None:
         self.t = time.time()
@@ -810,3 +821,72 @@ class fps_counter:
             return 0.0
         else:
             return length / sum_t
+
+
+def stack_images(imgArray, scale=0.5, lables=[]) -> np.ndarray:
+    """
+    将多张图像合并成一张图像
+    imgArray: 图像阵列 (单行 [img1, img2, img3, ...] 或多行 [[img11, img12,...], [img21, img22, ...], ...])
+    lables: 图像标签阵列, 形式应与imgArray一致
+    scale: 图像缩放比例
+    """
+    rows = len(imgArray)
+    cols = len(imgArray[0])
+    rowsAvailable = isinstance(imgArray[0], list)
+    width = imgArray[0][0].shape[1]
+    height = imgArray[0][0].shape[0]
+    blank_img = np.zeros_like(imgArray[0][0])
+    if rowsAvailable:
+        for r in range(rows):
+            if len(imgArray[r]) != cols:
+                diff = cols - len(imgArray[r])
+                for _ in range(diff):
+                    imgArray[r].append(blank_img)
+        for x in range(0, rows):
+            for y in range(0, cols):
+                imgArray[x][y] = cv2.resize(imgArray[x][y], (0, 0), None, scale, scale)
+                if len(imgArray[x][y].shape) == 2:
+                    imgArray[x][y] = cv2.cvtColor(imgArray[x][y], cv2.COLOR_GRAY2BGR)
+        imageBlank = np.zeros((height, width, 3), np.uint8)
+        hor = [imageBlank] * rows
+        hor_con = [imageBlank] * rows
+        for x in range(0, rows):
+            hor[x] = np.hstack(imgArray[x])
+            hor_con[x] = np.concatenate(imgArray[x])
+        ver = np.vstack(hor)
+        ver_con = np.concatenate(hor)
+    else:
+        for x in range(0, rows):
+            imgArray[x] = cv2.resize(imgArray[x], (0, 0), None, scale, scale)
+            if len(imgArray[x].shape) == 2:
+                imgArray[x] = cv2.cvtColor(imgArray[x], cv2.COLOR_GRAY2BGR)
+        hor = np.hstack(imgArray)
+        hor_con = np.concatenate(imgArray)
+        ver = hor
+    if len(lables) != 0:
+        eachImgWidth = int(ver.shape[1] / cols)
+        eachImgHeight = int(ver.shape[0] / rows)
+        for d in range(0, rows):
+            for c in range(0, cols):
+                text = str(lables[d][c])
+                text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0]
+                cv2.rectangle(
+                    ver,
+                    (c * eachImgWidth, eachImgHeight * d),
+                    (
+                        c * eachImgWidth + text_size[0] + 10,
+                        eachImgHeight * d + text_size[1] + 10,
+                    ),
+                    (0, 0, 0),
+                    cv2.FILLED,
+                )
+                cv2.putText(
+                    ver,
+                    str(lables[d][c]),
+                    (eachImgWidth * c + 5, eachImgHeight * d + 15),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (255, 255, 255),
+                    1,
+                )
+    return ver
