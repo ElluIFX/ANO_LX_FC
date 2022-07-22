@@ -58,21 +58,21 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         )
         self._action_log("set rgb led", f"#{r:02X}{g:02X}{b:02X}")
 
-    def send_general_position(self, x: int, y: int, z: int) -> None:
+    def send_general_position(
+        self, x: int = -2_147_483_648, y: int = -2_147_483_648, z: int = -2_147_483_648
+    ) -> None:
         """
         通用数据传感器回传
         x,y,z: cm
+        默认值 -2_147_483_648 代表输入无效
         """
-        # FIXME: 当前不工作,上位机查看不到对应的数据,问题应该在32的代码部分,或者匿名压根没实现这个功能
-        self._byte_temp1.reset(x, "s32", int)
-        self._byte_temp2.reset(y, "s32", int)
-        self._byte_temp3.reset(z, "s32", int)
+        x = x if x is not None else -2_147_483_648
+        y = y if y is not None else -2_147_483_648
+        z = z if z is not None else -2_147_483_648
+        data = struct.pack("<iii", int(x), int(y), int(z))
         self._send_32_command(
             0x02,
-            self._byte_temp1.bytes
-            + self._byte_temp2.bytes
-            + self._byte_temp3.bytes
-            + b"\x22",  # 帧结尾
+            data + b"\x22",  # 帧结尾
         )
 
     def send_realtime_control_data(

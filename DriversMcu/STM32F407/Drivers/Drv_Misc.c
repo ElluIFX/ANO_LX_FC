@@ -72,4 +72,8 @@ void DrvDOutInit(void) {
 void DrvMiscInit(void) {
   DrvButtonInit();
   DrvDOutInit();
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> dev
