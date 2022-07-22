@@ -24,6 +24,7 @@ class LD_Radar(object):
         self._rtpose_flag = False
         self.fp_points = []
         self.rt_pose = [0, 0, 0]
+        self._rt_pose_inited = [False, False, False]
         self.map = Map_360()
 
     def start(self, com_port, radar_type: str = "LD08", update_callback=None):
@@ -119,23 +120,38 @@ class LD_Radar(object):
                         )
                         x, y, yaw = radar_resolve_rt_pose(img)
                         if x is not None:
-                            self.rt_pose[0] += (
-                                x / self._rtpose_scale_ratio - self.rt_pose[0]
-                            ) * self._rtpose_low_pass_ratio
+                            if self._rt_pose_inited[0]:
+                                self.rt_pose[0] += (
+                                    x / self._rtpose_scale_ratio - self.rt_pose[0]
+                                ) * self._rtpose_low_pass_ratio
+                            else:
+                                self.rt_pose[0] = x / self._rtpose_scale_ratio
+                                self._rt_pose_inited[0] = True
                         if y is not None:
-                            self.rt_pose[1] += (
-                                y / self._rtpose_scale_ratio - self.rt_pose[1]
-                            ) * self._rtpose_low_pass_ratio
+                            if self._rt_pose_inited[1]:
+                                self.rt_pose[1] += (
+                                    y / self._rtpose_scale_ratio - self.rt_pose[1]
+                                ) * self._rtpose_low_pass_ratio
+                            else:
+                                self.rt_pose[1] = y / self._rtpose_scale_ratio
+                                self._rt_pose_inited[1] = True
                         if yaw is not None:
-                            self.rt_pose[2] += (
-                                yaw - self.rt_pose[2]
-                            ) * self._rtpose_low_pass_ratio
+                            if self._rt_pose_inited[2]:
+                                self.rt_pose[2] += (
+                                    yaw - self.rt_pose[2]
+                                ) * self._rtpose_low_pass_ratio
+                            else:
+                                self.rt_pose[2] = yaw
+                                self._rt_pose_inited[2] = True
                         self.rt_pose_update_event.set()
                 else:
                     logger.warning("[RADAR] Map resolve thread wait timeout")
             except Exception as e:
                 import traceback
-                logger.error(f"[RADAR] Map resolve thread error: {traceback.format_exc()}")
+
+                logger.error(
+                    f"[RADAR] Map resolve thread error: {traceback.format_exc()}"
+                )
                 time.sleep(0.5)
 
     def _init_radar_map(self):
@@ -327,6 +343,7 @@ class LD_Radar(object):
         self._rtpose_scale_ratio = scale_ratio
         self._rtpose_low_pass_ratio = low_pass_ratio
         self.rt_pose = [0, 0, 0]
+        self._rt_pose_inited = [False, False, False]
 
     def stop_resolve_pose(self):
         """
@@ -334,6 +351,7 @@ class LD_Radar(object):
         """
         self._rtpose_flag = False
         self.rt_pose = [0, 0, 0]
+        self._rt_pose_inited = [False, False, False]
         self.rt_pose_update_event.clear()
 
     def update_resolve_pose_args(
