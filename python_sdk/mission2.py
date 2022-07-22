@@ -20,8 +20,10 @@ def deg_360_180(deg):
         deg = deg - 360
     return deg
 
-TARGET_POINT1 = np.array([315, 419])# 任务点
-BASE_POINT = np.array([79, 425])# 基地点
+
+TARGET_POINT1 = np.array([325, 419])  # 任务点
+BASE_POINT = np.array([79, 425])  # 基地点
+
 
 class Mission(object):
     def __init__(self, fc: FC_Controller, radar: LD_Radar, camera: cv2.VideoCapture):
@@ -50,8 +52,8 @@ class Mission(object):
         )
         self.navi_yaw_pid = PID(
             0.3,
-            0.02,
-            0.1,
+            0.0,
+            0.2,
             setpoint=0,
             output_limits=(-45, 45),
             auto_mode=False,
@@ -59,8 +61,6 @@ class Mission(object):
         #####################################
         self.keep_height_flag = False
         self.navigation_flag = False
-        self.avoidance_flag = False
-        self.find_obstacle_flag = False
         self.running = False
         self.thread_list = []
         # vision_debug()
@@ -76,12 +76,12 @@ class Mission(object):
         ############### 参数 #################
         self.camera_down_pwm = 32.5
         self.camera_up_pwm = 72
-        self.navigation_speed = 25  # 导航速度
-        self.cruise_height = 125  # 巡航高度
+        self.navigation_speed = 15  # 导航速度
+        self.cruise_height = 115  # 巡航高度
         self.set_buzzer = lambda x: fc.set_digital_output(0, x)
         self.pid_tunings = {
             "default": (0.4, 0, 0.08),  # 导航
-            "landing": (0.3, 0.02, 0.12),  # 降落
+            "landing": (0.25, 0.02, 0.06),  # 降落
             "circle": (0.5, 0, 0.08),  # 钻圈
         }  # PID参数
         ################ 启动线程 ################
@@ -94,13 +94,8 @@ class Mission(object):
             threading.Thread(target=self.navigation_task, daemon=True)
         )
         self.thread_list[-1].start()
-        self.thread_list.append(
-            threading.Thread(target=self.avoidance_task, daemon=True)
-        )
-        self.thread_list[-1].start()
         logger.info("[MISSION] Threads started")
         ################ 初始化 ################
-        self.init_avoidance_args(0)
         fc.set_action_log(False)
         fc.set_flight_mode(fc.PROGRAM_MODE)
         self.set_navigation_speed(self.navigation_speed)
@@ -120,23 +115,11 @@ class Mission(object):
         self.pointing_takeoff(BASE_POINT)
         ################ 前往目标点 ################
         self.navigation_to_waypoint(TARGET_POINT1)
-        self.avoidance_flag = True
-        time_count = 0
-        while self.avoidance_flag: # 等待到达同时开启避障
-            sleep(0.1)
-            if self.reached_waypoint():
-                time_count += 0.1
-            if time_count >= 1:
-                self.avoidance_flag = False
-                logger.info("[MISSION] Reached waypoint")
-                break
-            if self.find_obstacle_flag:
-                self.avoidance_obstacle()
-                break
+        self.set_avoidance_args(0)
+        self.wait_for_waypoint_with_avoidance()
         ################ 到达目标点 ################
         self.pointing_landing(TARGET_POINT1)
         logger.info("[MISSION] Misson-2 Finished")
-
 
     def pointing_takeoff(self, point):
         """
@@ -298,79 +281,69 @@ class Mission(object):
                 logger.warning("[MISSION] Waypoint overtime")
                 return
 
-    def avoidance_task(self):
-        """
-        实时避障DEMO
-        在检测到障碍物后升高巡航速度
-        移动指定距离后降低巡航高度
-        """
-        paused = False
-        while self.running:
+    def wait_for_waypoint_with_avoidance(self, time_thres=1, pos_thres=15, timeout=60):
+        time_count = 0
+        time_start = time()
+        while True:
             sleep(0.1)
-            if self.avoidance_flag:
-                if paused:
-                    paused = False
-                    self.radar.start_find_point(
-                        2.5, 0, self.fp_from, self.fp_to, 1, 800
-                    )
-                if self.radar.fp_points[0].distance < 400:
-                    self.avoidance_flag = False
-                    self.find_obstacle_flag = True
-                    logger.info("[MISSION] find obstacle")
+            if self.reached_waypoint(pos_thres):
+                time_count += 0.1
+            if time_count >= time_thres:
+                logger.info("[MISSION] Reached waypoint")
+                return
+            if time() - time_start > timeout:
+                logger.warning("[MISSION] Waypoint overtime")
+                return
+            self.avoidance_handler()
 
-            else:
-                self.radar.stop_find_point()
-                if not paused:
-                    paused = True
-                    logger.info("[MISSION] Avoidance paused")
-
-    def avoidance_obstacle(self):
-        waypoint_x = self.navi_x_pid.setpoint
-        waypoint_y = self.navi_y_pid.setpoint
-        self.navigation_flag = False
-        self.fc.update_realtime_control(0, 0, yaw=0)
-        current_x = self.radar.rt_pose[0]
-        current_y = self.radar.rt_pose[1]
-        self.height_pid.setpoint = self.avoidance_height
-        for i in range(3):
+    def avoidance_handler(self):
+        points = self.radar.map.find_nearest(
+            self._avd_fp_from, self._avd_fp_to, 1, self._avd_fp_dist
+        )
+        if len(points) > 0:
+            logger.info("[MISSION] Found obstacle")
+            waypoint = np.array([self.navi_x_pid.setpoint, self.navi_y_pid.setpoint])
+            pos_point = np.array([self.radar.rt_pose[0], self.radar.rt_pose[1]])
+            self.navigation_to_waypoint(pos_point)  # 原地停下
+            self.height_pid.setpoint = self._avd_height
             self.set_buzzer(True)
             self.fc.set_rgb_led(255, 0, 0)
-            sleep(0.2)
+            sleep(1)
             self.set_buzzer(False)
             self.fc.set_rgb_led(0, 0, 0)
-            sleep(0.2)
-        sleep(2)  # 等待高度稳定
-        self.navigation_to_waypoint(
-            np.array([current_x, current_y])
-            + np.array([self.avoidance_dist, 0])
-        )
-        self.wait_for_waypoint()
-        sleep(1)
-        self.navigation_to_waypoint(np.array([waypoint_x, waypoint_y]))
-        self.wait_for_waypoint()
+            sleep(1)  # 等待高度稳定
+            self.keep_height_flag = False
+            self.navigation_flag = False
+            self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
+            self.fc.horizontal_move(self._avd_move, 25, self._avd_deg)
+            self.fc.set_rgb_led(255, 255, 0)
+            self.fc.wait_for_last_command_done()
+            self.fc.set_rgb_led(0, 0, 0)
+            self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
+            self.keep_height_flag = True
+            self.height_pid.setpoint = self.cruise_height
+            sleep(1)  # 等待高度稳定
+            self.navigation_flag = True
+            self.navigation_to_waypoint(waypoint)
 
-    def init_avoidance_args(self, type: int = 1, height: int = 180, move: int = 50):
+    def set_avoidance_args(
+        self,
+        deg: int = 0,
+        deg_range: int = 30,
+        dist: int = 600,
+        avd_height: int = 200,
+        avd_move: int = 180,
+    ):
         """
-        type: 0 -> 起飞后正前方120度范围内找点
-        type: 1 -> 过呼啦圈后避障,在前方180读范围内找点
-        type: 2 -> 1号点起飞后避障,在右方120度范围内找点
-        type: 3 -> 2号,3号点起飞后避障,在左方120度范围内找点
-        height: 避障高度
-        move: 避障距离
+        fp_deg: 目标避障角度(deg) (0~360)
+        fp_deg_range: 目标避障角度范围(deg)
+        fp_dist: 目标避障距离(mm)
+        avd_height: 避障目标高度(cm)
+        avd_move: 避障移动距离(cm)
         """
-        if type == 0:
-            self.fp_from = -60
-            self.fp_to = 60
-        elif type == 1:
-            self.fp_from = -90
-            self.fp_to = 90
-        elif type == 2:
-            self.fp_from = 0
-            self.fp_to = 120
-        elif type == 3:
-            self.fp_from = -120
-            self.fp_to = 0
-        else:
-            raise ValueError("type must be 0, 1, 2 or 3")
-        self.avoidance_height = height
-        self.avoidance_dist = move
+        self._avd_fp_from = deg - deg_range
+        self._avd_fp_to = deg + deg_range
+        self._avd_fp_dist = dist
+        self._avd_height = avd_height
+        self._avd_deg = deg
+        self._avd_move = avd_move

@@ -37,20 +37,20 @@ circle_height = 136
 # 降落点
 landing_point = BASE_POINT
 
-# target_pos_dict = {}
-# target_action_dict = {}
-# target_list = []
-target_pos_dict = {
-    "car": TARGET_POINT1,
-    "house": TARGET_POINT2,
-    "hospital": TARGET_POINT3,
-}
-target_action_dict = {"hospital": 1, "house": 2, "car": 1}
-target_list = [
-    "house",
-    "car",
-    "hospital",
-]
+target_pos_dict = {}
+target_action_dict = {}
+target_list = []
+# target_pos_dict = {
+#     "car": TARGET_POINT1,
+#     "house": TARGET_POINT2,
+#     "hospital": TARGET_POINT3,
+# }
+# target_action_dict = {"hospital": 1, "house": 2, "car": 1}
+# target_list = [
+#     "house",
+#     "car",
+#     "hospital",
+# ]
 
 
 class Mission(object):
@@ -91,7 +91,6 @@ class Mission(object):
         #####################################
         self.keep_height_flag = False
         self.navigation_flag = False
-        self.avoidance_flag = False
         self.running = False
         self.thread_list = []
         # vision_debug()
@@ -135,9 +134,9 @@ class Mission(object):
         fc.set_PWM_output(0, self.camera_up_pwm)
         fc.set_flight_mode(fc.PROGRAM_MODE)
         self.set_navigation_speed(self.navigation_speed)
-        # self.read_mission_info()
+        self.read_mission_info()
         fc.set_rgb_led(255, 0, 255)
-        # fc.event.key_short.wait_clear()
+        fc.event.key_short.wait_clear()
         fc.set_rgb_led(255, 0, 0)  # 起飞前警告
         for i in range(10):
             sleep(0.1)
