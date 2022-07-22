@@ -17,7 +17,7 @@ from FlightController.Components import LD_Radar, Map_360, Point_2D
 
 
 def self_reboot():
-    logger.info("[MISSION] Manager Restarting")
+    logger.info("[MANAGER] Manager Restarting")
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 
@@ -25,13 +25,15 @@ try:
     fc = FC_Client()
     fc.connect()
     fc.start_sync_state(False)
+    fc.wait_for_connection(5)
 except:
-    logger.warning("[MISSION] Manager Connecting Failed, Switching to Local Mode")
+    logger.warning("[MANAGER] Manager Connecting Failed, Switching to Local Mode")
     try:
         fc = FC_Controller()
         fc.start_listen_serial("/dev/serial0", print_state=False)
+        fc.wait_for_connection(5)
     except:
-        logger.error("[MISSION] Local Mode Failed, Restarting")
+        logger.error("[MANAGER] Local Mode Failed, Restarting")
         sleep(1)
         self_reboot()
 
@@ -39,15 +41,18 @@ fc.event.key_short.clear()
 fc.event.key_double.clear()
 fc.event.key_long.clear()
 fc.set_rgb_led(0, 0, 0)
+fc.set_action_log(False)
 
 try:
     radar = LD_Radar()
     radar.start("/dev/ttyUSB0", "LD06")
 except:
-    logger.warning("[MISSION] Radar Connecting Failed")
-    fc.set_rgb_led(255, 0, 0)
+    logger.warning("[MANAGER] Radar Connecting Failed")
     while True:
-        sleep(1)
+        fc.set_rgb_led(255, 0, 0)
+        sleep(0.5)
+        fc.set_rgb_led(0, 0, 0)
+        sleep(0.5)
         if fc.event.key_short.is_set():
             self_reboot()
 try:
@@ -56,10 +61,12 @@ try:
         cam.open(0)
     assert cam.isOpened()
 except:
-    logger.warning("[MISSION] Camera Opening Failed")
-    fc.set_rgb_led(255, 255, 0)
+    logger.warning("[MANAGER] Camera Opening Failed")
     while True:
-        sleep(1)
+        fc.set_rgb_led(255, 255, 0)
+        sleep(0.5)
+        fc.set_rgb_led(0, 0, 0)
+        sleep(0.5)
         if fc.event.key_short.is_set():
             self_reboot()
 
@@ -71,13 +78,11 @@ camera_up_45_pwm = 91.75
 set_button_led = lambda x: fc.set_digital_output(1, x)
 set_buzzer = lambda x: fc.set_digital_output(0, x)
 ############################## 初始化 ##############################
-logger.info("[MISSION] Self-Checking Passed")
+logger.info("[MANAGER] Self-Checking Passed")
 fc.set_rgb_led(0, 255, 0)
-sleep(0.7)
+sleep(1)
 fc.set_rgb_led(0, 0, 0)
 
-fc.wait_for_connection()
-fc.set_action_log(False)
 
 fc.set_PWM_output(0, camera_up_pwm)
 fc.set_rgb_led(0, 0, 0)
@@ -86,8 +91,9 @@ fc.set_flight_mode(fc.PROGRAM_MODE)
 target_mission = None
 total_mission = 3
 _light_cnt = 0
+_testing = False
 
-logger.info("[MISSION] Selecting mission...")
+logger.info("[MANAGER] Selecting mission...")
 if target_mission is None:
     target_mission = 1
     while True:
@@ -113,9 +119,11 @@ if target_mission is None:
                 fc.set_rgb_led(0, 0, 0)
                 sleep(0.2)
             break
+else:
+    _testing = True
 set_button_led(False)
 ############################## 开始任务 ##############################
-logger.info(f"[MISSION] Target Mission: {target_mission}")
+logger.info(f"[MANAGER] Target Mission: {target_mission}")
 fc.set_action_log(True)
 mission = None
 try:
@@ -131,20 +139,20 @@ try:
         from mission3 import Mission
 
         mission = Mission(fc, radar, cam)
-    logger.info("[MISSION] Calling Mission")
+    logger.info("[MANAGER] Calling Mission")
 
     mission.run()
 
-    logger.info("[MISSION] Mission Finished")
+    logger.info("[MANAGER] Mission Finished")
 except Exception as e:
     import traceback
 
-    logger.error(f"[MISSION] Mission Failed: {traceback.format_exc()}")
+    logger.error(f"[MANAGER] Mission Failed: {traceback.format_exc()}")
 finally:
     if mission is not None:
         mission.stop()
     if fc.state.unlock.value:
-        logger.warning("[MISSION] Auto Landing")
+        logger.warning("[MANAGER] Auto Landing")
         fc.set_flight_mode(fc.PROGRAM_MODE)
         fc.stablize()
         fc.land()
@@ -164,3 +172,5 @@ fc.quit()
 cam.release()
 
 ########################## 重启自身 #############################
+if not _testing:
+    self_reboot()
