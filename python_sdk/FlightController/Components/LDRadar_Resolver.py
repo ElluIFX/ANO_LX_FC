@@ -254,6 +254,8 @@ class Map_360(object):
         """
         if view is None:
             view = (self.data < range_limit) & (self.data != -1)
+            from_ %= 360
+            to_ %= 360
             if from_ > to_:
                 view[to_ + 2 : from_] = False
             else:
@@ -284,6 +286,8 @@ class Map_360(object):
         range_limit: int 距离限制
         """
         view = (self.data < range_limit) & (self.data != -1)
+        from_ %= 360
+        to_ %= 360
         if from_ > to_:
             view[to_ + 2 : from_] = False
         else:
