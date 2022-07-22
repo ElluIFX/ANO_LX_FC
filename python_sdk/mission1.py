@@ -22,8 +22,8 @@ def deg_360_180(deg):
     return deg
 
 
-TARGET_POINT1 = np.array([315, 419])  # 左上方
-TARGET_POINT2 = np.array([315, 71])  # 右上方
+TARGET_POINT1 = np.array([325, 419])  # 左上方
+TARGET_POINT2 = np.array([325, 71])  # 右上方
 TARGET_POINT3 = np.array([73, 73])  # 右下方
 # 基地点
 BASE_POINT = np.array([79, 425])
@@ -82,8 +82,8 @@ class Mission(object):
         )
         self.navi_yaw_pid = PID(
             0.3,
-            0.02,
-            0.1,
+            0.0,
+            0.2,
             setpoint=0,
             output_limits=(-45, 45),
             auto_mode=False,
@@ -112,9 +112,9 @@ class Mission(object):
         self.set_buzzer = lambda x: fc.set_digital_output(0, x)
         self.pid_tunings = {
             "default": (0.4, 0, 0.08),  # 导航
-            "landing": (0.3, 0.02, 0.12),  # 降落
+            "landing": (0.25, 0.02, 0.06),  # 降落
             "circle": (0.5, 0, 0.08),  # 钻圈
-        }  # PID参数
+        }  # PID参数 (仅导航XY使用)
         ################ 启动线程 ################
         self.running = True
         self.thread_list.append(
