@@ -93,11 +93,11 @@ void WS2812_SetRGB(uint32_t rgb_data, uint8_t index) {
  * during transmission.
  */
 void WS2812_SendBuf(void) {
-  // __disable_irq();  // disable all interrupts
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, DISABLE);
+  __disable_irq();  // disable all interrupts
+  // RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, DISABLE);
   WS2812_SendBit(ws2812_buf, WS2812_NUM);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);
-  // __enable_irq();  // enable all interrupts
+  // RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);
+  __enable_irq();  // enable all interrupts
 }
 
 /**
