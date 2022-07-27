@@ -1,5 +1,4 @@
 import threading
-from re import S
 from time import sleep, time
 
 import cv2
@@ -8,7 +7,6 @@ from FlightController import FC_Client, FC_Controller, logger
 from FlightController.Components import LD_Radar, Map_360, Point_2D
 from FlightController.Solutions.Vision import (
     change_cam_resolution,
-    find_QRcode_zbar,
     set_cam_autowb,
     vision_debug,
 )
@@ -24,8 +22,26 @@ def deg_360_180(deg):
 
 # 基地点
 BASE_POINT = np.array([79, 425])
+# 任务点
+LEFT_UP_POINT = np.array([350, 375])
+RIGHT_UP_POINT = np.array([350, 75])
+RIGHT_DOWN_POINT = np.array([50, 75])
+m_point = (
+    lambda x, y: (RIGHT_UP_POINT - LEFT_UP_POINT) / 4 * x
+    + (RIGHT_DOWN_POINT - RIGHT_UP_POINT) / 4 * y
+    + LEFT_UP_POINT
+)  # 坐标系定义: 以左上角为(0,0),向右为x轴,向下为y轴
+RED_TRIANGLES = [m_point(0, 0) + m_point(2, 2)]
+RED_RECTANGLES = [m_point(0, 2) + m_point(2, 4)]
+RED_CIRCLES = [m_point(4, 0) + m_point(3, 3)]
+BLUE_TRIANGLES = [m_point(3, 1) + m_point(4, 4)]
+BLUE_RECTANGLES = [m_point(2, 0) + m_point(4, 2)]
+BLUE_CIRCLES = [m_point(1, 1) + m_point(1, 3)]
 # 降落点
 landing_point = BASE_POINT
+
+target_points = [m_point(1, 1), m_point(3, 3)]
+
 
 class Mission(object):
     def __init__(self, fc: FC_Controller, radar: LD_Radar, camera: cv2.VideoCapture):
@@ -81,11 +97,11 @@ class Mission(object):
         self.camera_down_pwm = 32.5
         self.camera_up_pwm = 72
         self.navigation_speed = 25  # 导航速度
-        self.cruise_height = 125  # 巡航高度
-        self.set_buzzer = lambda x: fc.set_digital_output(0, x)
+        self.cruise_height = 140  # 巡航高度
+        self.goods_height = 80  # 处理物品高度
         self.pid_tunings = {
             "default": (0.4, 0, 0.08),  # 导航
-            "landing": (0.25, 0.02, 0.06),  # 降落
+            "landing": (0.3, 0.02, 0.06),  # 降落
         }  # PID参数 (仅导航XY使用)
         ################ 启动线程 ################
         self.running = True
@@ -107,19 +123,24 @@ class Mission(object):
         fc.set_PWM_output(0, self.camera_up_pwm)
         fc.set_flight_mode(fc.PROGRAM_MODE)
         self.set_navigation_speed(self.navigation_speed)
-        fc.set_rgb_led(255, 0, 0)  # 起飞前警告
-        for i in range(10):
-            sleep(0.1)
-            self.set_buzzer(True)
-            sleep(0.1)
-            self.set_buzzer(False)
-        fc.set_rgb_led(0, 0, 0)
+        for i in range(6):
+            sleep(0.25)
+            fc.set_rgb_led(255, 0, 0)  # 起飞前警告
+            sleep(0.25)
+            fc.set_rgb_led(0, 0, 0)
+        fc.set_PWM_output(0, self.camera_down_pwm)
+        fc.set_digital_output(2, True)  # 激光笔开启
         fc.set_action_log(True)
         self.fc.start_realtime_control(20)
         self.switch_pid("default")
         ################ 初始化完成 ################
         logger.info("[MISSION] Mission-1 Started")
         self.pointing_takeoff(BASE_POINT)
+        ################ 开始任务 ################
+        for target_point in target_points:
+            self.navigation_to_waypoint(target_point)
+            self.wait_for_waypoint()
+            self.handle_goods()
         ######## 回到基地点
         logger.info("[MISSION] Go to base")
         self.navigation_to_waypoint(BASE_POINT)
@@ -141,11 +162,12 @@ class Mission(object):
         self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
         self.height_pid.setpoint = self.cruise_height
         self.keep_height_flag = True
-        sleep(2)
+        sleep(1)
         self.navigation_to_waypoint(point)  # 初始化路径点
         self.switch_pid("default")
         sleep(0.1)
         self.navigation_flag = True
+        sleep(1)
 
     def pointing_landing(self, point):
         """
@@ -157,14 +179,35 @@ class Mission(object):
         self.switch_pid("landing")
         sleep(1)
         self.height_pid.setpoint = 60
-        sleep(1.5)
+        sleep(1)
+        self.height_pid.setpoint = 40
+        sleep(1)
         self.wait_for_waypoint()
         self.height_pid.setpoint = 20
-        sleep(2)
+        sleep(3)
         self.wait_for_waypoint()
         self.height_pid.setpoint = 0
         self.fc.wait_for_lock(6)
         self.fc.lock()
+
+    def handle_goods(self):
+        """
+        处理物品
+        """
+        logger.info(f"[MISSION] Handle goods")
+        self.height_pid.setpoint = self.goods_height
+        sleep(1.5)  # 等待高度稳定
+        #####################################
+        # TODO:放下吊舱, 播放语音
+        self.fc.set_rgb_led(0, 255, 0)
+        ####################################
+        sleep(5)
+        #####################################
+        # TODO:收起吊舱
+        self.fc.set_rgb_led(0, 0, 0)
+        ####################################
+        self.height_pid.setpoint = self.cruise_height
+        sleep(1.5)  # 等待高度稳定
 
     def switch_pid(self, pid):
         """
@@ -312,10 +355,8 @@ class Mission(object):
             pos_point = np.array([self.radar.rt_pose[0], self.radar.rt_pose[1]])
             self.navigation_to_waypoint(pos_point)  # 原地停下
             self.height_pid.setpoint = self._avd_height
-            self.set_buzzer(True)
             self.fc.set_rgb_led(255, 0, 0)
             sleep(1)
-            self.set_buzzer(False)
             self.fc.set_rgb_led(0, 0, 0)
             sleep(1)  # 等待高度稳定
             self.keep_height_flag = False
@@ -338,7 +379,7 @@ class Mission(object):
         deg_range: int = 30,
         dist: int = 600,
         avd_height: int = 200,
-        avd_move: int = 180,
+        avd_move: int = 150,
     ):
         """
         fp_deg: 目标避障角度(deg) (0~360)
