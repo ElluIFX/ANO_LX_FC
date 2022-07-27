@@ -246,6 +246,11 @@ void UserCom_Task(float dT_s) {
       // 程控模式, 实时控制失效
       realtime_control_enable = 0;
       realtime_control_cnt = 0;
+      rt_tar.st_data.vel_x = 0;
+      rt_tar.st_data.vel_y = 0;
+      rt_tar.st_data.vel_z = 0;
+      rt_tar.st_data.yaw_dps = 0;
+      dt.fun[0x41].WTS = 1;  // 触发发送
     }
     if (realtime_control_enable) {
       realtime_control_cnt++;
