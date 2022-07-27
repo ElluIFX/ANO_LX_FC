@@ -335,7 +335,7 @@ class Map_360(object):
                     )
                     if abs(delta_dis - 110) < threshold:
                         return [fd_points[i], fd_points[j]]
-                    if abs(delta_dis) > 3:
+                    if abs(delta_dis) > 6:
                         eq_flag = False
             if eq_flag:
                 return [fd_points[0]]

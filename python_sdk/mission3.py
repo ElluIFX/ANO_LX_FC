@@ -19,6 +19,8 @@ from simple_pid import PID
 def deg_360_180(deg):
     if deg > 180:
         deg = deg - 360
+    elif deg < -180:
+        deg = deg + 360
     return deg
 
 
@@ -27,7 +29,7 @@ BASE_POINT = np.array([79, 425])
 # 降落点
 landing_point = BASE_POINT
 # 任务点
-start_point = np.array([50, 300])  # 待调
+start_point = np.array([90, 250])  # 待调
 
 
 class Mission(object):
@@ -127,7 +129,7 @@ class Mission(object):
         ############### 开始呼啦圈任务 ##############
         self.navigation_to_waypoint(start_point)
         self.wait_for_waypoint()
-        self.across_hoop(-60, 60, 2000)
+        self.across_hoop(-85, 85, 2000)
         ######## 原地降落
         self.fc.land()
         self.fc.wait_for_lock()
@@ -376,16 +378,23 @@ class Mission(object):
         self.navigation_flag = False
         self.height_pid.setpoint = self.across_height
 
-        init_move_flag  = True
+        init_move_flag = True
         yaw_flag = False
-        y_flag = False
+        x_flag = False
         start_time = time()
         while True:
             sleep(0.1)
             # 固定扫描角度
-            current_yaw = self.fc.state.yaw.value
-            dfrom = from_ - current_yaw
-            dto = to_ - current_yaw
+            current_yaw = deg_360_180(self.fc.state.yaw.value - self.initial_yaw)
+            if not yaw_flag:
+                dfrom = int(from_ - current_yaw)
+                dto = int(to_ - current_yaw)
+            else:
+                dfrom = -85
+                dto = 85
+            logger.info(
+                f"[hoop] current_yaw:{current_yaw} dfrom:{dfrom}  dto:{dto}"
+            )
             points = self.radar.map.find_two_different_nearest_point(
                 dfrom, dto, range_limit, dis_thre
             )
@@ -411,17 +420,6 @@ class Mission(object):
                     logger.info("[MISSION] Hoop yaw finish")
                 if yaw_flag:
                     mid_point = (a_point + b_point) / 2
-                    if mid_point[1] > 0:
-                        # 如果中点y坐标大于0，则应该向左移动
-                        self.fc.update_realtime_control(vel_y=10)
-                    elif mid_point[1] < 0:
-                        # 如果中点y坐标小于0，则应该向右移动
-                        self.fc.update_realtime_control(vel_y=-10)
-                    if abs(mid_point[1]) < 100:  # mm
-                        self.fc.update_realtime_control(vel_y=0)
-                        y_flag = True
-                if y_flag:
-                    mid_point = (a_point + b_point) / 2
                     if mid_point[0] > 500:
                         # 如果中点x坐标大于300mm，则应该向前移动
                         self.fc.update_realtime_control(vel_x=10)
@@ -429,6 +427,17 @@ class Mission(object):
                         # 如果中点x坐标小于300mm，则应该向后移动
                         self.fc.update_realtime_control(vel_x=-10)
                     if abs(mid_point[0] - 500) < 50:
+                        self.fc.update_realtime_control(vel_x=0)
+                        x_flag = True
+                if x_flag:
+                    mid_point = (a_point + b_point) / 2
+                    if mid_point[1] > 50:
+                        # 如果中点y坐标大于50，则应该向左移动
+                        self.fc.update_realtime_control(vel_y=10)
+                    elif mid_point[1] < -50:
+                        # 如果中点y坐标小于-50，则应该向右移动
+                        self.fc.update_realtime_control(vel_y=-10)
+                    if abs(mid_point[1]) < 50:  # mm
                         self.fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)
                         logger.info("[MISSION] Align Hoop finish")
                         break
@@ -443,7 +452,7 @@ class Mission(object):
         self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
         self.fc.stablize()
         sleep(0.5)
-        self.fc.horizontal_move(2.5 * mid_point[0], 25, 0)
+        self.fc.horizontal_move((2.5 * mid_point[0] + 50) / 10, 25, 0)
         self.fc.wait_for_last_command_done()
         self.keep_height_flag = True
         sleep(0.5)
