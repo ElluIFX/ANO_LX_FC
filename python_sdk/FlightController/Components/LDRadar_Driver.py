@@ -222,7 +222,43 @@ class LD_Radar(object):
                 0.4,
                 (255, 255, 0),
             )
-            add_p = self.fp_points
+            # add_p = self.fp_points
+            # 测试锁呼啦圈点
+            add_p = self.map.find_two_different_nearest_point(-60, 60, 2000, 5)
+            if len(add_p) == 2:
+                a_point = add_p[0].to_xy()
+                b_point = add_p[1].to_xy()
+                k = (b_point[0] - a_point[0]) / (
+                    a_point[1] - b_point[1]
+                )  # 换算到笛卡尔坐标系的斜率
+                cv2.putText(
+                    img_,
+                    f"k: {k}",
+                    (300, 10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (255, 255, 0),
+                )
+                mid_point = Point_2D()
+                mid_point.from_xy((a_point + b_point) / 2)
+                add_p.append(mid_point)
+                cv2.putText(
+                    img_,
+                    f"mx: {mid_point.to_xy()[0]}",
+                    (300, 35),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (255, 255, 0),
+                )
+                cv2.putText(
+                    img_,
+                    f"my: {mid_point.to_xy()[1]}",
+                    (300, 60),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (255, 255, 0),
+                )
+
             if self.__radar_map_info_angle != -1:
                 cv2.putText(
                     img_,

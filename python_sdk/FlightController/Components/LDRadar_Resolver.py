@@ -304,6 +304,46 @@ class Map_360(object):
         new_view[peak_deg] = True
         return self.find_nearest(from_, to_, num, range_limit, new_view)
 
+    def find_two_different_nearest_point(
+        self, from_: int = 0, to_: int = 359, range_limit: int = 1e7, threshold: int = 15
+    ):
+        """
+        在给定范围内查找两个不同的最近点
+        from_: int 起始角度
+        to_: int 结束角度(包含)
+        range_limit: int 距离限制
+        threshold: int 计算出的两点之间距离阈值
+        """
+        fd_points = self.find_nearest(
+            from_, to_, 500, range_limit
+        )  # 查找指定范围内的所有最近点
+        length = len(fd_points)
+        eq_flag = True
+        if length >= 2:
+            for i in range(length):
+                for j in range(i + 1, length):
+                    delta_deg = (
+                        abs(fd_points[i].degree - fd_points[j].degree) * np.pi / 180.0
+                    )
+                    delta_dis = np.sqrt(
+                        (fd_points[i].distance/10) ** 2
+                        + (fd_points[j].distance/10) ** 2
+                        - 2
+                        * (fd_points[i].distance/10)
+                        * (fd_points[j].distance/10)
+                        * np.cos(delta_deg)
+                    )
+                    if abs(delta_dis - 110) < threshold:
+                        return [fd_points[i], fd_points[j]]
+                    if abs(delta_dis) > 3:
+                        eq_flag = False
+            if eq_flag:
+                return [fd_points[0]]
+        elif length == 1:
+            return [fd_points[0]]
+        return []
+
+
     def draw_on_cv_image(
         self,
         img: np.ndarray,
