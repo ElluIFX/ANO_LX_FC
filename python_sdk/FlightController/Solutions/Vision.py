@@ -425,6 +425,44 @@ def color_recognition(img, threshold=0.4) -> Union[str, None]:
         return None
 
 
+def shape_recognition(img, image, LOWER, UPPER):
+    """
+    形状识别(圆、矩形、三角形)
+    LOWER, UPPER: HSV边界
+    return: 识别类型文本, 无法识别为unknown
+    """
+    shapes = {}
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, LOWER, UPPER)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 3))
+    closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    closed = cv2.erode(closed, None, iterations=4)
+    closed = cv2.dilate(closed, None, iterations=5)
+    cv2.imshow("mask", mask)
+
+    contours, hierarchy = cv2.findContours(
+        mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
+    if len(contours) > 0:
+        for cnt in range(len(contours)):
+            cv2.drawContours(image, contours, cnt, (0, 255, 0), 2)
+        cv2.imshow("contours", image)
+        epsilon = 0.01 * cv2.arcLength(contours[cnt], True)
+        approx = cv2.approxPolyDP(contours[cnt], epsilon, True)
+        corners = len(approx)
+        if corners == 3:
+            shapes["triangle"] = shapes.get("triangle", 0) + 1
+        if corners == 4:
+            shapes["rectangle"] = shapes.get("rectangle", 0) + 1
+        if corners >= 10:
+            shapes["circle"] = shapes.get("circle", 0) + 1
+    if len(shapes) == 0:
+        return "unknown"
+    max_shape = max(shapes, key=shapes.get)
+    max_num = shapes[max_shape]
+    return max_shape
+
+
 def hsv_checker(img, lower, upper, threshold=0.4) -> bool:
     """
     计算hsv图像中目标色值占比是否超过阈值
@@ -742,8 +780,11 @@ def update_hsv_selector(img):
     s_h = cv2.getTrackbarPos("S_h", "Selector")
     v_l = cv2.getTrackbarPos("V_l", "Selector")
     v_h = cv2.getTrackbarPos("V_h", "Selector")
-    mask = cv2.inRange(hsv, (h_l, s_l, v_l), (h_h, s_h, v_h))
+    UPPER = np.array([h_h, s_h, v_h], dtype=np.uint8)
+    LOWER = np.array([h_l, s_l, v_l], dtype=np.uint8)
+    mask = cv2.inRange(hsv, LOWER, UPPER)
     cv2.imshow("HSV_img", mask)
+    print(f"UPPER: {UPPER} LOWER: {LOWER}")
 
 
 def change_cam_resolution(cam, width: int, height: int, fps: int = 60):
