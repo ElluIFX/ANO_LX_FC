@@ -12,6 +12,7 @@ from FlightController.Solutions.Vision import (
     vision_debug,
 )
 from FlightController.Solutions.Vision_Net import FastestDetOnnx
+from just_playback import Playback
 from simple_pid import PID
 
 
@@ -70,6 +71,8 @@ class Mission(object):
         self.cam = camera
         self.inital_yaw = self.fc.state.yaw.value
         self.fd = FastestDetOnnx(drawOutput=True)  # 初始化神经网络
+        self.playback = Playback()
+        self.playback.load_file("/home/pi/Desktop/prj/python_sdk/door.mp3")
         ############### PID #################
         self.height_pid = PID(
             0.8, 0.0, 0.1, setpoint=0, output_limits=(-30, 30), auto_mode=False
@@ -218,23 +221,25 @@ class Mission(object):
         logger.info(f"[MISSION] Handle goods")
         self.height_pid.setpoint = self.goods_height
         self.switch_pid("delivery")
-        sleep(1.5)  # 等待高度稳定
+        sleep(2)  # 等待高度稳定
         #####################################
-        # TODO:放下吊舱, 播放语音
         self.fc.set_rgb_led(0, 255, 0)
         self.fc.set_pod(1, 8500)
         sleep(8.5)
         ####################################
+        self.playback.loop_at_end(True)
+        self.playback.play()
+        self.fc.set_digital_output(1, True)
         sleep(5)
+        self.fc.set_digital_output(1, False)
+        self.playback.stop()
         #####################################
-        # TODO:收起吊舱
-        self.fc.set_rgb_led(0, 0, 0)
-        self.fc.set_pod(2, 10000)
-        sleep(5)
-        ####################################
         self.height_pid.setpoint = self.cruise_height
         self.switch_pid("default")
-        sleep(1.5)  # 等待高度稳定
+        self.fc.set_rgb_led(0, 0, 0)
+        self.fc.set_pod(2, 10000)
+        sleep(8.5)
+        ####################################
 
     def switch_pid(self, pid):
         """
