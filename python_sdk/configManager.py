@@ -1,5 +1,6 @@
 import configparser
 import os
+import re
 
 import numpy as np
 
@@ -16,12 +17,14 @@ class ConfigManager:
         default_setting: default settings dictionary, set if the option is not set yet
         section: section name
         """
-        self._config_file = file
+        path = os.path.dirname(__file__)
+        file_path = os.path.join(path, file)
+        self._config_file = file_path
         self._config = configparser.ConfigParser()
-        if os.path.exists(file):
-            self._config.read(file)
+        if os.path.exists(file_path):
+            self._config.read(file_path)
         else:
-            open(file, "w").close()
+            open(file_path, "w").close()
         self._section_name = section.upper()
         self._init_file_(default_setting.copy())
 
@@ -60,14 +63,10 @@ class ConfigManager:
         Get the value of an option, return as numpy array
         dtype: str, optional, numpy format, default None
         """
-        string = self.get(option)
-        string = (
-            string.replace(" ", ",")
-            .replace(",,", ",")
-            .replace(",,", ",")
-            .replace("[,", "[")
-            .replace("],", "]")
-        )
+        string = self.get(option).strip()
+        # string = re.sub(r"\[\s+", r"[", string)
+        # string = re.sub(r"\s(\d)", r",\1", string)
+        # string = string.replace("\n", ",")
         if type == None:
             return np.array(eval(string))
         else:
@@ -77,7 +76,9 @@ class ConfigManager:
         """
         Set the value of an option
         """
-        value = str(value)
+        if isinstance(value, np.ndarray):
+            value = value.tolist()
+        value = repr(value)
         self._config.set(self._section_name, option, value)
         with open(self._config_file, "w") as f:
             self._config.write(f)

@@ -12,21 +12,28 @@ class HMI(object):
         self._flag = False
 
     def command(self, data: str):
-        send = data.encode("gbk") + b"\xFF\xFF\xFF"
-        self._serial.write(send)
+        try:
+            send = data.encode("gbk") + b"\xFF\xFF\xFF"
+            self._serial.write(send)
+        except Exception as e:
+            print(e)
 
     def read(self, timeout: float = 0.01) -> str:
-        if self._serial.in_waiting > 0:
-            if not self._flag:
-                self._flag = True
-                self._buffer = bytes()
-            self._buffer += self._serial.read(self._serial.in_waiting)
-            self._timer = time.time()
-        if self._flag and time.time() - self._timer > timeout:
-            self._flag = False
-            data = self._buffer.decode()
-            return data
-        return None
+        try:
+            if self._serial.in_waiting > 0:
+                if not self._flag:
+                    self._flag = True
+                    self._buffer = bytes()
+                self._buffer += self._serial.read(self._serial.in_waiting)
+                self._timer = time.time()
+            if self._flag and time.time() - self._timer > timeout:
+                self._flag = False
+                data = self._buffer.decode()
+                return data
+            return None
+        except Exception as e:
+            print(e)
+            return None
 
     def info(self, data: str):
         self.command(f'info.txt="{data}"')
