@@ -3,6 +3,7 @@ from time import sleep, time
 
 import cv2
 import numpy as np
+from configManager import ConfigManager
 from FlightController import FC_Client, FC_Controller, logger
 from FlightController.Components import LD_Radar, Map_360, Point_2D
 from FlightController.Solutions.Vision import (
@@ -41,6 +42,25 @@ BLUE_CIRCLES = [m_point(1, 1) + m_point(1, 3)]
 landing_point = BASE_POINT
 
 target_points = [m_point(1, 1), m_point(3, 3)]
+
+default_dict = {
+    "point-1": LEFT_UP_POINT,
+    "point-2": RIGHT_UP_POINT,
+    "point-3": RIGHT_DOWN_POINT,
+    "point-4": BASE_POINT,
+    "target-1": np.array([1, 1]),
+    "target-2": np.array([3, 3]),
+}
+cfg = ConfigManager(default_setting=default_dict)
+logger.info(f"[MISSION] Loaded config: {cfg.dict()}")
+BASE_POINT = cfg.get_array("point-4")
+LEFT_UP_POINT = cfg.get_array("point-1")
+RIGHT_UP_POINT = cfg.get_array("point-2")
+RIGHT_DOWN_POINT = cfg.get_array("point-3")
+_target_1 = cfg.get_array("target-1")
+target_points[0] = m_point(_target_1[0], _target_1[1])
+_target_2 = cfg.get_array("target-2")
+target_points[1] = m_point(_target_2[0], _target_2[1])
 
 
 class Mission(object):
@@ -101,6 +121,7 @@ class Mission(object):
         self.goods_height = 80  # 处理物品高度
         self.pid_tunings = {
             "default": (0.4, 0, 0.08),  # 导航
+            "delivery": (0.5, 0.01, 0.2),  # 配送
             "landing": (0.3, 0.02, 0.06),  # 降落
         }  # PID参数 (仅导航XY使用)
         ################ 启动线程 ################
@@ -196,17 +217,23 @@ class Mission(object):
         """
         logger.info(f"[MISSION] Handle goods")
         self.height_pid.setpoint = self.goods_height
+        self.switch_pid("delivery")
         sleep(1.5)  # 等待高度稳定
         #####################################
         # TODO:放下吊舱, 播放语音
         self.fc.set_rgb_led(0, 255, 0)
+        self.fc.set_pod(1, 8500)
+        sleep(8.5)
         ####################################
         sleep(5)
         #####################################
         # TODO:收起吊舱
         self.fc.set_rgb_led(0, 0, 0)
+        self.fc.set_pod(2, 10000)
+        sleep(5)
         ####################################
         self.height_pid.setpoint = self.cruise_height
+        self.switch_pid("default")
         sleep(1.5)  # 等待高度稳定
 
     def switch_pid(self, pid):

@@ -48,7 +48,10 @@ fc.set_action_log(False)
 
 try:
     radar = LD_Radar()
-    radar.start("/dev/ttyUSB0", "LD06")
+    radar.start(
+        "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0",
+        "LD06",
+    )
 except:
     logger.warning("[MANAGER] Radar Connecting Failed")
     while True:
@@ -74,7 +77,7 @@ except:
             self_reboot()
 
 try:
-    hmi = HMI("/dev/ttyUSB1")
+    hmi = HMI("/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0")
     hmi.command("page init")
     sleep(1)
 except:
@@ -130,9 +133,11 @@ if target_mission is None:
             if cmd == "start_cal":
                 pos_send_flag = True
                 radar.start_resolve_pose()
+                fc.set_digital_output(2, True)
             if cmd == "stop_cal":
                 pos_send_flag = False
                 radar.stop_resolve_pose()
+                fc.set_digital_output(2, False)
             if cmd.startswith("cal-"):
                 try:
                     target = f"point-{int(cmd.removeprefix('cal-'))}"
