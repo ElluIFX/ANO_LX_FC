@@ -92,18 +92,18 @@ except:
 
 ############################## 参数 ##############################
 cfg = ConfigManager()
-camera_down_pwm = 32.5
+camera_down_pwm = 20
 camera_down_45_pwm = 52.25
-camera_up_pwm = 72
+camera_up_pwm = 60
 camera_up_45_pwm = 91.75
-set_button_led = lambda x: fc.set_digital_output(1, x)
-set_buzzer = lambda x: fc.set_digital_output(0, x)
+set_button_led = lambda x: fc.set_digital_output(0, x)
+set_buzzer = lambda x: fc.set_digital_output(2, x)
 ############################## 初始化 ##############################
 logger.info("[MANAGER] Self-Checking Passed")
 fc.set_rgb_led(0, 255, 0)
 sleep(1)
 fc.set_rgb_led(0, 0, 0)
-hmi.command("ok.en=1")
+# hmi.command("ok.en=1")
 
 
 fc.set_PWM_output(0, camera_up_pwm)

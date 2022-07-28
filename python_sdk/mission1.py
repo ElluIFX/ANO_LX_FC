@@ -70,7 +70,7 @@ class Mission(object):
         self.radar = radar
         self.cam = camera
         self.inital_yaw = self.fc.state.yaw.value
-        self.fd = FastestDetOnnx(drawOutput=True)  # 初始化神经网络
+        # self.fd = FastestDetOnnx(drawOutput=True)  # 初始化神经网络
         self.playback = Playback()
         self.playback.load_file("/home/pi/Desktop/prj/python_sdk/door.mp3")
         ############### PID #################
@@ -117,13 +117,13 @@ class Mission(object):
         radar = self.radar
         cam = self.cam
         ############### 参数 #################
-        self.camera_down_pwm = 32.5
-        self.camera_up_pwm = 72
+        self.camera_down_pwm = 20
+        self.camera_up_pwm = 60
         self.navigation_speed = 25  # 导航速度
         self.cruise_height = 140  # 巡航高度
         self.goods_height = 80  # 处理物品高度
         self.pid_tunings = {
-            "default": (0.4, 0, 0.08),  # 导航
+            "default": (0.4, 0, 0.05),  # 导航
             "delivery": (0.5, 0.01, 0.2),  # 配送
             "landing": (0.3, 0.02, 0.06),  # 降落
         }  # PID参数 (仅导航XY使用)
@@ -140,10 +140,10 @@ class Mission(object):
         logger.info("[MISSION] Threads started")
         ################ 初始化 ################
         fc.set_action_log(False)
-        change_cam_resolution(cam, 800, 600)
-        set_cam_autowb(cam, False)  # 关闭自动白平衡
-        for _ in range(10):
-            cam.read()
+        # change_cam_resolution(cam, 800, 600)
+        # set_cam_autowb(cam, True)  # 关闭自动白平衡
+        # for _ in range(10):
+        #     cam.read()
         fc.set_PWM_output(0, self.camera_up_pwm)
         fc.set_flight_mode(fc.PROGRAM_MODE)
         self.set_navigation_speed(self.navigation_speed)
@@ -153,7 +153,7 @@ class Mission(object):
             sleep(0.25)
             fc.set_rgb_led(0, 0, 0)
         fc.set_PWM_output(0, self.camera_down_pwm)
-        fc.set_digital_output(2, True)  # 激光笔开启
+        fc.set_digital_output(3, True)  # 激光笔开启
         fc.set_action_log(True)
         self.fc.start_realtime_control(20)
         self.switch_pid("default")
@@ -229,9 +229,9 @@ class Mission(object):
         ####################################
         self.playback.loop_at_end(True)
         self.playback.play()
-        self.fc.set_digital_output(1, True)
+        self.fc.set_digital_output(0, True)
         sleep(5)
-        self.fc.set_digital_output(1, False)
+        self.fc.set_digital_output(0, False)
         self.playback.stop()
         #####################################
         self.height_pid.setpoint = self.cruise_height
