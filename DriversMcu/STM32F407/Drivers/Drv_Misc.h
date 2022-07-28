@@ -18,6 +18,11 @@
 #define __BUTTON1_RCC RCC_AHB1Periph_GPIOB
 #define __BUTTON1_GPIO GPIOB
 #define __BUTTON1_PIN GPIO_Pin_0
+
+#define __BUTTON2_ID 0x02
+#define __BUTTON2_RCC RCC_AHB1Periph_GPIOB
+#define __BUTTON2_GPIO GPIOB
+#define __BUTTON2_PIN GPIO_Pin_1
 //
 #define __DOUT_RCC RCC_AHB1Periph_GPIOD
 #define __DOUT_GPIO GPIOD

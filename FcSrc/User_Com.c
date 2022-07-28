@@ -28,6 +28,9 @@ static u8 user_connected = 0;           //用户下位机是否连接
 static u16 user_heartbeat_cnt = 0;      //用户下位机心跳计数
 static u8 realtime_control_enable = 0;  //实时控制是否开启
 static u16 realtime_control_cnt = 0;    //实时控制超时计数
+static uint32_t pod_target_time = 0;    //吊舱目标时间
+static uint32_t pod_start_time = 0;     //吊舱开始时间
+static u8 pod_state = 0;                //吊舱状态
 s16 user_pwm[4] = {0};                  //范围0-10000
 _user_pos_st user_pos;                  //用户下位机位置数据
 _to_user_un to_user_data;               //回传状态数据
@@ -86,6 +89,7 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
   static u8* p_data;
   static s16* p_s16;
   static s32* p_s32;
+  static u32* p_u32;
   static u8 u8_temp;
   static u32 u32_temp;
 
@@ -172,6 +176,15 @@ void UserCom_DataAnl(u8* data_buf, u8 data_len) {
         case 0x05:                  // IO控制
           if (p_data[3] == 0x55) {  // 帧结尾，确保接收完整
             DOut_Set(p_data[1], p_data[2]);
+          }
+          break;
+        case 0x06:                  // 吊舱 控制
+          if (p_data[6] == 0x66) {  // 帧结尾，确保接收完整
+            pod_state = p_data[1];
+            p_u32 = (u32*)(p_data + 2);
+            pod_target_time = *p_u32;
+            pod_start_time = GetSysRunTimeMs();
+            UserCom_CalcAck(0x01, p_data, 7);  // 重要的无反馈操作,需要ACK
           }
           break;
       }
@@ -264,6 +277,24 @@ void UserCom_Task(float dT_s) {
         rt_tar.st_data.yaw_dps = 0;
         dt.fun[0x41].WTS = 1;  // 触发发送
         LxStringSend(LOG_COLOR_RED, "WARN: realtime control timeout");
+      }
+    }
+
+    // 吊舱状态检测
+    if (pod_state == 0x01) {  //放线
+      user_pwm[1] = 7000;
+      if (GetSysRunTimeMs() - pod_start_time > pod_target_time) {  //超时
+        pod_state = 0x00;
+        user_pwm[1] = 6000;
+      }
+    } else if (pod_state == 0x02) {  //收线
+      user_pwm[1] = 4800;
+      if (GetSysRunTimeMs() - pod_start_time > pod_target_time) {  //超时
+        pod_state = 0x00;
+        user_pwm[1] = 6000;
+      } else if (Button_Get(0x02) == 1) {  //限位按钮按下
+        pod_state = 0x00;
+        user_pwm[1] = 6000;
       }
     }
   }
