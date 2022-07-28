@@ -12,8 +12,11 @@ except:
 from time import sleep, time
 
 import cv2
+import numpy as np
+from configManager import ConfigManager
 from FlightController import FC_Client, FC_Controller, logger
 from FlightController.Components import LD_Radar, Map_360, Point_2D
+from hmi import HMI
 
 
 def self_reboot():
@@ -45,7 +48,10 @@ fc.set_action_log(False)
 
 try:
     radar = LD_Radar()
-    radar.start("/dev/ttyUSB0", "LD06")
+    radar.start(
+        "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0",
+        "LD06",
+    )
 except:
     logger.warning("[MANAGER] Radar Connecting Failed")
     while True:
@@ -70,7 +76,22 @@ except:
         if fc.event.key_short.is_set():
             self_reboot()
 
+try:
+    hmi = HMI("/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0")
+    hmi.command("page init")
+    sleep(1)
+except:
+    logger.warning("[MANAGER] HMI Connecting Failed")
+    while True:
+        fc.set_rgb_led(255, 0, 255)
+        sleep(0.5)
+        fc.set_rgb_led(0, 0, 0)
+        sleep(0.5)
+        if fc.event.key_short.is_set():
+            self_reboot()
+
 ############################## 参数 ##############################
+cfg = ConfigManager()
 camera_down_pwm = 32.5
 camera_down_45_pwm = 52.25
 camera_up_pwm = 72
@@ -82,49 +103,81 @@ logger.info("[MANAGER] Self-Checking Passed")
 fc.set_rgb_led(0, 255, 0)
 sleep(1)
 fc.set_rgb_led(0, 0, 0)
+hmi.command("ok.en=1")
 
 
 fc.set_PWM_output(0, camera_up_pwm)
 fc.set_rgb_led(0, 0, 0)
 fc.set_flight_mode(fc.PROGRAM_MODE)
+set_button_led(False)
 
 target_mission = None
-total_mission = 3
-_light_cnt = 0
 _testing = False
 
 logger.info("[MANAGER] Selecting mission...")
+
+pos_send_flag = False
+last_send_time = time()
+
 if target_mission is None:
-    target_mission = 1
     while True:
-        sleep(0.1)
-        _light_cnt += 1
-        set_button_led(_light_cnt % 2 == 0)
-        if fc.event.key_short.is_set():
-            fc.event.key_short.clear()
-            target_mission += 1
-            target_mission %= total_mission + 1
-            if target_mission == 0:
-                target_mission = 1
-            for i in range(target_mission):
-                fc.set_rgb_led(0, 0, 255)
-                sleep(0.15)
-                fc.set_rgb_led(0, 0, 0)
-                sleep(0.15)
-        elif fc.event.key_long.is_set():
-            fc.event.key_long.clear()
-            for i in range(target_mission):
-                fc.set_rgb_led(255, 255, 255)
-                sleep(0.2)
-                fc.set_rgb_led(0, 0, 0)
-                sleep(0.2)
-            break
+        cmd = hmi.read()
+        pos = radar.rt_pose
+        if pos_send_flag and time() - last_send_time > 0.2:
+            last_send_time = time()
+            hmi.command(f'pos.txt="({pos[0]:06.2f}, {pos[1]:06.2f}, {pos[2]:05.1f})"')
+        if cmd is not None:
+            if cmd == "ok":  # 握手
+                hmi.command("ok.en=1")
+                logger.info("[HMI] HMI connected")
+            if cmd == "start_cal":
+                pos_send_flag = True
+                radar.start_resolve_pose()
+                fc.set_digital_output(2, True)
+            if cmd == "stop_cal":
+                pos_send_flag = False
+                radar.stop_resolve_pose()
+                fc.set_digital_output(2, False)
+            if cmd.startswith("cal-"):
+                try:
+                    target = f"point-{int(cmd.removeprefix('cal-'))}"
+                    arr = np.array([pos[0], pos[1]])
+                    cfg.set(target, arr)
+                    logger.info(f"[HMI] Set calibration {target} to {arr}")
+                    hmi.info(f"{target} 校正成功")
+                except:
+                    hmi.info(f"指令出错")
+            if cmd.startswith("pos:"):
+                try:
+                    x1, y1, x2, y2 = cmd.strip().replace("pos:", "").split(",")
+                    arr1 = np.array([int(x1), int(y1)])
+                    arr2 = np.array([int(x2), int(y2)])
+                    cfg.set("target-1", arr1)
+                    cfg.set("target-2", arr2)
+                    logger.info(f"[HMI] Set targets to {arr1} and {arr2}")
+                    hmi.info(f"任务点已设置")
+                except:
+                    hmi.info(f"指令出错")
+            if cmd.startswith("mission-"):
+                try:
+                    mission = int(cmd.strip().replace("mission-", ""))
+                    logger.info(f"[HMI] Get mission {mission}")
+                    hmi.info(f"任务 {mission} 已选择, 等待一键启动")
+                    target_mission = mission
+                    break
+                except:
+                    hmi.info(f"指令出错")
 else:
     _testing = True
+set_button_led(True)
+fc.event.key_short.clear()
+fc.event.key_short.wait()
+fc.event.key_short.clear()
 set_button_led(False)
 ############################## 开始任务 ##############################
 logger.info(f"[MANAGER] Target Mission: {target_mission}")
 fc.set_action_log(True)
+hmi.info(f"任务 {target_mission} 启动")
 mission = None
 try:
     if target_mission == 1:
@@ -161,6 +214,7 @@ finally:
             fc.lock()
 
 ############################## 结束任务 ##############################
+hmi.info(f"任务 {target_mission} 结束")
 fc.set_action_log(False)
 fc.set_PWM_output(1, 0)
 fc.set_rgb_led(0, 255, 0)

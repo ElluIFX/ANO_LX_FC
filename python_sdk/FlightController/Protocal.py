@@ -125,6 +125,19 @@ class FC_Protocol(FC_Base_Uart_Comunication):
         )
         self._action_log("set digital output", f"channel {channel} on {on}")
 
+    def set_pod(self, state: int, time: int) -> None:
+        """
+        设置吊舱
+        state: 1 放线 2 收线
+        time: 动作时间 毫秒 收线触发限位开关时或到达时间会停止, 放线仅超时停止
+        """
+        self._byte_temp1.reset(state, "u8", int)
+        self._byte_temp2.reset(time, "u32", int)
+        self._send_32_command(
+            0x06, self._byte_temp1.bytes + self._byte_temp2.bytes + b"\x66", True
+        )
+        self._action_log("set pod", f"state {state} time {time}")
+
     ######### IMU 命令 #########
 
     def _send_imu_command_frame(self, CID: int, CMD0: int, CMD1: int, CMD_data=b""):
