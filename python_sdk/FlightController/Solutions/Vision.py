@@ -425,7 +425,7 @@ def color_recognition(img, threshold=0.4) -> Union[str, None]:
         return None
 
 
-def shape_recognition(img, image, LOWER, UPPER):
+def shape_recognition(image, LOWER, UPPER):
     """
     形状识别(圆、矩形、三角形)
     LOWER, UPPER: HSV边界
@@ -438,28 +438,29 @@ def shape_recognition(img, image, LOWER, UPPER):
     closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
     closed = cv2.erode(closed, None, iterations=4)
     closed = cv2.dilate(closed, None, iterations=5)
-    cv2.imshow("mask", mask)
-
+    if _DEBUG:
+        cv2.imshow("Process", mask)
     contours, hierarchy = cv2.findContours(
         mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
     if len(contours) > 0:
         for cnt in range(len(contours)):
-            cv2.drawContours(image, contours, cnt, (0, 255, 0), 2)
-        cv2.imshow("contours", image)
-        epsilon = 0.01 * cv2.arcLength(contours[cnt], True)
-        approx = cv2.approxPolyDP(contours[cnt], epsilon, True)
-        corners = len(approx)
-        if corners == 3:
-            shapes["triangle"] = shapes.get("triangle", 0) + 1
-        if corners == 4:
-            shapes["rectangle"] = shapes.get("rectangle", 0) + 1
-        if corners >= 10:
-            shapes["circle"] = shapes.get("circle", 0) + 1
+            if _DEBUG:
+                cv2.drawContours(image, contours, cnt, (0, 255, 0), 2)
+            epsilon = 0.01 * cv2.arcLength(contours[cnt], True)
+            approx = cv2.approxPolyDP(contours[cnt], epsilon, True)
+            corners = len(approx)
+            if corners == 3:
+                shapes["triangle"] = shapes.get("triangle", 0) + 1
+            if corners == 4:
+                shapes["rectangle"] = shapes.get("rectangle", 0) + 1
+            if corners >= 10:
+                shapes["circle"] = shapes.get("circle", 0) + 1
+    if _DEBUG:
+        cv2.imshow("Result", image)
     if len(shapes) == 0:
         return "unknown"
     max_shape = max(shapes, key=shapes.get)
-    max_num = shapes[max_shape]
     return max_shape
 
 

@@ -333,7 +333,6 @@ class LD_Radar(object):
     ):
         """
         开始使用点云图解算位姿
-        freq_div: 更新降频系数
         size: 解算范围(长宽为size的正方形)
         scale_ratio: 降采样比例, 降低精度节省计算资源
         low_pass_ratio: 低通滤波比例
@@ -365,6 +364,7 @@ class LD_Radar(object):
         """
         self._rtpose_size = size
         self._rtpose_scale_ratio = ratio
+        self._rtpose_low_pass_ratio = low_pass_ratio
 
 
 if __name__ == "__main__":
