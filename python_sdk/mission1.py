@@ -4,6 +4,7 @@ from time import sleep, time
 import cv2
 import numpy as np
 from configManager import ConfigManager
+from cv2 import log
 from FlightController import FC_Client, FC_Controller, logger
 from FlightController.Components import LD_Radar, Map_360, Point_2D
 from FlightController.Solutions.Vision import (
@@ -12,6 +13,7 @@ from FlightController.Solutions.Vision import (
     vision_debug,
 )
 from FlightController.Solutions.Vision_Net import FastestDetOnnx
+from hmi import HMI
 from just_playback import Playback
 from simple_pid import PID
 
@@ -33,12 +35,12 @@ m_point = (
     + (RIGHT_DOWN_POINT - RIGHT_UP_POINT) / 4 * y
     + LEFT_UP_POINT
 )  # 坐标系定义: 以左上角为(0,0),向右为x轴,向下为y轴
-RED_TRIANGLES = [m_point(0, 0) + m_point(2, 2)]
-RED_RECTANGLES = [m_point(0, 2) + m_point(2, 4)]
-RED_CIRCLES = [m_point(4, 0) + m_point(3, 3)]
-BLUE_TRIANGLES = [m_point(3, 1) + m_point(4, 4)]
-BLUE_RECTANGLES = [m_point(2, 0) + m_point(4, 2)]
-BLUE_CIRCLES = [m_point(1, 1) + m_point(1, 3)]
+RED_TRIANGLES = [m_point(0, 0), m_point(2, 2)]
+RED_RECTANGLES = [m_point(0, 2), m_point(2, 4)]
+RED_CIRCLES = [m_point(4, 0), m_point(3, 3)]
+BLUE_TRIANGLES = [m_point(3, 1), m_point(4, 4)]
+BLUE_RECTANGLES = [m_point(2, 0), m_point(4, 2)]
+BLUE_CIRCLES = [m_point(1, 1), m_point(1, 3)]
 # 降落点
 landing_point = BASE_POINT
 
@@ -65,10 +67,13 @@ target_points[1] = m_point(_target_2[0], _target_2[1])
 
 
 class Mission(object):
-    def __init__(self, fc: FC_Controller, radar: LD_Radar, camera: cv2.VideoCapture):
+    def __init__(
+        self, fc: FC_Controller, radar: LD_Radar, camera: cv2.VideoCapture, hmi: HMI
+    ):
         self.fc = fc
         self.radar = radar
         self.cam = camera
+        self.hmi = hmi
         self.inital_yaw = self.fc.state.yaw.value
         self.fd = FastestDetOnnx(drawOutput=True)  # 初始化神经网络
         self.playback = Playback()
@@ -119,13 +124,13 @@ class Mission(object):
         ############### 参数 #################
         self.camera_down_pwm = 32.5
         self.camera_up_pwm = 72
-        self.navigation_speed = 25  # 导航速度
+        self.navigation_speed = 35  # 导航速度
         self.cruise_height = 140  # 巡航高度
         self.goods_height = 80  # 处理物品高度
         self.pid_tunings = {
             "default": (0.4, 0, 0.08),  # 导航
-            "delivery": (0.5, 0.01, 0.2),  # 配送
-            "landing": (0.3, 0.02, 0.06),  # 降落
+            "delivery": (0.45, 0.1, 0.08),  # 配送
+            "landing": (0.45, 0.01, 0.06),  # 降落
         }  # PID参数 (仅导航XY使用)
         ################ 启动线程 ################
         self.running = True
@@ -145,6 +150,7 @@ class Mission(object):
         for _ in range(10):
             cam.read()
         fc.set_PWM_output(0, self.camera_up_pwm)
+        # self.recognize_targets()
         fc.set_flight_mode(fc.PROGRAM_MODE)
         self.set_navigation_speed(self.navigation_speed)
         for i in range(6):
@@ -221,7 +227,7 @@ class Mission(object):
         logger.info(f"[MISSION] Handle goods")
         self.height_pid.setpoint = self.goods_height
         self.switch_pid("delivery")
-        sleep(2)  # 等待高度稳定
+        sleep(4)  # 等待高度稳定
         #####################################
         self.fc.set_rgb_led(0, 255, 0)
         self.fc.set_pod(1, 8500)
@@ -426,3 +432,47 @@ class Mission(object):
         self._avd_height = avd_height
         self._avd_deg = deg
         self._avd_move = avd_move
+
+    def recognize_targets(self):
+        global target_points
+        target_points = []
+        logger.info("[MISSION] Recognizing targets")
+        self.hmi.info("请将目标移到视野内")
+        self.fc.set_rgb_led(255, 255, 0)
+        rec_dict = {}
+        start = False
+        start_time = time()
+        while True:
+            img = self.cam.read()[1]
+            if img is None:
+                continue
+            get = self.fd.detect(img)
+            for res in get:
+                name = res[1]
+                rec_dict[name] = rec_dict.get(name, 0) + 1
+                if not start:
+                    start = True
+                    start_time = time()
+                    self.hmi.info("正在识别, 请保持目标在视野内3秒...")
+            if start and time() - start_time > 3:
+                break
+        max_idx = max(rec_dict, key=rec_dict.get)
+        logger.info("[MISSION] Recognized target: {}".format(max_idx))
+        self.hmi.info("识别到目标: {}, 可以一键启动".format(max_idx))
+        self.fc.set_rgb_led(0, 255, 0)
+        if max_idx == "r_rec":
+            target_points = RED_RECTANGLES
+        elif max_idx == "b_rec":
+            target_points = BLUE_RECTANGLES
+        elif max_idx == "r_tri":
+            target_points = RED_TRIANGLES
+        elif max_idx == "b_tri":
+            target_points = BLUE_TRIANGLES
+        elif max_idx == "r_cir":
+            target_points = RED_CIRCLES
+        elif max_idx == "b_cir":
+            target_points = BLUE_CIRCLES
+        else:
+            raise Exception(f"[MISSION] Unknown target: {max_idx}")
+        logger.info("[MISSION] Set target points: {}".format(target_points))
+        self.fc.event.key_short.wait_clear()

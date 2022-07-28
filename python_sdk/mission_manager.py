@@ -183,15 +183,15 @@ try:
     if target_mission == 1:
         from mission1 import Mission
 
-        mission = Mission(fc, radar, cam)
+        mission = Mission(fc, radar, cam, hmi)
     elif target_mission == 2:
         from mission2 import Mission
 
-        mission = Mission(fc, radar, cam)
+        mission = Mission(fc, radar, cam, hmi)
     elif target_mission == 3:
         from mission3 import Mission
 
-        mission = Mission(fc, radar, cam)
+        mission = Mission(fc, radar, cam, hmi)
     logger.info("[MANAGER] Calling Mission")
 
     mission.run()
