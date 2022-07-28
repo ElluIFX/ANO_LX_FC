@@ -120,8 +120,9 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             return
         if not self.fc.state.unlock.value:
             return
-        if self.fc.state.mode.value != self.fc.PROGRAM_MODE:
-            self.fc.send_realtime_control_data(*self.speed_xyzYaw)
+        if self.check_enable_ctl.isChecked():
+            if self.fc.state.mode.value != self.fc.PROGRAM_MODE:
+                self.fc.send_realtime_control_data(*self.speed_xyzYaw)
 
     def update_fc_state(self, state: FC_State_Struct) -> None:
         self.lcd_h.display(f"{state.alt_add.value/100:9.02f}")
@@ -383,6 +384,21 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.fc.set_PWM_output(channel, get)
 
     @Slot()
+    def on_btn_pod_clicked(self) -> None:
+        if self.fc is None:
+            return
+        s, ok = QInputDialog.getItem(self, "设置吊舱", "操作:", ["上升", "下降"], 0, False)
+        if not ok:
+            return
+        if s == "上升":
+            self.fc.set_pod(2, 20000)
+        else:
+            get, ok = QInputDialog.getInt(self, "设置吊舱", "放线时间(ms):", 0, 0, 20000, 1)
+            if not ok:
+                return
+            self.fc.set_pod(1, get)
+
+    @Slot()
     def on_btn_io_0_clicked(self) -> None:
         self._set_io(0)
 
@@ -413,6 +429,56 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @Slot()
     def on_btn_pwm_3_clicked(self) -> None:
         self._set_pwm(3)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        key = event.key()
+        if key == Qt.Key_W:
+            self.on_btn_forward_pressed()
+        elif key == Qt.Key_S:
+            self.on_btn_backward_pressed()
+        elif key == Qt.Key_A:
+            self.on_btn_left_pressed()
+        elif key == Qt.Key_D:
+            self.on_btn_right_pressed()
+        elif key == Qt.Key_Q:
+            self.on_btn_l_turn_pressed()
+        elif key == Qt.Key_E:
+            self.on_btn_r_turn_pressed()
+        elif key == Qt.Key_R:
+            self.on_btn_up_pressed()
+        elif key == Qt.Key_F:
+            self.on_btn_down_pressed()
+        elif key == Qt.Key_Space:
+            self.on_btn_stop_clicked()
+        elif key == Qt.Key_Z:
+            self.on_btn_takeoff_clicked()
+        elif key == Qt.Key_X:
+            self.on_btn_unlock_clicked()
+        elif key == Qt.Key_C:
+            self.on_btn_land_clicked()
+        elif key == Qt.Key_Escape:
+            self.on_btn_lock_clicked()
+        return super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        key = event.key()
+        if key == Qt.Key_W:
+            self.on_btn_forward_released()
+        elif key == Qt.Key_S:
+            self.on_btn_backward_released()
+        elif key == Qt.Key_A:
+            self.on_btn_left_released()
+        elif key == Qt.Key_D:
+            self.on_btn_right_released()
+        elif key == Qt.Key_Q:
+            self.on_btn_l_turn_released()
+        elif key == Qt.Key_E:
+            self.on_btn_r_turn_released()
+        elif key == Qt.Key_R:
+            self.on_btn_up_released()
+        elif key == Qt.Key_F:
+            self.on_btn_down_released()
+        return super().keyReleaseEvent(event)
 
 
 def main():

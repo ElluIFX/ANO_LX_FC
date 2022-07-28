@@ -975,18 +975,18 @@
               </layout>
              </item>
              <item>
-              <widget class="QCheckBox" name="check_enable_keyboard_ctl">
+              <widget class="QCheckBox" name="check_enable_ctl">
                <property name="font">
                 <font>
                  <italic>false</italic>
-                 <bold>false</bold>
+                 <bold>true</bold>
                 </font>
                </property>
                <property name="layoutDirection">
                 <enum>Qt::LeftToRight</enum>
                </property>
                <property name="text">
-                <string>使能键盘控制(仅实时控制)</string>
+                <string>   使能上位机实时控制</string>
                </property>
               </widget>
              </item>
@@ -1361,7 +1361,7 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QPushButton" name="btn_rgb_11">
+          <widget class="QPushButton" name="btn_pod">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -1381,7 +1381,7 @@
             </font>
            </property>
            <property name="text">
-            <string>N/A</string>
+            <string>吊舱</string>
            </property>
            <property name="shortcut">
             <string>W</string>
@@ -1568,7 +1568,7 @@
               </font>
              </property>
              <property name="text">
-              <string>测试文本</string>
+              <string>TODO</string>
              </property>
              <property name="dragEnabled">
               <bool>true</bool>
@@ -1586,7 +1586,7 @@
          <item>
           <widget class="QLabel" name="label_radar_image">
            <property name="text">
-            <string>TextLabel</string>
+            <string>TODO</string>
            </property>
           </widget>
          </item>
@@ -1652,7 +1652,7 @@
          <item>
           <widget class="QLabel" name="label_sensor_image">
            <property name="text">
-            <string>TextLabel</string>
+            <string>TODO</string>
            </property>
           </widget>
          </item>
