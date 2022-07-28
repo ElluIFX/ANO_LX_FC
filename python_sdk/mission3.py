@@ -29,7 +29,7 @@ BASE_POINT = np.array([79, 425])
 # 降落点
 landing_point = BASE_POINT
 # 任务点
-start_point = np.array([90, 250])  # 待调
+start_point = np.array([350, 425])  # 待调
 
 
 class Mission(object):
@@ -129,10 +129,11 @@ class Mission(object):
         ############### 开始呼啦圈任务 ##############
         self.navigation_to_waypoint(start_point)
         self.wait_for_waypoint()
-        self.across_hoop(-85, 85, 2000)
+        self.across_hoop(-70, 70, 2000)
         ######## 原地降落
-        self.fc.land()
-        self.fc.wait_for_lock()
+        fc.set_flight_mode(fc.PROGRAM_MODE)
+        fc.land()
+        fc.wait_for_lock()
         logger.info("[MISSION] Misson-1 Finished")
 
     def pointing_takeoff(self, point):
@@ -295,73 +296,6 @@ class Mission(object):
                 logger.warning("[MISSION] Waypoint overtime")
                 return
 
-    def wait_for_waypoint_with_avoidance(self, time_thres=1, pos_thres=15, timeout=60):
-        time_count = 0
-        time_start = time()
-        while True:
-            sleep(0.1)
-            if self.reached_waypoint(pos_thres):
-                time_count += 0.1
-            if time_count >= time_thres:
-                logger.info("[MISSION] Reached waypoint")
-                return
-            if time() - time_start > timeout:
-                logger.warning("[MISSION] Waypoint overtime")
-                return
-            self.avoidance_handler()
-
-    def avoidance_handler(self):
-        points = self.radar.map.find_nearest(
-            self._avd_fp_from, self._avd_fp_to, 1, self._avd_fp_dist
-        )
-        if len(points) > 0:
-            logger.info("[MISSION] Found obstacle")
-            waypoint = np.array([self.navi_x_pid.setpoint, self.navi_y_pid.setpoint])
-            pos_point = np.array([self.radar.rt_pose[0], self.radar.rt_pose[1]])
-            self.navigation_to_waypoint(pos_point)  # 原地停下
-            self.height_pid.setpoint = self._avd_height
-            self.set_buzzer(True)
-            self.fc.set_rgb_led(255, 0, 0)
-            sleep(1)
-            self.set_buzzer(False)
-            self.fc.set_rgb_led(0, 0, 0)
-            sleep(1)  # 等待高度稳定
-            self.keep_height_flag = False
-            self.navigation_flag = False
-            self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
-            self.fc.horizontal_move(self._avd_move, 25, self._avd_deg)
-            self.fc.set_rgb_led(255, 255, 0)
-            self.fc.wait_for_last_command_done()
-            self.fc.set_rgb_led(0, 0, 0)
-            self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
-            self.keep_height_flag = True
-            self.height_pid.setpoint = self.cruise_height
-            sleep(1)  # 等待高度稳定
-            self.navigation_flag = True
-            self.navigation_to_waypoint(waypoint)
-
-    def set_avoidance_args(
-        self,
-        deg: int = 0,
-        deg_range: int = 30,
-        dist: int = 600,
-        avd_height: int = 200,
-        avd_move: int = 180,
-    ):
-        """
-        fp_deg: 目标避障角度(deg) (0~360)
-        fp_deg_range: 目标避障角度范围(deg)
-        fp_dist: 目标避障距离(mm)
-        avd_height: 避障目标高度(cm)
-        avd_move: 避障移动距离(cm)
-        """
-        self._avd_fp_from = deg - deg_range
-        self._avd_fp_to = deg + deg_range
-        self._avd_fp_dist = dist
-        self._avd_height = avd_height
-        self._avd_deg = deg
-        self._avd_move = avd_move
-
     def across_hoop(
         self,
         from_: int = 0,
@@ -377,34 +311,46 @@ class Mission(object):
         """
         self.navigation_flag = False
         self.height_pid.setpoint = self.across_height
+        self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
+        self.fc.turn_right(90, 20)
+        self.fc.wait_for_last_command_done()
+        self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
 
-        init_move_flag = True
         yaw_flag = False
         x_flag = False
         start_time = time()
         while True:
             sleep(0.1)
-            # 固定扫描角度
+            # 固定扫描角度,指定向右为yaw轴零点
             current_yaw = deg_360_180(self.fc.state.yaw.value - self.initial_yaw)
+            current_yaw = deg_360_180(current_yaw - 90)
             if not yaw_flag:
                 dfrom = int(from_ - current_yaw)
                 dto = int(to_ - current_yaw)
             else:
                 dfrom = -85
                 dto = 85
-            logger.info(
-                f"[hoop] current_yaw:{current_yaw} dfrom:{dfrom}  dto:{dto}"
-            )
+            logger.info(f"[hoop] current_yaw:{current_yaw} dfrom:{dfrom}  dto:{dto}")
             points = self.radar.map.find_two_different_nearest_point(
                 dfrom, dto, range_limit, dis_thre
             )
-            if init_move_flag and len(points) == 1:
-                self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
-                self.fc.horizontal_move(20, 20, 90)
-                self.fc.wait_for_last_command_done()
-                self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
-                init_move_flag = False
-            if len(points) == 2:
+            if len(points) == 1:
+                if not yaw_flag:
+                    self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
+                    if current_yaw > 10:
+                        self.fc.horizontal_move(30, 20, 90 - current_yaw)
+                    elif current_yaw < -10:
+                        self.fc.horizontal_move(30, 20, (-90 - current_yaw) % 360)
+                    elif abs(current_yaw) < 10:
+                        self.fc.horizontal_move(30, 20, 90)
+                    self.fc.wait_for_last_command_done()
+                    self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
+                else:
+                    self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
+                    self.fc.horizontal_move(20, 20, 180)
+                    self.fc.wait_for_last_command_done()
+                    self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
+            elif len(points) == 2:
                 a_point = points[0].to_xy()
                 b_point = points[1].to_xy()
                 k = (b_point[0] - a_point[0]) / (
@@ -421,10 +367,10 @@ class Mission(object):
                 if yaw_flag:
                     mid_point = (a_point + b_point) / 2
                     if mid_point[0] > 500:
-                        # 如果中点x坐标大于300mm，则应该向前移动
+                        # 如果中点x坐标大于500mm，则应该向前移动
                         self.fc.update_realtime_control(vel_x=10)
                     elif mid_point[0] < 500:
-                        # 如果中点x坐标小于300mm，则应该向后移动
+                        # 如果中点x坐标小于500mm，则应该向后移动
                         self.fc.update_realtime_control(vel_x=-10)
                     if abs(mid_point[0] - 500) < 50:
                         self.fc.update_realtime_control(vel_x=0)
@@ -447,14 +393,24 @@ class Mission(object):
             if time() - start_time > timeout:
                 logger.warning("[MISSION] Align_hoop overtime")
                 break
+        # 程控转圈
+        # sleep(0.5)
+        # self.keep_height_flag = False
+        # self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
+        # self.fc.stablize()
+        # sleep(0.5)
+        # self.fc.horizontal_move(180, 25, 0)
+        # self.fc.wait_for_last_command_done()
+        # self.keep_height_flag = True
+        # sleep(0.5)
+        # self.fc.stablize()
+        # logger.info("[MISSION] Across hoop finish")
+
+        # 实时控制钻圈
         sleep(0.5)
         self.keep_height_flag = False
-        self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
-        self.fc.stablize()
-        sleep(0.5)
-        self.fc.horizontal_move((2.5 * mid_point[0] + 50) / 10, 25, 0)
-        self.fc.wait_for_last_command_done()
+        self.fc.update_realtime_control(vel_x=25, vel_y=0, vel_z=0, yaw=0)
+        sleep(5)
+        self.fc.update_realtime_control(vel_x=0, vel_y=0, vel_z=0, yaw=0)
         self.keep_height_flag = True
         sleep(0.5)
-        self.fc.stablize()
-        logger.info("[MISSION] Across hoop finish")
