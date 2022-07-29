@@ -51,7 +51,11 @@ void DrvButtonInit(void) {
   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_Pin = __BUTTON1_PIN | __BUTTON2_PIN;
+  GPIO_InitStructure.GPIO_Pin = __BUTTON1_PIN;
+  GPIO_Init(__BUTTON1_GPIO, &GPIO_InitStructure);
+
+  RCC_AHB1PeriphClockCmd(__BUTTON2_RCC, ENABLE);
+  GPIO_InitStructure.GPIO_Pin = __BUTTON2_PIN;
   GPIO_Init(__BUTTON1_GPIO, &GPIO_InitStructure);
 }
 
