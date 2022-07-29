@@ -19,6 +19,8 @@ from simple_pid import PID
 def deg_360_180(deg):
     if deg > 180:
         deg = deg - 360
+    elif deg < -180:
+        deg = deg + 360
     return deg
 
 
@@ -125,7 +127,7 @@ class Mission(object):
         self.pid_tunings = {
             "default": (0.3, 0, 0.08),  # 导航
             "delivery": (0.5, 0.01, 0.15),  # 配送
-            "landing": (0.3, 0.02, 0.06),  # 降落
+            "landing": (0.3, 0.01, 0.08),  # 降落
         }  # PID参数 (仅导航XY使用)
         ################ 启动线程 ################
         self.running = True
@@ -182,6 +184,13 @@ class Mission(object):
         sleep(2)  # 等待电机启动
         self.fc.take_off(80)
         self.fc.wait_for_takeoff_done()
+        current_yaw = deg_360_180(self.fc.state.yaw.value - self.inital_yaw)
+        if current_yaw > 4:
+            self.fc.turn_left(current_yaw, 20)
+            self.fc.wait_for_last_command_done()
+        elif current_yaw < -4:
+            self.fc.turn_right(-current_yaw, 20)
+            self.fc.wait_for_last_command_done()
         ######## 闭环定高
         self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
         self.height_pid.setpoint = self.cruise_height
@@ -197,22 +206,36 @@ class Mission(object):
         """
         定点降落
         """
+        # 实时控制降落
+        # logger.info(f"[MISSION] Landing at {point}")
+        # self.navigation_to_waypoint(point)
+        # self.wait_for_waypoint()
+        # self.switch_pid("landing")
+        # sleep(1)
+        # self.height_pid.setpoint = 60
+        # sleep(1)
+        # self.height_pid.setpoint = 40
+        # sleep(1)
+        # self.wait_for_waypoint()
+        # self.height_pid.setpoint = 20
+        # sleep(3)
+        # self.wait_for_waypoint()
+        # self.height_pid.setpoint = 0
+        # self.fc.wait_for_lock(6)
+        # self.fc.lock()
+        # 程控降落
         logger.info(f"[MISSION] Landing at {point}")
+        self.switch_pid("landing")
+        self.height_pid.setpoint = 60
         self.navigation_to_waypoint(point)
         self.wait_for_waypoint()
-        self.switch_pid("landing")
-        sleep(1)
-        self.height_pid.setpoint = 60
-        sleep(1)
-        self.height_pid.setpoint = 40
-        sleep(1)
-        self.wait_for_waypoint()
         self.height_pid.setpoint = 20
-        sleep(3)
+        sleep(2)
         self.wait_for_waypoint()
-        self.height_pid.setpoint = 0
-        self.fc.wait_for_lock(6)
-        self.fc.lock()
+        self.fc.set_flight_mode(fc.PROGRAM_MODE)
+        self.fc.stop_realtime_control()
+        self.fc.land()
+        self.fc.wait_for_lock()
 
     def handle_goods(self):
         """
