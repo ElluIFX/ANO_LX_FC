@@ -224,7 +224,7 @@ class LD_Radar(object):
             )
             # add_p = self.fp_points
             # 测试锁呼啦圈点
-            add_p = self.map.find_two_different_nearest_point(-60, 60, 2000, 5)
+            add_p = self.map.find_two_different_nearest_point(-60, 60, 2000, 15, img_)
             if len(add_p) == 2:
                 a_point = add_p[0].to_xy()
                 b_point = add_p[1].to_xy()
@@ -236,7 +236,7 @@ class LD_Radar(object):
                     f"k: {k}",
                     (300, 10),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
+                    0.4,
                     (255, 255, 0),
                 )
                 mid_point = Point_2D()
@@ -245,19 +245,23 @@ class LD_Radar(object):
                 cv2.putText(
                     img_,
                     f"mx: {mid_point.to_xy()[0]}",
-                    (300, 35),
+                    (300, 40),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
+                    0.4,
                     (255, 255, 0),
                 )
                 cv2.putText(
                     img_,
                     f"my: {mid_point.to_xy()[1]}",
-                    (300, 60),
+                    (300, 70),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.5,
                     (255, 255, 0),
                 )
+            elif len(add_p) == 1:
+                    pass
+            else:
+                logger.info("[RADAR] Hoop point found error")
 
             if self.__radar_map_info_angle != -1:
                 cv2.putText(

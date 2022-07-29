@@ -305,7 +305,7 @@ class Map_360(object):
         return self.find_nearest(from_, to_, num, range_limit, new_view)
 
     def find_two_different_nearest_point(
-        self, from_: int = 0, to_: int = 359, range_limit: int = 1e7, threshold: int = 15
+        self, from_: int = 0, to_: int = 359, range_limit: int = 1e7, threshold: int = 15, img = None
     ):
         """
         在给定范围内查找两个不同的最近点
@@ -315,7 +315,7 @@ class Map_360(object):
         threshold: int 计算出的两点之间距离阈值
         """
         fd_points = self.find_nearest(
-            from_, to_, 500, range_limit
+            from_, to_, 15, range_limit
         )  # 查找指定范围内的所有最近点
         length = len(fd_points)
         eq_flag = True
@@ -333,14 +333,24 @@ class Map_360(object):
                         * (fd_points[j].distance/10)
                         * np.cos(delta_deg)
                     )
+                    if img is not None:
+                        cv2.putText(
+                            img,
+                            f"delta_dis: {delta_dis}",
+                            (300, 100),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.5,
+                            (255, 255, 0),
+                        )
                     if abs(delta_dis - 110) < threshold:
                         return [fd_points[i], fd_points[j]]
-                    if abs(delta_dis) > 6:
+                    if abs(delta_dis) > 7:
                         eq_flag = False
             if eq_flag:
                 return [fd_points[0]]
-        elif length == 1:
-            return [fd_points[0]]
+        # elif length == 1:
+        #     return [fd_points[0]]
+        # 雷达扫呼啦圈不应该只扫出来一个点
         return []
 
 

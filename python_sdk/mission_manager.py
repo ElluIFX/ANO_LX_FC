@@ -167,6 +167,13 @@ if target_mission is None:
                     break
                 except:
                     hmi.info(f"指令出错")
+            if cmd.startswith("across:"):
+                try:
+                    start = cmd.strip().replace("across:","")
+                    cfg.set("start_point_name", start)
+                    hmi.info(f"开始点已设置")
+                except:
+                    hmi.info(f"指令出错")
 else:
     _testing = True
 set_button_led(True)
