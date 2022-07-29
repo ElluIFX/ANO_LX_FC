@@ -272,3 +272,75 @@ class FastestDetOnnx(FastestDet):
         input_name = self.session.get_inputs()[0].name
         feature_map = self.session.run([], {input_name: blob})[0][0]
         return self.post_process(frame, feature_map)
+
+
+class HAWP(object):
+    """
+    使用 onnxruntime 运行 HAWP 线框检测
+    """
+
+    def __init__(self, confThreshold=0.95, drawOutput=False):
+        """
+        HAWP 线框检测网络
+        confThreshold: 置信度阈值
+        """
+        import onnxruntime
+
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+        path_onnx = os.path.join(path, "HAWP.onnx")
+
+        self.onnx_session = onnxruntime.InferenceSession(path_onnx)
+
+        self.input_name = self.onnx_session.get_inputs()[0].name
+        self.output_name = self.onnx_session.get_outputs()[0].name
+
+        self.input_shape = self.onnx_session.get_inputs()[0].shape
+        self.input_height = self.input_shape[2]
+        self.input_width = self.input_shape[3]
+        self.mean = np.array([0.485, 0.456, 0.406], dtype=np.float32).reshape(1, 1, 3)
+        self.std = np.array([0.229, 0.224, 0.225], dtype=np.float32).reshape(1, 1, 3)
+
+        self.confThreshold = confThreshold
+        self.drawOutput = drawOutput
+
+    def pre_process(self, frame):
+        """
+        图像预处理
+        """
+        frame = cv2.resize(frame, dsize=(self.input_width, self.input_height))
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = (frame.astype(np.float32) / 255.0 - self.mean) / self.std
+        frame = frame.transpose(2, 0, 1)
+        frame = np.expand_dims(frame, axis=0)
+        return frame
+
+    def post_process(self, frame, feature_map):
+        """ 
+        数据后处理
+        """
+        lines, scores = feature_map[0], feature_map[1]
+        image_width, image_height = frame.shape[1], frame.shape[0]
+        for line in lines:
+            line[0] = int(line[0] / 128 * image_width)
+            line[1] = int(line[1] / 128 * image_height)
+            line[2] = int(line[2] / 128 * image_width)
+            line[3] = int(line[3] / 128 * image_height)
+        output = []
+        for n in range(len(lines)):
+            if scores[n] > self.confThreshold:
+                output.append((lines[n], scores[n]))
+        if self.drawOutput:
+            for line, score in output:
+                x1, y1 = int(line[0]), int(line[1])
+                x2, y2 = int(line[2]), int(line[3])
+                cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+        return output
+
+    def detect(self, frame):
+        """
+        执行识别
+        return: 识别结果列表: ((x1,y1,x2,y2),score)
+        """
+        blob = self.pre_process(frame)
+        feature_map = self.onnx_session.run(None, {self.input_name: blob})
+        return self.post_process(frame, feature_map)
