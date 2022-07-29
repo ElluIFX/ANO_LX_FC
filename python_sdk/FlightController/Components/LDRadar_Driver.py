@@ -55,13 +55,14 @@ class LD_Radar(object):
         self._thread_list.append(thread)
         logger.info("[RADAR] Map resolve thread started")
 
-    def stop(self):
+    def stop(self, joined=False):
         """
         停止监听雷达数据
         """
         self.running = False
-        for thread in self._thread_list:
-            thread.join()
+        if joined:
+            for thread in self._thread_list:
+                thread.join()
         if self._serial != None:
             self._serial.close()
         logger.info("[RADAR] Stopped all threads")
