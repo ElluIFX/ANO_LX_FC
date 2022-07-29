@@ -281,14 +281,24 @@ void UserCom_Task(float dT_s) {
     }
 
     // 吊舱状态检测
-    if (pod_state == 0x01) {  //放线
+    if (pod_state == 0x01) {  //放线开始
       user_pwm[1] = 7000;
+      if (GetSysRunTimeMs() - pod_start_time > 1000) {  //超时
+        pod_state = 0x03;
+      }
+    } else if (pod_state == 0x02) {  //收线
+      if (Button_Get(0x02) == 0) {
+        user_pwm[1] = 4800;
+      }
       if (GetSysRunTimeMs() - pod_start_time > pod_target_time) {  //超时
         pod_state = 0x00;
         user_pwm[1] = 6000;
+      } else if (Button_Get(0x02) == 1) {  //限位按钮按下
+        pod_state = 0x00;
+        user_pwm[1] = 6000;
       }
-    } else if (pod_state == 0x02) {  //收线
-      user_pwm[1] = 4800;
+    } else if (pod_state == 0x03) {  //放线等待
+      user_pwm[1] = 7000;
       if (GetSysRunTimeMs() - pod_start_time > pod_target_time) {  //超时
         pod_state = 0x00;
         user_pwm[1] = 6000;
