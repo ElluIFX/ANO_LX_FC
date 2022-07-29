@@ -1,5 +1,4 @@
 import threading
-from re import S
 from time import sleep, time
 
 import cv2
@@ -50,13 +49,13 @@ select_point = {
     "f": start_point_f,
 }
 
-start_point_name = "a"
+start_point_name = "e"
 
-default_dict = {
-    "start_point_name": "b",
-}
-cfg = ConfigManager(default_setting=default_dict)
-start_point_name = str(cfg.get_array("start_point_name"))
+# default_dict = {
+#     "start_point_name": "b",
+# }
+# cfg = ConfigManager(default_setting=default_dict)
+# start_point_name = str(cfg.get_array("start_point_name"))
 
 start_point = select_point[start_point_name]
 
@@ -119,7 +118,7 @@ class Mission(object):
         self.camera_up_pwm = 60
         self.navigation_speed = 25  # 导航速度
         self.cruise_height = 135  # 巡航高度
-        self.across_height = 140  # 钻圈高度(待调)
+        self.across_height = 135  # 钻圈高度(待调)
         self.set_buzzer = lambda x: fc.set_digital_output(2, x)
         self.pid_tunings = {
             "default": (0.3, 0, 0.08),  # 导航
@@ -345,64 +344,81 @@ class Mission(object):
         dis_thre: 识别到的两个点的距离阈值 cm
         timeout: 超时时间
         """
+        count1 = 0
+        sum = np.array([0, 0], dtype = np.float64)
+        while True:
+            sleep(0.1)
+            points = self.radar.map.find_two_different_nearest_point(
+                from_, to_, range_limit, dis_thre
+            )
+            if len(points) == 2:
+                count1 += 1
+                a_point = points[0].to_xy() / 10
+                b_point = points[1].to_xy() / 10
+                mid_point = (a_point + b_point) / 2
+                sum += mid_point
+                if count1 > 3:
+                    mid_point = sum / count1
+                    logger.info("[MISSION] Find hoop")
+                    break
+            else:
+                logger.info("[MISSION] Not find hoop")
+        self.set_navigation_speed(15)
+        if start_point_name in ["a", "c", "e"]:
+            to_point = np.array([0, 0])
+            to_point[0] = start_point[0] + mid_point[0] - 65
+            to_point[1] = start_point[1] + mid_point[1]
+        elif start_point_name in ["b", "d"]:
+            to_point = np.array([0, 0])
+            to_point[0] = start_point[0] + mid_point[0]
+            to_point[1] = start_point[1] + mid_point[1] - 65
+        elif start_point_name == "f":
+            to_point = np.array([0, 0])
+            to_point[0] = start_point[0] + mid_point[0]
+            to_point[1] = start_point[1] + mid_point[1] + 65
+        logger.info(f"[MISSION] to_point: {to_point}")
+        self.navigation_to_waypoint(to_point)
+        self.wait_for_waypoint()
+        sleep(0.5)
         self.navigation_flag = False
         self.height_pid.setpoint = self.across_height
 
+        if start_point_name in ["a", "c", "e"]:
+            logger.info("[MISSION] no turn")
+        elif start_point_name in ["b", "d"]:
+            self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
+            self.fc.turn_left(90, 20)
+            self.fc.wait_for_last_command_done()
+            self.fc.horizontal_move(10, 15, 0)
+            self.fc.wait_for_last_command_done()
+        elif start_point_name == "f":
+            self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
+            self.fc.turn_right(90, 20)
+            self.fc.wait_for_last_command_done()
+            self.fc.horizontal_move(10, 15, 0)
+            self.fc.wait_for_last_command_done()
+        self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
+
         yaw_flag = False
         x_flag = False
-        count = 0
         count2 = 0
         start_time = time()
         while True:
             sleep(0.1)
-            # 固定扫描角度,指定向右为yaw轴零点
-            current_yaw = deg_360_180(self.fc.state.yaw.value - self.initial_yaw)
             if not yaw_flag:
-                dfrom = int(from_ - current_yaw)
-                dto = int(to_ - current_yaw)
-                drange = range_limit
+                if start_point_name in ['a','c','e']:
+                    points = self.radar.map.find_two_different_nearest_point(
+                        0, 359, 1500, dis_thre
+                    )
+                else:
+                    points = self.radar.map.find_two_different_nearest_point(
+                        0, 359, 2000, dis_thre
+                    )
             else:
-                count += 1
-                if count > 5 and count < 25:
-                    dfrom = int(from_ - current_yaw) - 5
-                    dto = int(to_ - current_yaw) + 5
-                elif count >= 25:
-                    dfrom = -85
-                    dto = 85
-                else:
-                    dfrom = int(from_ - current_yaw)
-                    dto = int(to_ - current_yaw)
-                if count >= 25:
-                    drange = 1500
-                else:
-                    drange = range_limit
-            # logger.info(f"[hoop] current_yaw:{current_yaw} dfrom:{dfrom}  dto:{dto}")
-            points = self.radar.map.find_two_different_nearest_point(
-                dfrom, dto, drange, dis_thre
-            )
-            if len(points) == 1:
-                self.fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)
-                logger.info(f"[Hoop] Impossible:{current_yaw} dfrom:{dfrom}  dto:{dto}")
-                # if not yaw_flag:
-                #     self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
-                #     if current_yaw > 10:
-                #         self.fc.horizontal_move(30, 20, (270 - current_yaw))
-                #     elif current_yaw < -10:
-                #         self.fc.horizontal_move(30, 20, (90 - current_yaw))
-                #     elif abs(current_yaw) < 10:
-                #         self.fc.horizontal_move(50, 20, 270)
-                #     self.fc.wait_for_last_command_done()
-                #     self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
-                # else:
-                #     # self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
-                #     # self.fc.horizontal_move(20, 20, 180)
-                #     # self.fc.wait_for_last_command_done()
-                #     # self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
-                #     logger.info("[Misson] Impossiable")
-            elif len(points) == 2:
-                logger.info(
-                    f"[hoop] current_yaw2:{current_yaw} dfrom:{dfrom}  dto:{dto}"
+                points = self.radar.map.find_two_different_nearest_point(
+                    -90, 90, 1200, dis_thre
                 )
+            if len(points) == 2:
                 a_point = points[0].to_xy()
                 b_point = points[1].to_xy()
                 k = (b_point[0] - a_point[0]) / (
@@ -445,28 +461,15 @@ class Mission(object):
                             break
             else:
                 self.fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)
-                logger.info("[MISSION] Find hoop error")
+                logger.info("[MISSION] Hoop find error")
             if time() - start_time > timeout:
                 logger.warning("[MISSION] Align_hoop overtime")
                 break
-        # 程控转圈
-        # sleep(0.5)
-        # self.keep_height_flag = False
-        # self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
-        # self.fc.stablize()
-        # sleep(0.5)
-        # self.fc.horizontal_move(180, 25, 0)
-        # self.fc.wait_for_last_command_done()
-        # self.keep_height_flag = True
-        # sleep(0.5)
-        # self.fc.stablize()
-        # logger.info("[MISSION] Across hoop finish")
 
-        # 实时控制钻圈
         sleep(0.5)
         self.keep_height_flag = False
         self.fc.update_realtime_control(vel_x=21, vel_y=0, vel_z=0, yaw=0)
-        sleep(7)
+        sleep(6)
         self.fc.update_realtime_control(vel_x=0, vel_y=0, vel_z=0, yaw=0)
         self.keep_height_flag = True
         sleep(0.5)
