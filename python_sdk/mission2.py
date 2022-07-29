@@ -36,12 +36,12 @@ m_point = (
     + (RIGHT_DOWN_POINT - RIGHT_UP_POINT) / 4 * y
     + LEFT_UP_POINT
 )  # 坐标系定义: 以左上角为(0,0),向右为x轴,向下为y轴
-RED_TRIANGLES = [m_point(0, 0) , m_point(2, 2)]
-RED_RECTANGLES = [m_point(0, 2) , m_point(2, 4)]
-RED_CIRCLES = [m_point(4, 0) , m_point(3, 3)]
-BLUE_TRIANGLES = [m_point(3, 1) , m_point(4, 4)]
-BLUE_RECTANGLES = [m_point(2, 0) , m_point(4, 2)]
-BLUE_CIRCLES = [m_point(1, 1) , m_point(1, 3)]
+RED_TRIANGLES = [m_point(0, 0), m_point(2, 2)]
+RED_RECTANGLES = [m_point(0, 2), m_point(2, 4)]
+RED_CIRCLES = [m_point(4, 0), m_point(3, 3)]
+BLUE_TRIANGLES = [m_point(3, 1), m_point(4, 4)]
+BLUE_RECTANGLES = [m_point(2, 0), m_point(4, 2)]
+BLUE_CIRCLES = [m_point(1, 1), m_point(1, 3)]
 # 降落点
 landing_point = BASE_POINT
 
@@ -110,7 +110,7 @@ class Mission(object):
         self.navigation_flag = False
         self.running = False
         self.thread_list = []
-        # vision_debug()
+        vision_debug()
 
     def stop(self):
         self.running = False
