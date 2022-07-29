@@ -40,11 +40,11 @@ select_point = {"a": start_point_a, "b": start_point_b, "c": start_point_c}
 
 start_point_name = "a"
 
-# default_dict = {
-#     "start_point_name": "b",
-# }
-# cfg = ConfigManager(default_setting=default_dict)
-# start_point_name = cfg.get_array("start_point_name")
+default_dict = {
+    "start_point_name": "b",
+}
+cfg = ConfigManager(default_setting=default_dict)
+start_point_name = str(cfg.get_array("start_point_name"))
 
 start_point = select_point[start_point_name]
 
