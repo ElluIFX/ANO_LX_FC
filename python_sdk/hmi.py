@@ -41,3 +41,6 @@ class HMI(object):
     def info(self, data: str):
         data.replace("\n", "\r\n")
         self.command(f'info.txt="{data}"')
+
+    def stop(self):
+        self._serial.close()

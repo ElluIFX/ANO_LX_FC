@@ -60,6 +60,7 @@ except:
         fc.set_rgb_led(0, 0, 0)
         sleep(0.5)
         if fc.event.key_short.is_set():
+            fc.quit()
             self_reboot()
 try:
     cam = cv2.VideoCapture(0)
@@ -74,6 +75,8 @@ except:
         fc.set_rgb_led(0, 0, 0)
         sleep(0.5)
         if fc.event.key_short.is_set():
+            fc.quit()
+            radar.stop()
             self_reboot()
 
 try:
@@ -88,6 +91,9 @@ except:
         fc.set_rgb_led(0, 0, 0)
         sleep(0.5)
         if fc.event.key_short.is_set():
+            fc.quit()
+            cam.release()
+            radar.stop()
             self_reboot()
 
 ############################## 参数 ##############################
@@ -171,12 +177,34 @@ if target_mission is None:
                     break
                 except:
                     hmi.info(f"指令出错")
+            if cmd == "spec-":
+                try:
+                    epoint = int(cmd.strip().replace("spec-", ""))
+                    logger.info(f"[HMI] Get enter point {epoint}")
+                    hmi.info(f"{epoint}")
+                    cfg.set("enter-point", epoint)
+                    sleep(0.5)
+                    hmi.info("")
+                except:
+                    pass
 else:
     _testing = True
 if not _testing:
     set_button_led(True)
     fc.event.key_short.clear()
-    fc.event.key_short.wait()
+    while True:
+        sleep(0.01)
+        if fc.event.key_short.is_set():
+            break
+        cmd = hmi.read()
+        if cmd is not None:
+            if "home" in cmd:
+                logger.info("[HMI] Cancel mission, auto rebooting...")
+                fc.quit()
+                cam.release()
+                radar.stop()
+                hmi.stop()
+                self_reboot()
     fc.event.key_short.clear()
     set_button_led(False)
 ############################## 开始任务 ##############################
@@ -229,6 +257,8 @@ set_buzzer(False)
 fc.set_rgb_led(0, 0, 0)
 fc.quit()
 cam.release()
+radar.stop()
+hmi.stop()
 
 ########################## 重启自身 #############################
 if not _testing:
