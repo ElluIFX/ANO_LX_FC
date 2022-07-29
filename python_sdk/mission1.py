@@ -33,35 +33,35 @@ m_point = (
     + (RIGHT_DOWN_POINT - RIGHT_UP_POINT) / 4 * y
     + LEFT_UP_POINT
 )  # 坐标系定义: 以左上角为(0,0),向右为x轴,向下为y轴
-RED_TRIANGLES = [m_point(0, 0) , m_point(2, 2)]
-RED_RECTANGLES = [m_point(0, 2) , m_point(2, 4)]
-RED_CIRCLES = [m_point(4, 0) , m_point(3, 3)]
-BLUE_TRIANGLES = [m_point(3, 1) , m_point(4, 4)]
-BLUE_RECTANGLES = [m_point(2, 0) , m_point(4, 2)]
-BLUE_CIRCLES = [m_point(1, 1) , m_point(1, 3)]
+# RED_TRIANGLES = [m_point(0, 0) , m_point(2, 2)]
+# RED_RECTANGLES = [m_point(0, 2) , m_point(2, 4)]
+# RED_CIRCLES = [m_point(4, 0) , m_point(3, 3)]
+# BLUE_TRIANGLES = [m_point(3, 1) , m_point(4, 4)]
+# BLUE_RECTANGLES = [m_point(2, 0) , m_point(4, 2)]
+# BLUE_CIRCLES = [m_point(1, 1) , m_point(1, 3)]
 # 降落点
 landing_point = BASE_POINT
 
 target_points = [m_point(1, 1), m_point(3, 3)]
 
-# default_dict = {
-#     "point-1": LEFT_UP_POINT,
-#     "point-2": RIGHT_UP_POINT,
-#     "point-3": RIGHT_DOWN_POINT,
-#     "point-4": BASE_POINT,
-#     "target-1": np.array([1, 1]),
-#     "target-2": np.array([3, 3]),
-# }
-# cfg = ConfigManager(default_setting=default_dict)
-# logger.info(f"[MISSION] Loaded config: {cfg.dict()}")
-# BASE_POINT = cfg.get_array("point-4")
-# LEFT_UP_POINT = cfg.get_array("point-1")
-# RIGHT_UP_POINT = cfg.get_array("point-2")
-# RIGHT_DOWN_POINT = cfg.get_array("point-3")
-# _target_1 = cfg.get_array("target-1")
-# target_points[0] = m_point(_target_1[0], _target_1[1])
-# _target_2 = cfg.get_array("target-2")
-# target_points[1] = m_point(_target_2[0], _target_2[1])
+default_dict = {
+    "point-1": LEFT_UP_POINT,
+    "point-2": RIGHT_UP_POINT,
+    "point-3": RIGHT_DOWN_POINT,
+    "point-4": BASE_POINT,
+    "target-1": np.array([1, 1]),
+    "target-2": np.array([3, 3]),
+}
+cfg = ConfigManager(default_setting=default_dict)
+logger.info(f"[MISSION] Loaded config: {cfg.dict()}")
+BASE_POINT = cfg.get_array("point-4")
+LEFT_UP_POINT = cfg.get_array("point-1")
+RIGHT_UP_POINT = cfg.get_array("point-2")
+RIGHT_DOWN_POINT = cfg.get_array("point-3")
+_target_1 = cfg.get_array("target-1")
+target_points[0] = m_point(_target_1[0], _target_1[1])
+_target_2 = cfg.get_array("target-2")
+target_points[1] = m_point(_target_2[0], _target_2[1])
 
 
 class Mission(object):
@@ -123,8 +123,8 @@ class Mission(object):
         self.cruise_height = 140  # 巡航高度
         self.goods_height = 80  # 处理物品高度
         self.pid_tunings = {
-            "default": (0.4, 0, 0.05),  # 导航
-            "delivery": (0.5, 0.03, 0.2),  # 配送
+            "default": (0.3, 0, 0.08),  # 导航
+            "delivery": (0.5, 0.01, 0.15),  # 配送
             "landing": (0.3, 0.02, 0.06),  # 降落
         }  # PID参数 (仅导航XY使用)
         ################ 启动线程 ################
@@ -298,7 +298,7 @@ class Mission(object):
                         low_pass_ratio=LOW_PASS_RATIO,
                     )
                     logger.info("[MISSION] Resolve pose started")
-                    sleep(0.01)
+                    sleep(0.05)
                 if self.radar.rt_pose_update_event.wait(1):  # 等待地图更新
                     self.radar.rt_pose_update_event.clear()
                     current_x = self.radar.rt_pose[0]

@@ -77,7 +77,7 @@ except:
             self_reboot()
 
 try:
-    hmi = HMI("/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0")
+    hmi = HMI("/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0")
     hmi.command("page init")
     sleep(1)
 except:
@@ -171,7 +171,7 @@ if target_mission is None:
                 try:
                     start = cmd.strip().replace("across:","")
                     cfg.set("start_point_name", start)
-                    hmi.info(f"开始点已设置")
+                    hmi.info(f"开始点已设置:"+start)
                 except:
                     hmi.info(f"指令出错")
 else:
