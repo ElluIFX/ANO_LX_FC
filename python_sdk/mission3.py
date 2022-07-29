@@ -404,15 +404,16 @@ class Mission(object):
                         x_flag = True
                 if x_flag:
                     mid_point = (a_point + b_point) / 2
-                    if mid_point[1] > 50:
+                    if mid_point[1] > 35:
                         # 如果中点y坐标大于50，则应该向左移动
                         self.fc.update_realtime_control(vel_y=10)
-                    elif mid_point[1] < -50:
+                    elif mid_point[1] < -35:
                         # 如果中点y坐标小于-50，则应该向右移动
                         self.fc.update_realtime_control(vel_y=-10)
-                    if abs(mid_point[1]) < 50:  # mm
+                    if abs(mid_point[1]) < 35:  # mm
                         count2 += 1
                         self.fc.update_realtime_control(vel_y=0)
+                        logger.info("[MISSION] Y success")
                         if count2 > 3:
                             self.fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)
                             logger.info("[MISSION] Align Hoop finish")
@@ -439,7 +440,7 @@ class Mission(object):
         # 实时控制钻圈
         sleep(0.5)
         self.keep_height_flag = False
-        self.fc.update_realtime_control(vel_x=25, vel_y=0, vel_z=0, yaw=0)
+        self.fc.update_realtime_control(vel_x=21, vel_y=0, vel_z=0, yaw=0)
         sleep(7)
         self.fc.update_realtime_control(vel_x=0, vel_y=0, vel_z=0, yaw=0)
         self.keep_height_flag = True
