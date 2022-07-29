@@ -244,7 +244,7 @@ class FastestDetOnnx(FastestDet):
     使用 onnxruntime 运行 FastestDet 目标检测网络
     """
 
-    def __init__(self, confThreshold=0.6, nmsThreshold=0.3, drawOutput=False):
+    def __init__(self, confThreshold=0.6, nmsThreshold=0.2, drawOutput=False):
         """
         FastestDet 目标检测网络
         confThreshold: 置信度阈值
