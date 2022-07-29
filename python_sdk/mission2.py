@@ -31,21 +31,6 @@ BASE_POINT = np.array([79, 425])
 LEFT_UP_POINT = np.array([350, 375])
 RIGHT_UP_POINT = np.array([350, 75])
 RIGHT_DOWN_POINT = np.array([50, 75])
-m_point = (
-    lambda x, y: (RIGHT_UP_POINT - LEFT_UP_POINT) / 4 * x
-    + (RIGHT_DOWN_POINT - RIGHT_UP_POINT) / 4 * y
-    + LEFT_UP_POINT
-)  # 坐标系定义: 以左上角为(0,0),向右为x轴,向下为y轴
-RED_TRIANGLES = [m_point(0, 0), m_point(2, 2)]
-RED_RECTANGLES = [m_point(0, 2), m_point(2, 4)]
-RED_CIRCLES = [m_point(4, 0), m_point(3, 3)]
-BLUE_TRIANGLES = [m_point(3, 1), m_point(4, 4)]
-BLUE_RECTANGLES = [m_point(2, 0), m_point(4, 2)]
-BLUE_CIRCLES = [m_point(1, 1), m_point(1, 3)]
-# 降落点
-landing_point = BASE_POINT
-
-target_points = [m_point(1, 1), m_point(3, 3)]
 
 default_dict = {
     "point-1": LEFT_UP_POINT,
@@ -61,6 +46,22 @@ BASE_POINT = cfg.get_array("point-4")
 LEFT_UP_POINT = cfg.get_array("point-1")
 RIGHT_UP_POINT = cfg.get_array("point-2")
 RIGHT_DOWN_POINT = cfg.get_array("point-3")
+
+# 降落点
+landing_point = BASE_POINT
+
+m_point = (
+    lambda x, y: (RIGHT_UP_POINT - LEFT_UP_POINT) / 4 * x
+    + (RIGHT_DOWN_POINT - RIGHT_UP_POINT) / 4 * y
+    + LEFT_UP_POINT
+)  # 坐标系定义: 以左上角为(0,0),向右为x轴,向下为y轴
+RED_TRIANGLES = [m_point(0, 0), m_point(2, 2)]
+RED_RECTANGLES = [m_point(0, 2), m_point(2, 4)]
+RED_CIRCLES = [m_point(4, 0), m_point(3, 3)]
+BLUE_TRIANGLES = [m_point(3, 1), m_point(4, 4)]
+BLUE_RECTANGLES = [m_point(2, 0), m_point(4, 2)]
+BLUE_CIRCLES = [m_point(1, 1), m_point(1, 3)]
+
 _target_1 = cfg.get_array("target-1")
 target_points[0] = m_point(_target_1[0], _target_1[1])
 _target_2 = cfg.get_array("target-2")
@@ -99,8 +100,8 @@ class Mission(object):
         )
         self.navi_yaw_pid = PID(
             0.3,
-            0.01,
-            0.05,
+            0,
+            0.1,
             setpoint=0,
             output_limits=(-45, 45),
             auto_mode=False,
@@ -110,7 +111,7 @@ class Mission(object):
         self.navigation_flag = False
         self.running = False
         self.thread_list = []
-        vision_debug()
+        # vision_debug()
 
     def stop(self):
         self.running = False

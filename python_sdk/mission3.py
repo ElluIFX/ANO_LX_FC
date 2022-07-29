@@ -14,6 +14,7 @@ from FlightController.Solutions.Vision import (
     vision_debug,
 )
 from FlightController.Solutions.Vision_Net import FastestDetOnnx
+from hmi import HMI
 from simple_pid import PID
 
 
@@ -31,12 +32,23 @@ BASE_POINT = np.array([72, 75])
 # 降落点
 landing_point = BASE_POINT
 # 任务点
-start_point_a = np.array([85, 310])  # 待调
-start_point_b = np.array([85, 200])
-start_point_c = np.array([85, 90])
-deg_from = {"a": 0, "b": -70, "c": -90}
-deg_to = {"a": 90, "b": 70, "c": 0}
-select_point = {"a": start_point_a, "b": start_point_b, "c": start_point_c}
+start_point_a = np.array([110, 275])  # 1 9之间
+start_point_b = np.array([270, 125])  # 2 10之间
+start_point_c = np.array([75, 200])  # 9后
+start_point_d = np.array([200, 70])  # 7右
+start_point_e = np.array([120, 120])  # 7后
+start_point_f = np.array([270, 270])  # 3 8之间
+deg_from = {"a": -30, "b": -120, "c": -60, "d": -135, "e": -30, "f": 60}
+deg_to = {"a": 30, "b": -60, "c": 60, "d": -45, "e": 30, "f": 120}
+point_range = {"a": 2100, "b": 2200, "c": 2200, "d": 2000, "e": 2000, "f": 2200}
+select_point = {
+    "a": start_point_a,
+    "b": start_point_b,
+    "c": start_point_c,
+    "d": start_point_d,
+    "e": start_point_e,
+    "f": start_point_f,
+}
 
 start_point_name = "a"
 
@@ -48,11 +60,15 @@ start_point_name = str(cfg.get_array("start_point_name"))
 
 start_point = select_point[start_point_name]
 
+
 class Mission(object):
-    def __init__(self, fc: FC_Controller, radar: LD_Radar, camera: cv2.VideoCapture):
+    def __init__(
+        self, fc: FC_Controller, radar: LD_Radar, camera: cv2.VideoCapture, hmi: HMI
+    ):
         self.fc = fc
         self.radar = radar
         self.cam = camera
+        self.hmi = hmi
         self.initial_yaw = self.fc.state.yaw.value
         self.fd = FastestDetOnnx(drawOutput=True)  # 初始化神经网络
         ############### PID #################
@@ -77,8 +93,8 @@ class Mission(object):
         )
         self.navi_yaw_pid = PID(
             0.3,
-            0.0,
-            0.2,
+            0,
+            0.1,
             setpoint=0,
             output_limits=(-45, 45),
             auto_mode=False,
@@ -106,8 +122,8 @@ class Mission(object):
         self.across_height = 140  # 钻圈高度(待调)
         self.set_buzzer = lambda x: fc.set_digital_output(2, x)
         self.pid_tunings = {
-            "default": (0.4, 0, 0.08),  # 导航
-            "landing": (0.25, 0.02, 0.06),  # 降落
+            "default": (0.3, 0, 0.08),  # 导航
+            "landing": (0.3, 0.01, 0.08),  # 降落
         }  # PID参数 (仅导航XY使用)
         ################ 启动线程 ################
         self.running = True
@@ -145,7 +161,11 @@ class Mission(object):
         ############### 开始呼啦圈任务 ##############
         self.navigation_to_waypoint(start_point)
         self.wait_for_waypoint()
-        self.across_hoop(deg_from[start_point_name], deg_to[start_point_name], 2000)
+        self.across_hoop(
+            deg_from[start_point_name],
+            deg_to[start_point_name],
+            point_range[start_point_name],
+        )
         ######## 原地降落
         fc.set_flight_mode(fc.PROGRAM_MODE)
         fc.land()
@@ -340,20 +360,25 @@ class Mission(object):
             if not yaw_flag:
                 dfrom = int(from_ - current_yaw)
                 dto = int(to_ - current_yaw)
+                drange = range_limit
             else:
                 count += 1
                 if count > 5 and count < 25:
-                    dfrom = int(from_ - current_yaw) - 10
-                    dto = int(to_ - current_yaw) + 10
+                    dfrom = int(from_ - current_yaw) - 5
+                    dto = int(to_ - current_yaw) + 5
                 elif count >= 25:
                     dfrom = -85
                     dto = 85
                 else:
                     dfrom = int(from_ - current_yaw)
                     dto = int(to_ - current_yaw)
+                if count >= 25:
+                    drange = 1500
+                else:
+                    drange = range_limit
             # logger.info(f"[hoop] current_yaw:{current_yaw} dfrom:{dfrom}  dto:{dto}")
             points = self.radar.map.find_two_different_nearest_point(
-                dfrom, dto, range_limit, dis_thre
+                dfrom, dto, drange, dis_thre
             )
             if len(points) == 1:
                 self.fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)

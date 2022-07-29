@@ -12,7 +12,7 @@ from FlightController import FC_Client
 # fc.run()
 
 fc = FC_Client()
-fc.connect("192.168.137.23")
+fc.connect("192.168.137.79")
 fc.start_sync_state(False)
 fc.wait_for_connection(5)
 

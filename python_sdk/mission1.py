@@ -42,8 +42,7 @@ m_point = (
 # BLUE_TRIANGLES = [m_point(3, 1) , m_point(4, 4)]
 # BLUE_RECTANGLES = [m_point(2, 0) , m_point(4, 2)]
 # BLUE_CIRCLES = [m_point(1, 1) , m_point(1, 3)]
-# 降落点
-landing_point = BASE_POINT
+
 
 target_points = [m_point(1, 1), m_point(3, 3)]
 
@@ -65,6 +64,8 @@ _target_1 = cfg.get_array("target-1")
 target_points[0] = m_point(_target_1[0], _target_1[1])
 _target_2 = cfg.get_array("target-2")
 target_points[1] = m_point(_target_2[0], _target_2[1])
+# 降落点
+landing_point = BASE_POINT
 
 
 class Mission(object):
@@ -99,8 +100,8 @@ class Mission(object):
         )
         self.navi_yaw_pid = PID(
             0.3,
-            0.01,
-            0.05,
+            0,
+            0.1,
             setpoint=0,
             output_limits=(-45, 45),
             auto_mode=False,

@@ -172,6 +172,7 @@ if target_mission is None:
                     start = cmd.strip().replace("across:","")
                     cfg.set("start_point_name", start)
                     hmi.info(f"开始点已设置:"+start)
+                    logger.info("[MANAGER] start point set:"+start)
                 except:
                     hmi.info(f"指令出错")
 else:
