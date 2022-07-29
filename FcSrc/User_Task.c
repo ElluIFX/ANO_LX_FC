@@ -1,5 +1,6 @@
 #include "User_Task.h"
 
+#include "Drv_PwmOut.h"
 #include "Drv_RcIn.h"
 #include "LX_FC_Fun.h"
 
@@ -55,6 +56,10 @@ void UserTask_OneKeyCmd(void) {
       emergency_stop_f = 1;
       //执行一键锁桨
       FC_Lock();
+      pwm_to_esc.pwm_m1 = 0;
+      pwm_to_esc.pwm_m2 = 0;
+      pwm_to_esc.pwm_m3 = 0;
+      pwm_to_esc.pwm_m4 = 0;
     }
   } else {
     emergency_stop_f = 0;
