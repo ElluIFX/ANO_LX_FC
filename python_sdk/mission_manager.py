@@ -2,12 +2,12 @@ import os
 import sys
 
 ####### 清理日志 #######
-path = os.path.dirname(os.path.abspath(__file__))
-log_path = os.path.join(path, "fc_log.log")
-try:
-    os.remove(log_path)
-except:
-    pass
+# path = os.path.dirname(os.path.abspath(__file__))
+# log_path = os.path.join(path, "fc_log.log")
+# try:
+#     os.remove(log_path)
+# except:
+#     pass
 ####################
 from time import sleep, time
 
@@ -118,21 +118,25 @@ logger.info("[MANAGER] Selecting mission...")
 
 pos_send_flag = False
 last_send_time = time()
-
+last_cnt_time = time()
 if target_mission is None:
     while True:
+        sleep(0.01)
         cmd = hmi.read()
         pos = radar.rt_pose
         if pos_send_flag and time() - last_send_time > 0.2:
             last_send_time = time()
             hmi.command(f'pos.txt="({pos[0]:06.2f}, {pos[1]:06.2f}, {pos[2]:05.1f})"')
+        if time() - last_cnt_time > 1:
+            last_cnt_time = time()
+            hmi.command(f'cnt.txt="已连接 电压: {fc.state.bat.value:.2f}V"')
         if cmd is not None:
             if cmd == "ok":  # 握手
                 hmi.command("ok.en=1")
                 logger.info("[HMI] HMI connected")
             if cmd == "start_cal":
                 pos_send_flag = True
-                radar.start_resolve_pose()
+                radar.start_resolve_pose(scale_ratio=1, low_pass_ratio=0.4)
                 fc.set_digital_output(2, True)
             if cmd == "stop_cal":
                 pos_send_flag = False
@@ -169,11 +173,12 @@ if target_mission is None:
                     hmi.info(f"指令出错")
 else:
     _testing = True
-set_button_led(True)
-fc.event.key_short.clear()
-fc.event.key_short.wait()
-fc.event.key_short.clear()
-set_button_led(False)
+if not _testing:
+    set_button_led(True)
+    fc.event.key_short.clear()
+    fc.event.key_short.wait()
+    fc.event.key_short.clear()
+    set_button_led(False)
 ############################## 开始任务 ##############################
 logger.info(f"[MANAGER] Target Mission: {target_mission}")
 fc.set_action_log(True)

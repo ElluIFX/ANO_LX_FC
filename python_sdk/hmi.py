@@ -1,11 +1,14 @@
 # 陶晶驰串口屏驱动
 import time
+import traceback
 
 import serial
 
 
 class HMI(object):
     def __init__(self, port, baudrate: int = 115200):
+        self._port = port
+        self._baudrate = baudrate
         self._serial = serial.Serial(port, baudrate)
         self._buffer = bytes()
         self._timer = time.time()
@@ -16,7 +19,7 @@ class HMI(object):
             send = data.encode("gbk") + b"\xFF\xFF\xFF"
             self._serial.write(send)
         except Exception as e:
-            print(e)
+            traceback.print_exc()
 
     def read(self, timeout: float = 0.01) -> str:
         try:
@@ -32,8 +35,9 @@ class HMI(object):
                 return data
             return None
         except Exception as e:
-            print(e)
+            traceback.print_exc()
             return None
 
     def info(self, data: str):
+        data.replace("\n", "\r\n")
         self.command(f'info.txt="{data}"')
