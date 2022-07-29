@@ -31,16 +31,17 @@ BASE_POINT = np.array([72, 75])
 # 降落点
 landing_point = BASE_POINT
 # 任务点
-start_point_a = np.array([85, 300])  # 待调
+start_point_a = np.array([85, 310])  # 待调
 start_point_b = np.array([85, 200])
-deg_from = {"a": 0, "b": -70}
-deg_to = {"a": 90, "b": 70}
-select_point = {"a": start_point_a, "b": start_point_b}
+start_point_c = np.array([85, 90])
+deg_from = {"a": 0, "b": -70, "c": -90}
+deg_to = {"a": 90, "b": 70, "c": 0}
+select_point = {"a": start_point_a, "b": start_point_b, "c": start_point_c}
 
 start_point_name = "a"
 
 # default_dict = {
-#     "start_point_name": "a",
+#     "start_point_name": "b",
 # }
 # cfg = ConfigManager(default_setting=default_dict)
 # start_point_name = cfg.get_array("start_point_name")

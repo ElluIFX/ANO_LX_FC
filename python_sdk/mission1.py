@@ -124,7 +124,7 @@ class Mission(object):
         self.goods_height = 80  # 处理物品高度
         self.pid_tunings = {
             "default": (0.4, 0, 0.05),  # 导航
-            "delivery": (0.5, 0.01, 0.2),  # 配送
+            "delivery": (0.5, 0.03, 0.2),  # 配送
             "landing": (0.3, 0.02, 0.06),  # 降落
         }  # PID参数 (仅导航XY使用)
         ################ 启动线程 ################
@@ -238,7 +238,7 @@ class Mission(object):
         self.height_pid.setpoint = self.cruise_height
         self.switch_pid("default")
         self.fc.set_rgb_led(0, 0, 0)
-        self.fc.set_pod(1, 11000)
+        self.fc.set_pod(1, 10000)
         sleep(9)
         ####################################
 
