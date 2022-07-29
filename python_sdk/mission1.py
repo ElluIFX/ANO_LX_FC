@@ -95,8 +95,8 @@ class Mission(object):
         )
         self.navi_yaw_pid = PID(
             0.3,
-            0.0,
-            0.2,
+            0.01,
+            0.05,
             setpoint=0,
             output_limits=(-45, 45),
             auto_mode=False,
@@ -235,11 +235,12 @@ class Mission(object):
         # self.playback.stop()
         sleep(6)
         #####################################
-        self.height_pid.setpoint = self.cruise_height
-        self.switch_pid("default")
         self.fc.set_rgb_led(0, 0, 0)
         self.fc.set_pod(1, 10000)
-        sleep(9)
+        sleep(8.5)
+        self.height_pid.setpoint = self.cruise_height
+        self.switch_pid("default")
+        sleep(2)
         ####################################
 
     def switch_pid(self, pid):
