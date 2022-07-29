@@ -12,6 +12,7 @@ from FlightController.Solutions.Vision import (
     vision_debug,
 )
 from FlightController.Solutions.Vision_Net import FastestDetOnnx
+from hmi import HMI
 from just_playback import Playback
 from simple_pid import PID
 
@@ -67,10 +68,11 @@ target_points[1] = m_point(_target_2[0], _target_2[1])
 
 
 class Mission(object):
-    def __init__(self, fc: FC_Controller, radar: LD_Radar, camera: cv2.VideoCapture):
+    def __init__(self, fc: FC_Controller, radar: LD_Radar, camera: cv2.VideoCapture, hmi: HMI):
         self.fc = fc
         self.radar = radar
         self.cam = camera
+        self.hmi = hmi
         self.inital_yaw = self.fc.state.yaw.value
         # self.fd = FastestDetOnnx(drawOutput=True)  # 初始化神经网络
         # self.playback = Playback()
@@ -322,7 +324,7 @@ class Mission(object):
                         low_pass_ratio=LOW_PASS_RATIO,
                     )
                     logger.info("[MISSION] Resolve pose started")
-                    sleep(0.05)
+                    sleep(0.01)
                 if self.radar.rt_pose_update_event.wait(1):  # 等待地图更新
                     self.radar.rt_pose_update_event.clear()
                     current_x = self.radar.rt_pose[0]
