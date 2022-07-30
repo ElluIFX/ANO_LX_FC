@@ -336,9 +336,11 @@ class Map_360(object):
                             )
                             / 2
                         )
-                        get_list.append((fd_points[i], fd_points[j], delta_dis, deg))
+                        dis = (fd_points[i].distance + fd_points[j].distance) / 2
+                        get_list.append((fd_points[i], fd_points[j], dis, deg))
             if len(get_list) > 0:
-                get_list.sort(key=lambda x: x[3])
+                get_list.sort(key=lambda x: x[2])  # 按距离排序
+                get_list.sort(key=lambda x: x[3])  # 按角度排序
                 return list(get_list[0][:2])
         return []
 
