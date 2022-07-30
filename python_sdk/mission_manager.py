@@ -177,16 +177,21 @@ if target_mission is None:
                     break
                 except:
                     hmi.info(f"指令出错")
-            if cmd == "spec-":
+            if cmd.startswith("spec-"):
                 try:
-                    epoint = int(cmd.strip().replace("spec-", ""))
-                    logger.info(f"[HMI] Get enter point {epoint}")
+                    it = int(cmd.strip().replace("spec-", ""))
+                    epoint = cfg.get_int("enter-point")
+                    if it == 1:
+                        epoint -= 1
+                    elif it == 3:
+                        epoint += 1
+                    logger.info(f"[HMI] Set enter point {epoint}")
                     hmi.info(f"{epoint}")
                     cfg.set("enter-point", epoint)
                     sleep(0.5)
                     hmi.info("")
                 except:
-                    pass
+                    logger.warning(f"[HMI] Get enter point error")
 else:
     _testing = True
 if not _testing:

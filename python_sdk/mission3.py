@@ -18,29 +18,56 @@ from simple_pid import PID
 
 
 def deg_360_180(deg):
-    if deg > 180:
-        deg = deg - 360
+    while deg > 180:
+        deg -= 360
+    while deg < -180:
+        deg += 360
     return deg
 
 
 cfg = ConfigManager()
 
 # 基地点
-BASE_POINT = cfg.get_array("point-0")
-logger.info(f"[MISSION] Loaded base point: {BASE_POINT}")
+BASE_POINT = np.array([75, 75])
 
-ENTER_POINT_1 = np.array([85, 310])  # 待调
-ENTER_POINT_2 = np.array([85, 200])
-ENTER_POINT_3 = np.array([85, 90])
-DEG_RANGE_1 = (0, 90)
-DEG_RANGE_2 = (-45, 45)
-DEG_RANGE_3 = (-90, 0)
+# 左边，正面进入
+ENTER_PATH_1 = np.array([[110, 275]])
+ENTER_TURN_1 = 0
+# 左边，侧面进入
+ENTER_PATH_2 = np.array([[270, 125]])
+ENTER_TURN_2 = -90
+# 中间，正面进入
+ENTER_PATH_3 = np.array([[75, 200]])
+ENTER_TURN_3 = 0
+# 中间，侧面进入
+ENTER_PATH_4 = np.array([[200, 70]])
+ENTER_TURN_4 = -90
+# 右边，正面进入
+ENTER_PATH_5 = np.array([[120, 120]])
+ENTER_TURN_5 = 0
+# 右边，侧面进入
+ENTER_PATH_6 = np.array([[110, 275], [270, 270]])
+ENTER_TURN_6 = 90
 
 POINT_ID = cfg.get_int("enter-point") - 1
-ENTER_POINT = list([ENTER_POINT_1, ENTER_POINT_2, ENTER_POINT_3])[POINT_ID]
-logger.info(f"[MISSION] Loaded enter point: {ENTER_POINT}")
-DEG_RANGE = list([DEG_RANGE_1, DEG_RANGE_2, DEG_RANGE_3])[POINT_ID]
-logger.info(f"[MISSION] Loaded deg range: {DEG_RANGE}")
+ENTER_PATH = (
+    ENTER_PATH_1,
+    ENTER_PATH_2,
+    ENTER_PATH_3,
+    ENTER_PATH_4,
+    ENTER_PATH_5,
+    ENTER_PATH_6,
+)[POINT_ID]
+logger.info(f"[MISSION] Loaded enter path {ENTER_PATH}")
+ENTER_TURN = (
+    ENTER_TURN_1,
+    ENTER_TURN_2,
+    ENTER_TURN_3,
+    ENTER_TURN_4,
+    ENTER_TURN_5,
+    ENTER_TURN_6,
+)[POINT_ID]
+logger.info(f"[MISSION] Loaded enter turn {ENTER_TURN}")
 
 
 class Mission(object):
@@ -51,9 +78,8 @@ class Mission(object):
         self.radar = radar
         self.cam = camera
         self.hmi = hmi
-        self.initial_yaw = self.fc.state.yaw.value
+        self.inital_yaw = self.fc.state.yaw.value
         self.playback = Playback()
-        self.playback.load_file("/home/pi/Desktop/prj/python_sdk/door.mp3")
         ############### PID #################
         self.height_pid = PID(
             0.8, 0.0, 0.1, setpoint=0, output_limits=(-30, 30), auto_mode=False
@@ -147,8 +173,18 @@ class Mission(object):
         logger.info("[MISSION] Mission-3 Started")
         self.pointing_takeoff(BASE_POINT)
         ################ 开始任务 ################
-        self.navigation_to_waypoint(ENTER_POINT)
-        self.wait_for_waypoint()
+        for point in ENTER_PATH:
+            self.navigation_to_waypoint(point)
+            self.wait_for_waypoint()
+        self.navigation_flag = False  # 暂停导航
+        if ENTER_TURN != 0:
+            fc.set_flight_mode(fc.PROGRAM_MODE)
+            if ENTER_TURN < 0:
+                fc.turn_left(abs(ENTER_TURN), 45)
+            else:
+                fc.turn_right(ENTER_TURN, 45)
+            fc.wait_for_hovering()
+            fc.set_flight_mode(fc.HOLD_POS_MODE)
         self.across_hoop()
         ##########################################
         fc.set_flight_mode(fc.PROGRAM_MODE)
@@ -163,9 +199,12 @@ class Mission(object):
         self.navigation_flag = False
         self.fc.set_flight_mode(self.fc.PROGRAM_MODE)
         self.fc.unlock()
+        inital_yaw = self.fc.state.yaw.value
         sleep(2)  # 等待电机启动
         self.fc.take_off(80)
         self.fc.wait_for_takeoff_done()
+        self.fc.set_yaw(inital_yaw, 25)
+        self.fc.wait_for_hovering(2)
         ######## 闭环定高
         self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
         self.height_pid.setpoint = self.cruise_height
@@ -294,6 +333,7 @@ class Mission(object):
     def navigation_to_waypoint(self, waypoint):
         self.navi_x_pid.setpoint = waypoint[0]
         self.navi_y_pid.setpoint = waypoint[1]
+        logger.info("[MISSION] Navigation to waypoint: %s", waypoint)
 
     def set_navigation_speed(self, speed):
         speed = abs(speed)
@@ -321,158 +361,106 @@ class Mission(object):
                 return
 
     def across_hoop(self):
-        self.navigation_flag = False
+        fc = self.fc
+        radar = self.radar
         self.height_pid.setpoint = self.across_height
-        self.fc.set_flight_mode(self.fc.HOLD_POS_MODE)
-
-        ############ 找圈 ############
-        from_ = DEG_RANGE[0]
-        to_ = DEG_RANGE[1]
-        dis_thre = 15
-        range_limit = 3000
-        ############ 穿越 ############
-        x_vel = 20
-        timeout = 8
-        ###########################
-
-        yaw_flag = False
-        x_flag = False
-        y_flag = False
-        locked = False
-        dfrom = from_
-        dto = to_
+        sleep(2)  # 等待高度稳定
+        radar.start_find_point(1, 0, -45, 45, 1, 3000)
+        y_locked = False  # y 是否锁定
+        x_locked = False  # x 是否锁定
+        y_pid = PID(1.2, 0.02, 0.05, setpoint=0, output_limits=(-15, 15))
+        x_pid = PID(
+            0.6, 0.02, 0.05, setpoint=50, output_limits=(-15, 15), auto_mode=False
+        )
+        self.navigation_flag = False  # 暂停导航
         while True:
-            sleep(0.01)
-            # 固定扫描角度,指定向右为yaw轴零点
-            diff_yaw = deg_360_180(self.fc.state.yaw.value - self.initial_yaw)
-            ###############################
-            # 未锁定时使用yaw更新范围
-            if not locked:
-                dfrom = int(from_ - diff_yaw)
-                dto = int(to_ - diff_yaw)
-            ###############################
-            points = self.radar.map.find_two_point_with_given_distance(
-                from_=dfrom,
-                to_=dto,
-                distance=110,
-                threshold=dis_thre,
-                range_limit=range_limit,
-            )
-            if len(points) == 0:
-                self.fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)
-                logger.info(f"[MISSION] LOSS :{diff_yaw} dfrom:{dfrom}  dto:{dto}")
-            elif len(points) == 1:
-                self.fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)
-                logger.info(f"[Hoop] ERROR :{diff_yaw} dfrom:{dfrom}  dto:{dto}")
-            elif len(points) == 2:
-                logger.info(f"[hoop] LOCKED :{diff_yaw} dfrom:{dfrom}  dto:{dto}")
-                locked = True
-                a_point = points[0]
-                b_point = points[1]
-                a_point_xy = a_point.to_xy()
-                b_point_xy = b_point.to_xy()
-                mid_point = (a_point_xy + b_point_xy) / 2
-                k = (b_point_xy[0] - a_point_xy[0]) / (
-                    a_point_xy[1] - b_point_xy[1]
-                )  # 换算到笛卡尔坐标系的斜率
-                ###############################
-                # 锁定后使用扫描到的点更新范围
-                a_deg = deg_360_180(a_point.degree)
-                b_deg = deg_360_180(b_point.degree)
-                dfrom = int(min(a_deg, b_deg) - 15)
-                dto = int(max(a_deg, b_deg) + 15)
-                ###############################
-                if k < -0.1:
-                    self.fc.update_realtime_control(yaw=15)
-                elif k > 0.1:
-                    self.fc.update_realtime_control(yaw=-15)
-                if abs(k - 0) < 0.1:
-                    self.fc.update_realtime_control(yaw=0)
-                    if not yaw_flag:
-                        yaw_flag = True
-                        logger.info("[MISSION] Hoop yaw finish")
-                if yaw_flag:  # 如果yaw轴已经完成,则开始x轴
-                    if mid_point[0] > 500:
-                        # 应该向前移动
-                        self.fc.update_realtime_control(vel_x=10)
-                    elif mid_point[0] < 500:
-                        # 应该向后移动
-                        self.fc.update_realtime_control(vel_x=-10)
-                    if abs(mid_point[0] - 500) < 50:
-                        self.fc.update_realtime_control(vel_x=0)
-                        if not x_flag:
-                            x_flag = True
-                            logger.info("[MISSION] Hoop x finish")
-                if x_flag:  # 如果x轴已经完成,则开始y轴
-                    if mid_point[1] > 35:
-                        # 向左移动
-                        self.fc.update_realtime_control(vel_y=10)
-                    elif mid_point[1] < -35:
-                        # 向右移动
-                        self.fc.update_realtime_control(vel_y=-10)
-                    if abs(mid_point[1]) < 35:  # mm
-                        self.fc.update_realtime_control(vel_y=0)
-                        if not y_flag:
-                            y_flag = True
-                            logger.info("[MISSION] Hoop y finish")
-                if yaw_flag and x_flag and y_flag:
-                    self.fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)
-                    logger.info("[MISSION] Align Hoop finish")
-                    break
-
-        # 实时控制钻圈
-        self.keep_height_flag = False
-        start_time = time()
-        logger.info("[MISSION] Start to pass hoop")
-
-        y_fixed = False
-        yaw_fixed = False
+            sleep(0.1)
+            if radar.fp_timeout_flag:
+                fc.update_realtime_control(vel_x=0, vel_y=0)
+            if len(radar.fp_points) > 0:
+                deg = deg_360_180(radar.fp_points[0].degree)
+                dis = radar.fp_points[0].distance / 10
+                logger.info("[MISSION] find point A: %.2f, %.2f" % (deg, dis))
+                out_y = y_pid(deg)
+                fc.update_realtime_control(vel_y=out_y)
+                if -5 < deg < 5:
+                    if not y_locked:
+                        y_locked = True
+                        logger.info("[MISSION] Y locked")
+                        x_pid.set_auto_mode(True)
+                if y_locked:
+                    out_x = x_pid(dis)
+                    fc.update_realtime_control(vel_x=-out_x)
+                    if -5 < dis - 50 < 5:
+                        if not x_locked:
+                            x_locked = True
+                            ok_time = time()
+                            logger.info("[MISSION] X locked")
+                if x_locked:
+                    if time() - ok_time > 2:
+                        break
+            else:
+                fc.update_realtime_control(vel_x=0, vel_y=0)
+        fc.update_realtime_control(vel_x=0, vel_y=0)
+        dis_pid = PID(
+            0.6, 0.02, 0.05, setpoint=50, output_limits=(-20, 20), auto_mode=True
+        )
+        yaw_pid = PID(
+            0.6, 0.02, 0.1, setpoint=20, output_limits=(-45, 45), auto_mode=False
+        )
+        yaw_locked = False  # yaw 是否锁定
+        x_locked = False  # x 是否锁定
+        radar.update_find_point_args(-30, 30, 1, 3000)
+        last_yaw = fc.state.yaw.value
+        turn_count = 0
+        logger.info("[MISSION] Start across hoop")
+        self.keep_height_flag = False  # 暂停高度控制
         while True:
-            sleep(0.01)
-            if time() - start_time > timeout:
-                logger.info("[MISSION] Passing hoop overtime")
-                self.fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)
+            sleep(0.1)
+            if radar.fp_timeout_flag:
+                fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)
+            if len(radar.fp_points) > 0:
+                deg = deg_360_180(radar.fp_points[0].degree)
+                dis = radar.fp_points[0].distance / 10
+                logger.info("[MISSION] find point B: %.2f, %.2f" % (deg, dis))
+                out_dis = dis_pid(dis)
+                fc.update_realtime_control(vel_x=-out_dis)
+                if abs(dis - dis_pid.setpoint) < 10:
+                    if not x_locked:
+                        x_locked = True
+                        yaw_pid.set_auto_mode(True)
+                        logger.info("[MISSION] X locked")
+                if x_locked:
+                    out_yaw = yaw_pid(deg)
+                    if out_yaw is not None:
+                        fc.update_realtime_control(yaw=-out_yaw)
+                        if abs(deg - yaw_pid.setpoint) < 5:
+                            if not yaw_locked:
+                                yaw_locked = True
+                                logger.info("[MISSION] Yaw locked")
+                if x_locked and yaw_locked:
+                    radar.update_find_point_args(-30, 30, 1, 1000)
+                    fc.update_realtime_control(vel_y=-8)
+            else:
+                # 没有雷达点，x速度置为零
+                fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)
+            current_yaw = fc.state.yaw.value
+            diff = abs(current_yaw - last_yaw)
+            last_yaw = current_yaw
+            if diff > 180:
+                diff = 360 - diff
+            turn_count += diff
+            if turn_count > 100:
+                ok_points = radar.map.find_nearest(-135, -45, 1)  # 左边
+                if len(ok_points) > 0:
+                    deg2 = deg_360_180(ok_points[0].degree)
+                    dis2 = ok_points[0].distance / 10
+                    logger.info("[MISSION] find point C: %.2f, %.2f" % (deg2, dis2))
+                    if 120 < dis2 < 150:
+                        logger.info("[MISSION] Stop hoop")
+                        break
+            if turn_count > 300:
+                logger.info("[MISSION] ForceStop hoop")
                 break
-            left_point = self.radar.map.find_nearest(
-                from_=-179, to_=-1, num=1, range_limit=2000
-            )
-            right_point = self.radar.map.find_nearest(
-                from_=1, to_=179, num=1, range_limit=2000
-            )
-            if len(left_point) > 0 and len(right_point) > 0:  # 正常
-                left_p = left_point[0].to_xy()
-                right_p = right_point[0].to_xy()
-                y_diff = abs(right_p[1]) - abs(left_p[1])  # 用于修正横向位移
-                if y_diff > 60:  # 左偏，向右移动
-                    self.fc.update_realtime_control(vel_y=-8)
-                elif y_diff < -60:  # 右偏，向左移动
-                    self.fc.update_realtime_control(vel_y=8)
-                else:
-                    self.fc.update_realtime_control(vel_y=0)
-                    if not y_fixed:
-                        y_fixed = True
-                        logger.info("[MISSION] Hoop y fixed")
-
-                x_diff = right_p[0] - left_p[0]  # 用于修正YAW轴，不使用degree修正以避免正反馈
-                if x_diff > 30:  # 左偏，向右转动
-                    self.fc.update_realtime_control(yaw=5)
-                elif x_diff < -30:  # 右偏，向左转动
-                    self.fc.update_realtime_control(yaw=-5)
-                else:
-                    self.fc.update_realtime_control(yaw=0)
-                    if not yaw_fixed:
-                        yaw_fixed = True
-                        logger.info("[MISSION] Hoop yaw fixed")
-
-                if left_p[0] < -800 and right_p[0] < -800:  # 到达安全距离
-                    self.fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)
-                    logger.info("[MISSION] Passing hoop finish")
-                    break
-            else:  # 无法获取点
-                self.fc.update_realtime_control(vel_y=0, yaw=0)
-                logger.info("[MISSION] Find no hoop edges")
-
-            if yaw_fixed and y_fixed:
-                self.fc.update_realtime_control(vel_x=x_vel)  # 开始前进
-
+        fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)
         logger.info("[MISSION] Across hoop OK")

@@ -320,7 +320,7 @@ class Map_360(object):
         range_limit: int 距离限制
         threshold: int 允许的距离误差
         """
-        fd_points = self.find_nearest(from_, to_, 30, range_limit)
+        fd_points = self.find_nearest(from_, to_, 20, range_limit)
         num = len(fd_points)
         get_list = []
         if num >= 2:

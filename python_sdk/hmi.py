@@ -39,7 +39,7 @@ class HMI(object):
             return None
 
     def info(self, data: str):
-        data.replace("\n", "\r\n")
+        data = data.replace("\n", "\r\n")
         self.command(f'info.txt="{data}"')
 
     def stop(self):
