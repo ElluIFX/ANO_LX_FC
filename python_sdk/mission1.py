@@ -235,9 +235,9 @@ class Mission(object):
         # self.playback.loop_at_end(True)
         # self.playback.play()
         self.fc.set_rgb_led(0, 255, 0)
-        self.fc.set_digital_output(1, True)
+        self.fc.set_digital_output(0, True)
         sleep(5)
-        self.fc.set_digital_output(1, False)
+        self.fc.set_digital_output(0, False)
         # self.playback.stop()
         self.fc.set_rgb_led(0, 0, 0)
         #####################################

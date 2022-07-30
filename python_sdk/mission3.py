@@ -450,17 +450,17 @@ class Mission(object):
             if diff > 180:
                 diff = 360 - diff
             turn_count += diff
-            if turn_count > 100:
-                ok_points = radar.map.find_nearest(-135, -45, 1)  # 左边
-                if len(ok_points) > 0:
-                    deg2 = deg_360_180(ok_points[0].degree)
-                    dis2 = ok_points[0].distance / 10
-                    logger.info("[MISSION] find point C: %.2f, %.2f" % (deg2, dis2))
-                    if 120 < dis2 < 150:
-                        logger.info("[MISSION] Stop hoop")
-                        break
+            # if turn_count > 100:
+            #     ok_points = radar.map.find_nearest(-135, -45, 1)  # 左边
+            #     if len(ok_points) > 0:
+            #         deg2 = deg_360_180(ok_points[0].degree)
+            #         dis2 = ok_points[0].distance / 10
+            #         logger.info("[MISSION] find point C: %.2f, %.2f" % (deg2, dis2))
+            #         if 120 < dis2 < 150:
+            #             logger.info("[MISSION] Stop hoop")
+            #             break
             if turn_count > 300:
-                logger.info("[MISSION] ForceStop hoop")
+                logger.info("[MISSION] Stop hoop")
                 break
         fc.update_realtime_control(vel_x=0, vel_y=0, yaw=0)
         logger.info("[MISSION] Across hoop OK")
