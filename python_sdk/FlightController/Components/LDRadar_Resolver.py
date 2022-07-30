@@ -320,15 +320,26 @@ class Map_360(object):
         range_limit: int 距离限制
         threshold: int 允许的距离误差
         """
-        fd_points = self.find_nearest(from_, to_, 15, range_limit)
+        fd_points = self.find_nearest(from_, to_, 30, range_limit)
         num = len(fd_points)
+        get_list = []
         if num >= 2:
             for i in range(num):
                 for j in range(i + 1, num):
                     vector = fd_points[i].to_xy() - fd_points[j].to_xy()
                     delta_dis = np.sqrt(vector.dot(vector))
                     if abs(delta_dis - distance) < threshold:
-                        return [fd_points[i], fd_points[j]]
+                        deg = (
+                            abs(
+                                fd_points[i].to_180_degree()
+                                + fd_points[j].to_180_degree()
+                            )
+                            / 2
+                        )
+                        get_list.append((fd_points[i], fd_points[j], delta_dis, deg))
+            if len(get_list) > 0:
+                get_list.sort(key=lambda x: x[3])
+                return list(get_list[0][:2])
         return []
 
     def draw_on_cv_image(

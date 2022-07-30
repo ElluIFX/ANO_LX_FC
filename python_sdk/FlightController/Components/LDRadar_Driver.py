@@ -223,7 +223,14 @@ class LD_Radar(object):
                 0.4,
                 (255, 255, 0),
             )
-            add_p = self.fp_points
+            add_p = self.map.find_two_point_with_given_distance(
+                from_=-60,
+                to_=60,
+                distance=110,
+                threshold=15,
+                range_limit=3000,
+            )
+            print(add_p)
             if self.__radar_map_info_angle != -1:
                 cv2.putText(
                     img_,
