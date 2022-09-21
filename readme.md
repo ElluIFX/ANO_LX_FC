@@ -7,13 +7,16 @@
 * DriversBsp - 通用驱动
 * DriversMcu/STM32F407 - 板级驱动
 * FcSrc - 凌霄飞控相关通讯模块和飞控任务调度模块
+  * ANO* 凌霄通讯相关
+  * \*FC* 飞控相关
+  * User* sdk交互相关
 * python_sdk - 二级下位机（树莓派）python通讯接口
+  * FlightController 飞控控制类
+  * camRecv / camTrans 图传相关
+  * fc_gui 图形化上位机
+  * mission* 任务相关
+  * server 飞控服务网络服务器
 
 ## TODO
 
-1. ~~从旧飞控移植树莓派通讯代码过来~~
-2. ~~更改python sdk适配凌霄的命令树~~
-3. 添加绕圈等连续操作的sdk
-4. 完善飞控状态数据下发到树莓派的流程
-5. 尝试把激光雷达解算打包发给凌霄
-6. more
+***ALL DONE***
