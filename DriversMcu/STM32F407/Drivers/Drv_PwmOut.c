@@ -102,13 +102,13 @@ void DrvPwmOutInit(void) {
 
   /* PWM1 Mode configuration: Channel3 */
   TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-  TIM_OCInitStructure.TIM_Pulse = INIT_DUTY;
+  TIM_OCInitStructure.TIM_Pulse = 0;
   TIM_OC3Init(TIM5, &TIM_OCInitStructure);
   TIM_OC3PreloadConfig(TIM5, TIM_OCPreload_Enable);
 
   /* PWM1 Mode configuration: Channel4 */
   TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-  TIM_OCInitStructure.TIM_Pulse = INIT_DUTY;
+  TIM_OCInitStructure.TIM_Pulse = 0;
   TIM_OC4Init(TIM5, &TIM_OCInitStructure);
   TIM_OC4PreloadConfig(TIM5, TIM_OCPreload_Enable);
 
@@ -203,13 +203,13 @@ void DrvPwmOutInit(void) {
 
   /* PWM1 Mode configuration: Channel3 */
   // TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-  TIM_OCInitStructure.TIM_Pulse = INIT_DUTY;
+  TIM_OCInitStructure.TIM_Pulse = 0;
   TIM_OC3Init(TIM8, &TIM_OCInitStructure);
   TIM_OC3PreloadConfig(TIM1, TIM_OCPreload_Enable);
 
   /* PWM1 Mode configuration: Channel4 */
   // TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-  TIM_OCInitStructure.TIM_Pulse = INIT_DUTY;
+  TIM_OCInitStructure.TIM_Pulse = 0;
   TIM_OC4Init(TIM8, &TIM_OCInitStructure);
   TIM_OC4PreloadConfig(TIM1, TIM_OCPreload_Enable);
 
@@ -224,10 +224,10 @@ void DrvPwmOutInit(void) {
   TIM1->CCR2 = 2 * INIT_DUTY;  // 3
   TIM1->CCR1 = 2 * INIT_DUTY;  // 4
 
-  TIM5->CCR4 = 2 * INIT_DUTY;  // 5
-  TIM5->CCR3 = 2 * INIT_DUTY;  // 6
-  TIM8->CCR4 = 2 * INIT_DUTY;  // 7
-  TIM8->CCR3 = 2 * INIT_DUTY;  // 8
+  // TIM5->CCR4 = 2 * INIT_DUTY;  // 5
+  // TIM5->CCR3 = 2 * INIT_DUTY;  // 6
+  // TIM8->CCR4 = 2 * INIT_DUTY;  // 7
+  // TIM8->CCR3 = 2 * INIT_DUTY;  // 8
 #endif
 }
 

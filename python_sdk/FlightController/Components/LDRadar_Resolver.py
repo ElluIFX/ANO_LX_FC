@@ -29,7 +29,7 @@ class Point_2D(object):
     def __repr__(self):
         return self.__str__()
 
-    def to_xy(self):
+    def to_xy(self) -> np.ndarray:
         """
         转换到匿名坐标系下的坐标
         """
@@ -40,7 +40,7 @@ class Point_2D(object):
             ]
         )
 
-    def to_cv_xy(self):
+    def to_cv_xy(self) -> np.ndarray:
         """
         转换到OpenCV坐标系下的坐标
         """
@@ -70,7 +70,7 @@ class Point_2D(object):
             return False
         return self.degree == __o.degree and self.distance == __o.distance
 
-    def to_180_degree(self):
+    def to_180_degree(self) -> float:
         """
         转换到-180~180度
         """
@@ -254,6 +254,8 @@ class Map_360(object):
         """
         if view is None:
             view = (self.data < range_limit) & (self.data != -1)
+            from_ %= 360
+            to_ %= 360
             if from_ > to_:
                 view[to_ + 2 : from_] = False
             else:
@@ -284,6 +286,8 @@ class Map_360(object):
         range_limit: int 距离限制
         """
         view = (self.data < range_limit) & (self.data != -1)
+        from_ %= 360
+        to_ %= 360
         if from_ > to_:
             view[to_ + 2 : from_] = False
         else:
@@ -299,6 +303,46 @@ class Map_360(object):
         new_view = np.zeros(360, dtype=bool)
         new_view[peak_deg] = True
         return self.find_nearest(from_, to_, num, range_limit, new_view)
+
+    def find_two_point_with_given_distance(
+        self,
+        from_: int,
+        to_: int,
+        distance: int,
+        range_limit: int = 1e7,
+        threshold: int = 15,
+    ) -> List[Point_2D]:
+        """
+        在给定范围内查找两个给定距离的点
+        from_: int 起始角度
+        to_: int 结束角度(包含)
+        distance: int 给定的两点之间的距离
+        range_limit: int 距离限制
+        threshold: int 允许的距离误差
+        """
+        fd_points = self.find_nearest(from_, to_, 20, range_limit)
+        num = len(fd_points)
+        get_list = []
+        if num >= 2:
+            for i in range(num):
+                for j in range(i + 1, num):
+                    vector = fd_points[i].to_xy() - fd_points[j].to_xy()
+                    delta_dis = np.sqrt(vector.dot(vector))
+                    if abs(delta_dis - distance) < threshold:
+                        deg = (
+                            abs(
+                                fd_points[i].to_180_degree()
+                                + fd_points[j].to_180_degree()
+                            )
+                            / 2
+                        )
+                        dis = (fd_points[i].distance + fd_points[j].distance) / 2
+                        get_list.append((fd_points[i], fd_points[j], dis, deg))
+            if len(get_list) > 0:
+                get_list.sort(key=lambda x: x[2])  # 按距离排序
+                get_list.sort(key=lambda x: x[3])  # 按角度排序
+                return list(get_list[0][:2])
+        return []
 
     def draw_on_cv_image(
         self,

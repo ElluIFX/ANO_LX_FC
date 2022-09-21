@@ -58,28 +58,22 @@ def radar_resolve_rt_pose(img, _DEBUG=False) -> list[float, float, float]:
                     back_lines.append((x2, y2, x1, y1))
                 else:
                     back_lines.append((x1, y1, x2, y2))
-    right_lines.sort(key=lambda line: line[0])
-    back_lines.sort(key=lambda line: line[1])
-    if len(right_lines) > 0:
-        x1, y1, x2, y2 = right_lines[0]
+    for line in right_lines:
+        x1, y1, x2, y2 = line
         dis, yaw = get_point_line_distance(x0, y0, x1, y1, x2, y2, 0)
-        y_out = dis
-        yaw_out_1 = -yaw
+        if y_out is None or dis < y_out:
+            y_out = dis
+            yaw_out_1 = -yaw
         if _DEBUG:
             cv2.line(img, (x1, y1), (x2, y2), (255, 255, 0), 2)
-            p = Point_2D(yaw + 90, dis)
-            target = p.to_cv_xy() + np.array([x0, y0])
-            cv2.line(img, (x0, y0), (int(target[0]), int(target[1])), (0, 0, 255), 1)
-    if len(back_lines) > 0:
-        x1, y1, x2, y2 = back_lines[0]
+    for line in back_lines:
+        x1, y1, x2, y2 = line
         dis, yaw = get_point_line_distance(x0, y0, x1, y1, x2, y2, 1)
-        x_out = dis
-        yaw_out_2 = -yaw
+        if x_out is None or dis < x_out:
+            x_out = dis
+            yaw_out_2 = -yaw
         if _DEBUG:
             cv2.line(img, (x1, y1), (x2, y2), (0, 255, 255), 2)
-            p = Point_2D(yaw + 180, dis)
-            target = p.to_cv_xy() + np.array([x0, y0])
-            cv2.line(img, (x0, y0), (int(target[0]), int(target[1])), (0, 0, 255), 1)
     if yaw_out_1 and yaw_out_2:
         yaw_out = (yaw_out_1 + yaw_out_2) / 2
     elif yaw_out_1:
@@ -92,6 +86,12 @@ def radar_resolve_rt_pose(img, _DEBUG=False) -> list[float, float, float]:
         x_ = x_out if x_out else -1
         y_ = y_out if y_out else -1
         yaw_ = yaw_out if yaw_out else 0
+        p = Point_2D(-yaw_ + 90, y_)
+        target = p.to_cv_xy() + np.array([x0, y0])
+        cv2.line(img, (x0, y0), (int(target[0]), int(target[1])), (0, 0, 255), 1)
+        p = Point_2D(-yaw_ + 180, x_)
+        target = p.to_cv_xy() + np.array([x0, y0])
+        cv2.line(img, (x0, y0), (int(target[0]), int(target[1])), (0, 0, 255), 1)
         cv2.putText(
             img,
             f"({x_:.1f}, {y_:.1f}, {yaw_:.1f})",

@@ -293,11 +293,12 @@ class FC_Base_Uart_Comunication(object):
         _listen_thread.start()
         self._thread_list.append(_listen_thread)
 
-    def quit(self) -> None:
+    def quit(self, joined=False) -> None:
         self.running = False
-        for thread in self._thread_list:
-            thread.join()
-            self._thread_list.remove(thread)
+        if joined:
+            for thread in self._thread_list:
+                thread.join()
+                self._thread_list.remove(thread)
         if self._ser_32:
             self._ser_32.close()
         logger.info("[FC] Threads closed, FC offline")

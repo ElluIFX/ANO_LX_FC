@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'guiKFqEyN.ui'
+## Form generated from reading UI file 'guiEthCPL.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.3.0
 ##
@@ -309,13 +309,6 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_16.addWidget(self.text_log)
 
-        self.btn_rgb = QPushButton(self.centralwidget)
-        self.btn_rgb.setObjectName(u"btn_rgb")
-        self.btn_rgb.setMinimumSize(QSize(0, 70))
-        font3 = QFont()
-        font3.setPointSize(11)
-        font3.setBold(False)
-        self.btn_rgb.setFont(font3)
 
         self.verticalLayout_9.addLayout(self.horizontalLayout_16)
 
@@ -340,19 +333,19 @@ class Ui_MainWindow(object):
         self.btn_unlock = QPushButton(self.layoutWidget)
         self.btn_unlock.setObjectName(u"btn_unlock")
         self.btn_unlock.setMinimumSize(QSize(0, 50))
-        font5 = QFont()
-        font5.setPointSize(13)
-        font5.setBold(True)
-        font5.setItalic(True)
-        font5.setStyleStrategy(QFont.PreferAntialias)
-        self.btn_unlock.setFont(font5)
+        font4 = QFont()
+        font4.setPointSize(13)
+        font4.setBold(True)
+        font4.setItalic(True)
+        font4.setStyleStrategy(QFont.PreferAntialias)
+        self.btn_unlock.setFont(font4)
 
         self.verticalLayout_4.addWidget(self.btn_unlock)
 
         self.btn_lock = QPushButton(self.layoutWidget)
         self.btn_lock.setObjectName(u"btn_lock")
         self.btn_lock.setMinimumSize(QSize(0, 50))
-        self.btn_lock.setFont(font5)
+        self.btn_lock.setFont(font4)
 
         self.verticalLayout_4.addWidget(self.btn_lock)
 
@@ -366,24 +359,24 @@ class Ui_MainWindow(object):
         self.btn_l_turn = QPushButton(self.layoutWidget)
         self.btn_l_turn.setObjectName(u"btn_l_turn")
         self.btn_l_turn.setMinimumSize(QSize(0, 70))
-        font6 = QFont()
-        font6.setPointSize(20)
-        font6.setBold(False)
-        self.btn_l_turn.setFont(font6)
+        font5 = QFont()
+        font5.setPointSize(20)
+        font5.setBold(False)
+        self.btn_l_turn.setFont(font5)
 
         self.horizontalLayout_8.addWidget(self.btn_l_turn)
 
         self.btn_forward = QPushButton(self.layoutWidget)
         self.btn_forward.setObjectName(u"btn_forward")
         self.btn_forward.setMinimumSize(QSize(0, 70))
-        self.btn_forward.setFont(font6)
+        self.btn_forward.setFont(font5)
 
         self.horizontalLayout_8.addWidget(self.btn_forward)
 
         self.btn_r_turn = QPushButton(self.layoutWidget)
         self.btn_r_turn.setObjectName(u"btn_r_turn")
         self.btn_r_turn.setMinimumSize(QSize(0, 70))
-        self.btn_r_turn.setFont(font6)
+        self.btn_r_turn.setFont(font5)
 
         self.horizontalLayout_8.addWidget(self.btn_r_turn)
 
@@ -395,21 +388,21 @@ class Ui_MainWindow(object):
         self.btn_left = QPushButton(self.layoutWidget)
         self.btn_left.setObjectName(u"btn_left")
         self.btn_left.setMinimumSize(QSize(0, 70))
-        self.btn_left.setFont(font6)
+        self.btn_left.setFont(font5)
 
         self.horizontalLayout_9.addWidget(self.btn_left)
 
         self.btn_backward = QPushButton(self.layoutWidget)
         self.btn_backward.setObjectName(u"btn_backward")
         self.btn_backward.setMinimumSize(QSize(0, 70))
-        self.btn_backward.setFont(font6)
+        self.btn_backward.setFont(font5)
 
         self.horizontalLayout_9.addWidget(self.btn_backward)
 
         self.btn_right = QPushButton(self.layoutWidget)
         self.btn_right.setObjectName(u"btn_right")
         self.btn_right.setMinimumSize(QSize(0, 70))
-        self.btn_right.setFont(font6)
+        self.btn_right.setFont(font5)
 
         self.horizontalLayout_9.addWidget(self.btn_right)
 
@@ -424,21 +417,21 @@ class Ui_MainWindow(object):
         self.btn_up = QPushButton(self.layoutWidget)
         self.btn_up.setObjectName(u"btn_up")
         self.btn_up.setMinimumSize(QSize(0, 50))
-        self.btn_up.setFont(font6)
+        self.btn_up.setFont(font5)
 
         self.verticalLayout_6.addWidget(self.btn_up)
 
         self.btn_stop = QPushButton(self.layoutWidget)
         self.btn_stop.setObjectName(u"btn_stop")
         self.btn_stop.setMinimumSize(QSize(0, 50))
-        self.btn_stop.setFont(font6)
+        self.btn_stop.setFont(font5)
 
         self.verticalLayout_6.addWidget(self.btn_stop)
 
         self.btn_down = QPushButton(self.layoutWidget)
         self.btn_down.setObjectName(u"btn_down")
         self.btn_down.setMinimumSize(QSize(0, 50))
-        self.btn_down.setFont(font6)
+        self.btn_down.setFont(font5)
 
         self.verticalLayout_6.addWidget(self.btn_down)
 
@@ -457,18 +450,18 @@ class Ui_MainWindow(object):
         self.combo_serial = QComboBox(self.layoutWidget)
         self.combo_serial.addItem("")
         self.combo_serial.setObjectName(u"combo_serial")
-        font7 = QFont()
-        font7.setPointSize(9)
-        self.combo_serial.setFont(font7)
+        font6 = QFont()
+        font6.setPointSize(9)
+        self.combo_serial.setFont(font6)
 
         self.horizontalLayout_17.addWidget(self.combo_serial)
 
         self.btn_serial_update = QPushButton(self.layoutWidget)
         self.btn_serial_update.setObjectName(u"btn_serial_update")
-        font8 = QFont()
-        font8.setPointSize(10)
-        font8.setKerning(True)
-        self.btn_serial_update.setFont(font8)
+        font7 = QFont()
+        font7.setPointSize(10)
+        font7.setKerning(True)
+        self.btn_serial_update.setFont(font7)
         self.btn_serial_update.setIconSize(QSize(0, 0))
 
         self.horizontalLayout_17.addWidget(self.btn_serial_update)
@@ -497,15 +490,15 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_7.addLayout(self.horizontalLayout_20)
 
-        self.check_enable_keyboard_ctl = QCheckBox(self.layoutWidget)
-        self.check_enable_keyboard_ctl.setObjectName(u"check_enable_keyboard_ctl")
+        self.check_enable_ctl = QCheckBox(self.layoutWidget)
+        self.check_enable_ctl.setObjectName(u"check_enable_ctl")
         font8 = QFont()
-        font8.setBold(False)
+        font8.setBold(True)
         font8.setItalic(False)
-        self.check_enable_keyboard_ctl.setFont(font8)
-        self.check_enable_keyboard_ctl.setLayoutDirection(Qt.LeftToRight)
+        self.check_enable_ctl.setFont(font8)
+        self.check_enable_ctl.setLayoutDirection(Qt.LeftToRight)
 
-        self.verticalLayout_7.addWidget(self.check_enable_keyboard_ctl)
+        self.verticalLayout_7.addWidget(self.check_enable_ctl)
 
         self.horizontalLayout_11 = QHBoxLayout()
         self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
@@ -678,13 +671,13 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.btn_io_2, 2, 3, 1, 1)
 
-        self.btn_rgb_11 = QPushButton(self.gridLayoutWidget)
-        self.btn_rgb_11.setObjectName(u"btn_rgb_11")
-        self.btn_rgb_11.setMinimumSize(QSize(120, 70))
-        self.btn_rgb_11.setMaximumSize(QSize(120, 70))
-        self.btn_rgb_11.setFont(font11)
+        self.btn_pod = QPushButton(self.gridLayoutWidget)
+        self.btn_pod.setObjectName(u"btn_pod")
+        self.btn_pod.setMinimumSize(QSize(120, 70))
+        self.btn_pod.setMaximumSize(QSize(120, 70))
+        self.btn_pod.setFont(font11)
 
-        self.gridLayout.addWidget(self.btn_rgb_11, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.btn_pod, 1, 1, 1, 1)
 
         self.btn_rgb_16 = QPushButton(self.gridLayoutWidget)
         self.btn_rgb_16.setObjectName(u"btn_rgb_16")
@@ -871,7 +864,7 @@ class Ui_MainWindow(object):
         self.btn_serial_update.setText(QCoreApplication.translate("MainWindow", u"\u5237\u65b0", None))
         self.radio_control_realtime.setText(QCoreApplication.translate("MainWindow", u"\u5b9e\u65f6\u63a7\u5236", None))
         self.radio_control_flow.setText(QCoreApplication.translate("MainWindow", u"\u6d41\u7a0b\u63a7\u5236", None))
-        self.check_enable_keyboard_ctl.setText(QCoreApplication.translate("MainWindow", u"\u4f7f\u80fd\u952e\u76d8\u63a7\u5236(\u4ec5\u5b9e\u65f6\u63a7\u5236)", None))
+        self.check_enable_ctl.setText(QCoreApplication.translate("MainWindow", u"   \u4f7f\u80fd\u4e0a\u4f4d\u673a\u5b9e\u65f6\u63a7\u5236", None))
         self.label_7.setText(QCoreApplication.translate("MainWindow", u"\u6c34\u5e73\u901f\u5ea6", None))
         self.label_8.setText(QCoreApplication.translate("MainWindow", u"\u5782\u76f4\u901f\u5ea6", None))
         self.label_12.setText(QCoreApplication.translate("MainWindow", u"\u65cb\u8f6c\u901f\u5ea6", None))
@@ -902,9 +895,9 @@ class Ui_MainWindow(object):
 #if QT_CONFIG(shortcut)
         self.btn_io_2.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
 #endif // QT_CONFIG(shortcut)
-        self.btn_rgb_11.setText(QCoreApplication.translate("MainWindow", u"N/A", None))
+        self.btn_pod.setText(QCoreApplication.translate("MainWindow", u"\u540a\u8231", None))
 #if QT_CONFIG(shortcut)
-        self.btn_rgb_11.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
+        self.btn_pod.setShortcut(QCoreApplication.translate("MainWindow", u"W", None))
 #endif // QT_CONFIG(shortcut)
         self.btn_rgb_16.setText(QCoreApplication.translate("MainWindow", u"N/A", None))
 #if QT_CONFIG(shortcut)
@@ -928,15 +921,15 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(shortcut)
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u" \u98de\u63a7\u5916\u8bbe ", None))
         self.label_16.setText(QCoreApplication.translate("MainWindow", u"\u96f7\u8fbe\u72b6\u6001: ", None))
-        self.line_radar_state.setText(QCoreApplication.translate("MainWindow", u"\u6d4b\u8bd5\u6587\u672c", None))
+        self.line_radar_state.setText(QCoreApplication.translate("MainWindow", u"TODO", None))
         self.line_radar_state.setPlaceholderText("")
-        self.label_radar_image.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
+        self.label_radar_image.setText(QCoreApplication.translate("MainWindow", u"TODO", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), QCoreApplication.translate("MainWindow", u" \u6fc0\u5149\u96f7\u8fbe ", None))
         self.label_13.setText(QCoreApplication.translate("MainWindow", u"\u4e3b\u673a\u5730\u5740: ", None))
         self.btn_connect_sensor.setText(QCoreApplication.translate("MainWindow", u"\u8fde\u63a5/\u65ad\u5f00", None))
         self.label_14.setText(QCoreApplication.translate("MainWindow", u"\u56fe\u50cf\u53c2\u6570: ", None))
         self.check_display_sensor_info.setText(QCoreApplication.translate("MainWindow", u"\u663e\u793a\u56fe\u4f20\u6570\u636e", None))
-        self.label_sensor_image.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
+        self.label_sensor_image.setText(QCoreApplication.translate("MainWindow", u"TODO", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), QCoreApplication.translate("MainWindow", u" \u6811\u8393\u6d3e\u56fe\u4f20 ", None))
     # retranslateUi
 

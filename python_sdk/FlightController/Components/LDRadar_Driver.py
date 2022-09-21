@@ -55,13 +55,14 @@ class LD_Radar(object):
         self._thread_list.append(thread)
         logger.info("[RADAR] Map resolve thread started")
 
-    def stop(self):
+    def stop(self, joined=False):
         """
         停止监听雷达数据
         """
         self.running = False
-        for thread in self._thread_list:
-            thread.join()
+        if joined:
+            for thread in self._thread_list:
+                thread.join()
         if self._serial != None:
             self._serial.close()
         logger.info("[RADAR] Stopped all threads")
@@ -222,7 +223,14 @@ class LD_Radar(object):
                 0.4,
                 (255, 255, 0),
             )
-            add_p = self.fp_points
+            add_p = self.map.find_two_point_with_given_distance(
+                from_=-60,
+                to_=60,
+                distance=110,
+                threshold=15,
+                range_limit=3000,
+            )
+            print(add_p)
             if self.__radar_map_info_angle != -1:
                 cv2.putText(
                     img_,
@@ -333,7 +341,6 @@ class LD_Radar(object):
     ):
         """
         开始使用点云图解算位姿
-        freq_div: 更新降频系数
         size: 解算范围(长宽为size的正方形)
         scale_ratio: 降采样比例, 降低精度节省计算资源
         low_pass_ratio: 低通滤波比例
@@ -365,6 +372,7 @@ class LD_Radar(object):
         """
         self._rtpose_size = size
         self._rtpose_scale_ratio = ratio
+        self._rtpose_low_pass_ratio = low_pass_ratio
 
 
 if __name__ == "__main__":
